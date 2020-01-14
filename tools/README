@@ -1,0 +1,12 @@
+
+set CMD_LIST environment variable to an absolute path
+set Make SHELL variable to cmd_shell.sh (absolute path)
+^ "make SHELL=path-to-cmd_shell.sh"
+
+cmd_shell.sh records cmds in CMD_LIST before passing them to bash
+
+Depending on how recursive make is invoked this may or may not provide
+all of the commands that make up the build.  It also might be necessary to
+manually delete recipes which invoke make. It is also assumed that make
+is executing recipes in the default way "sh -c 'recipe'".
+
