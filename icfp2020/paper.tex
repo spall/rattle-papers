@@ -2,14 +2,36 @@
 
 \begin{document}
 
-\title{TODO}
+\title{Build Systems with Perfect Dependencies}
+
+\author{Sarah Spall}
+\affiliation{
+  \institution{Indiana University}
+  \country{USA}
+}
+\email{sjspall@iu.edu}
+
+\author{Neil Mitchell}
+\affiliation{
+  \institution{Facebook}
+  \country{United Kingdom}
+}
+\email{ndmitchell@gmail.com}
+
+\author{Sam Tobin-Hochstadt}
+\affiliation{
+  \institution{Indiana University}
+  \country{USA}
+}
+\email{samth@cs.indiana.edu}
 
 \begin{abstract}
+Writing a build system for your project is tricky. You have to list the dependencies for every command, but these commands offer a level of encapsulation you may not understand. If you overspecify dependencies then it will rebuild too often, and without enough parallelism. If you underspecify dependencies, it will not rebuild enough. What if you could \emph{avoid} specifying dependencies and guarantee you got it right? This paper explores that approach, what it mean, and how you recover what you lose.
 \end{abstract}
 
 \maketitle
 
-\section{Introduction}
+\input{1-intro}
 
 \section{Rattle}
 
