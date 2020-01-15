@@ -1,0 +1,24 @@
+{
+    "latex-workshop.latex.recipes": [
+      {
+        "name": "builder",
+        "tools": [
+          "texify"
+        ]
+      },
+    ],
+    "latex-workshop.latex.tools": [
+      {
+        "name": "texify",
+        "command": "texify",
+        "args": [
+          "--synctex",
+          "--pdf",
+          "--tex-option=\"-shell-escape\"",
+          "--tex-option=\"-interaction=nonstopmode\"",
+          "--tex-option=\"-file-line-error\"",
+          "%DOC%.tex"
+        ]
+      }
+    ]
+}
