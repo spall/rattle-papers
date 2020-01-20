@@ -10,3 +10,12 @@ all of the commands that make up the build.  It also might be necessary to
 manually delete recipes which invoke make. It is also assumed that make
 is executing recipes in the default way "sh -c 'recipe'".
 
+------------------------------------------------------------------------------
+
+get_cmd_lists.sh takes a project name and the git url of that project
+
+It checkouts fresh versions of the project for a certain number of commits and
+writes the commands to build each commit to a different file.  This is useful
+in the case where the build script is changing between commit versions.
+
+
