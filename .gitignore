@@ -5,3 +5,7 @@
 *.pdf
 *.gz
 *.fdb_latexmk
+*.bbl
+*.blg
+*.dvi
+*.xcp
