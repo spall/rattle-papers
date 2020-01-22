@@ -1,11 +1,35 @@
 \section{Introduction}
+\label{sec:introduction}
 
-Build systems make you specify a lot of stuff, but really you don't want to care, it's an abstraction. A command line uses what it uses.
+Build systems \citep{build_systems_a_la_carte} describe \emph{commands to run} and \emph{dependencies to respect}. For example, a simple \Make build system might look like:
 
-Let's consider the VIM build system. It's wrong in lots of ways Sarah can describe. But these were expert software engineers - has anyone got it right? To a first approximation, no. Unless you go for something like Bazel, and then it's tedious but sandboxing makes you get it right.
+\begin{verbatim}
+main.o: main.c
+    gcc -c main.c
+util.o: util.c
+    gcc -c util.c
+main.exe: main.o util.o
+    gcc -o main.exe main.o util.o
+\end{verbatim}
 
-In this paper we let you write a build system by specifying the list of tools to run \emph{in order}, but not with dependencies.
+It contains three rules - taking a look at the first it says \texttt{main.o} depends on \texttt{main.c}, and is produced by running \texttt{gcc -c main.c}. But, what if we cheated, and just wrote a simple shell script? We'd end up with:
 
-We're not the first people to do that, but the previous solutions have been hampered by making parallelism hard. We solve that with speculation.
+\begin{verbatim}
+gcc -c main.c
+gcc -c util.c
+gcc -o main.exe main.o util.o
+\end{verbatim}
 
-In many ways we aren't the first to come up with this speculation idea. The CPU in your desktop computer already takes a series of instructions and executes them with pipelining and speculation. We just do the same with build commands.
+That's shorter, simpler and easier to follow. There are two main downsides: 1) everything will always rebuild even if it's dependencies haven't changed; 2) while make could run the two \texttt{gcc -c} commands in parallel, that non-interference information has been lost. But at the same time, we've fixed an inadvertent bug -- these commands all depend on the undeclared dependency \texttt{gcc}, and potentially whatever header files are imported by \texttt{main.c} and \texttt{util.c}. Furthermore, as the files \texttt{main.c} and \texttt{util.c} evolve, and their dependencies change (by adding additional \texttt{\#include} directives), the shell script remains correct, while the \Make script \emph{must} always be consistent (or builds will become stagnant).
+
+In this paper we introduce a build system \Rattle\footnote{\url{https://github.com/ndmitchell/rattle}}, which can take the above shell script, and gain the benefits of the \Make script -- skipping those dependencies that haven't changed and running it in parallel. Furthermore, it can source compilation results from a shared cloud store. It performs this feat by \emph{tracing} which files are read/written by each command and using this information to offer a build-like experience.
+
+This paper makes the following contributions:
+
+\begin{itemize}
+\item In \S\ref{sec:rattle} we describe how tracing can turn a shell script into a build system, while skipping dependencies and using a cloud store. % \item In \S\ref{sec:speculation} we add parallelism, which requires speculation.
+\item In \S\ref{sec:evaluation} we describe how we converted existing \Make scripts into \Rattle scripts, and show the performance characteristics and bugs uncovered.
+% \item In \S\ref{sec:theory} we outline the theory behind hazards that happen when build steps go wrong.
+\item In \S\ref{sec:related} we describe related work, in particular the \Fabricate system which pioneered the way.
+\item Finally, in \S\ref{sec:conclusion} we conclude and describe future work.
+\end{itemize}

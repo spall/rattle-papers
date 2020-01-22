@@ -1,70 +1,70 @@
 \section{Rattle}
+\label{sec:rattle}
 
-% Rattle is a build system a la fabricate, where instead of describing what you want to build
-% you just describe how to build it.
+In many ways we aren't the first to come up with this speculation idea. The CPU in your desktop computer already takes a series of instructions and executes them with pipelining and speculation. We just do the same with build commands.
 
-% The author of a Rattle build script just what and how to run the tools that build their
-% project, in an order they know is correct.
+Rattle is a build system a la fabricate, where instead of describing what you want to build
+you just describe how to build it.
 
-% Rattle then learns while running the script what the true file dependencies are for the build.
-% So, the build script author cannot get them wrong.
+The author of a Rattle build script just what and how to run the tools that build their
+project, in an order they know is correct.
 
-% How does Rattle work?
+Rattle then learns while running the script what the true file dependencies are for the build.
+So, the build script author cannot get them wrong.
 
-% It uses system level tracing to record the files read and written by the commands specified in
-% the haskell build script.
+How does Rattle work?
 
-% Rattle records this tracing information for use during subsequent runs.  On subsequent runs
-% The tracing information informs Rattle of which cmds should safely run in parallel.
+It uses system level tracing to record the files read and written by the commands specified in
+the haskell build script.
+
+Rattle records this tracing information for use during subsequent runs.  On subsequent runs
+The tracing information informs Rattle of which cmds should safely run in parallel.
 
 \subsection{Speculation}
 
-% Maybe this should be earlier.
+Maybe this should be earlier.
 
-% Because Rattle doesn't know what cmds are in the build script being run, it cannot perform
-% the same sort of graph traversal Make can to determine which commands to run in order.
+Because Rattle doesn't know what cmds are in the build script being run, it cannot perform
+the same sort of graph traversal Make can to determine which commands to run in order.
 
-% Speculation is used instead to achieve parallelism.  If Rattle believes it is safe, it will run
-% the commands from the previous build in parallel with the current build script.  When a cmd it
-% ran speculatively is encountered in the build script it won't have to run the command.
+Speculation is used instead to achieve parallelism.  If Rattle believes it is safe, it will run
+the commands from the previous build in parallel with the current build script.  When a cmd it
+ran speculatively is encountered in the build script it won't have to run the command.
 
-% If the build script hasn't changed between runs and the file level dependencies of each cmd
-% haven't changed, then Rattle should have no problems running cmds in parallel.
+If the build script hasn't changed between runs and the file level dependencies of each cmd
+haven't changed, then Rattle should have no problems running cmds in parallel.
 
-% But what if the build script or file level dependencies have changed?  Then Rattle might
-% run cmds in an order that doesn't respect their new dependencies.  To deal with this Rattle
-% has a concept of hazards, because speculation can go wrong.
+But what if the build script or file level dependencies have changed?  Then Rattle might
+run cmds in an order that doesn't respect their new dependencies.  To deal with this Rattle
+has a concept of hazards, because speculation can go wrong.
 
 \subsection{Hazards}
 
-% already need to have explained the properties
+already need to have explained the properties
 
-% Read Write hazard
-% Write Write hazard
+Read Write hazard
+Write Write hazard
 
-% ReadWrite hazard occurs when two commands read and write to the same file at the same time
-% or a command reads from a file before it is written to
+ReadWrite hazard occurs when two commands read and write to the same file at the same time
+or a command reads from a file before it is written to
 
-% WriteWrite hazard occurs when two commands write to the same file during the build.
+WriteWrite hazard occurs when two commands write to the same file during the build.
 
-% When a hazard occurs Rattle will terminate, restart, or continue.  If a property violating hazard
-% occurred Rattle will terminate and alert the build user.  If Rattle speculated a command that
-% caused a property violation the build will be restarted with no speculation.
-% If Rattle speculated a read cmd before a write then Rattle can continue and later re-execute the
-% read command again.
+When a hazard occurs Rattle will terminate, restart, or continue.  If a property violating hazard
+occurred Rattle will terminate and alert the build user.  If Rattle speculated a command that
+caused a property violation the build will be restarted with no speculation.
+If Rattle speculated a read cmd before a write then Rattle can continue and later re-execute the
+read command again.
 
 
 \subsection{Rebuilds}
 
-% using hashes to determine if files have changed
+using hashes to determine if files have changed
 
-% only rerun cmds whose dependencies have changed
+only rerun cmds whose dependencies have changed
 
 \subsection{Shared build cache}
 
-% Store output files to copy if they are missing but cmd's dependencies haven't changed
+Store output files to copy if they are missing but cmd's dependencies haven't changed
 
-% Other things Neil mentioned in the Rattle readme... 
-
-
-
+Other things Neil mentioned in the Rattle readme...
