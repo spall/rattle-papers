@@ -42,11 +42,11 @@ To implement \Rattle we treat the script as a sequence of commands with no obser
 
 \subsection{Skipping unnecessary commands}
 
-When \Rattle runs a command, it records the files it reads and writes, and their hashes at that point. If you subsequently run the same command, and the inputs and outputs haven't changed, it can be skipped. This is mostly true -- you get old but correct values. If you are running \texttt{date} it won't work, and if you are running \texttt{gcc} it will have an old compilation time. But it's good enough.
+When \Rattle runs a command, it records the files it reads and writes, and their hashes at that point. If you subsequently run the same command, and the inputs and outputs haven't changed (same hashes), it can be skipped. This is mostly true -- you get old but correct values. If you are running \texttt{date} it won't work, and if you are running \texttt{gcc} it will have an old compilation time. But it's good enough.
 
 \subsection{Cloud builds}
 
-If \Rattle matches on the files read, but not on the files written, but a previous run had the same files read/written and cached the written files, you can copy them over. If that store is in a cloud, you end up with cloud build functionality. It's pretty simple.
+If \Rattle matches on the files read, but not on the files written, but a previous run had the same files read/written and cached the written files, you can copy them over. If that store is in a cloud, you end up with cloud build functionality. It's pretty simple. Moreover, whether a command uses a cloud oracle or runs locally, that's not observable to the rest of the system, so we ignore it for proofs.
 
 \subsection{Build consistency}
 
@@ -70,74 +70,20 @@ Using the tracing we spot hazards and raise errors if they occur. We proove that
 
 \subsection{Parallelism}
 
-Given a script with no hazards when executed sequentially, we can show that any interleaving of those commands that also has no hazards will result in an equivalent output in \S\ref{sec:proof:reorder}. Moreover, any parallel execution without hazards will remain consistent. And even further, if we execute any additional commands that don't cause hazards, they can be shown to have no impact on the rest of the build.
+Given a script with no hazards when executed sequentially, we can show that any interleaving of those commands that also has no hazards will result in an equivalent output in \S\ref{sec:proof:reorder}. Moreover, any parallel execution without hazards will remain consistent, see \S\ref{sec:proof:parallel}. And even further, if we execute any additional commands that don't cause hazards, they can be shown to have no impact on the rest of the build, see \S\ref{sec:proof:additional}.
 
-As a consequence of the above, we can do whatever we want.
+As a consequence of the above, it is important that we check for hazards, but are otherwise free to run things in parallel. There are two ways we allow parallelism.
 
-In many ways we aren't the first to come up with this speculation idea. The CPU in your desktop computer already takes a series of instructions and executes them with pipelining and speculation. We just do the same with build commands.
+\subsubsection{Explicit Parallelism}
 
-Rattle is a build system a la fabricate, where instead of describing what you want to build
-you just describe how to build it.
+In the Haskell API for \Rattle there is a parallel combinator \texttt{forP}. Replacing \texttt{forM} with \texttt{forP} in Figure \ref{fig:monadic} causes the commands to be given to \Rattle in parallel. As a consequence, they can be executed in parallel. The use of explicit parallelism is convenient when replacing a loop, but harder when expressing that three executables can be built in parallel, but that a single shared object common to all of them must complete before starting, so it is difficult to provide \emph{complete} parallelism annotations.
 
-The author of a Rattle build script just what and how to run the tools that build their
-project, in an order they know is correct.
+Interestingly, given complete \emph{dependency} information (e.g. as available to \Make) it is possible to infer complete \emph{parallelism} information. However, the difficult of writing such information is the attraction to a tracing approach in the first place.
 
-Rattle then learns while running the script what the true file dependencies are for the build.
-So, the build script author cannot get them wrong.
+\subsubsection{Implicit Parallelism}
 
-How does Rattle work?
+The other source of parallelism is implicit, using speculation. If we can predict what commands are coming up next, and predict that their execution will not cause hazards, then we could speculatively execute them. Such predictions can be made by simply recording the last known execution and using that. If speculation suggests that running a command would be beneficial there are two possible approaches to take.
 
-It uses system level tracing to record the files read and written by the commands specified in
-the haskell build script.
+Firstly, we can execute the command remotely, or in a sandboxed manner - ensuring all writes do \emph{not} end up on the file system, but are recorded to the cloud cache. In such a mode we are filling up the coud cache speculative, with the hope that when the future command does arrive it can be satisfied from the cache. However, running remotely requires syncronising the files across, or using a sycronise on demand approach (CITE Microsoft Remote Execution talk). Running with a sandbox which intercepts writes is not an easily available cross-platform feature.
 
-Rattle records this tracing information for use during subsequent runs.  On subsequent runs
-The tracing information informs Rattle of which cmds should safely run in parallel.
-
-\subsection{Speculation}
-
-Maybe this should be earlier.
-
-Because Rattle doesn't know what cmds are in the build script being run, it cannot perform
-the same sort of graph traversal Make can to determine which commands to run in order.
-
-Speculation is used instead to achieve parallelism.  If Rattle believes it is safe, it will run
-the commands from the previous build in parallel with the current build script.  When a cmd it
-ran speculatively is encountered in the build script it won't have to run the command.
-
-If the build script hasn't changed between runs and the file level dependencies of each cmd
-haven't changed, then Rattle should have no problems running cmds in parallel.
-
-But what if the build script or file level dependencies have changed?  Then Rattle might
-run cmds in an order that doesn't respect their new dependencies.  To deal with this Rattle
-has a concept of hazards, because speculation can go wrong.
-
-\subsection{Hazards}
-
-already need to have explained the properties
-
-Read Write hazard
-Write Write hazard
-
-ReadWrite hazard occurs when two commands read and write to the same file at the same time
-or a command reads from a file before it is written to
-
-WriteWrite hazard occurs when two commands write to the same file during the build.
-
-When a hazard occurs Rattle will terminate, restart, or continue.  If a property violating hazard
-occurred Rattle will terminate and alert the build user.  If Rattle speculated a command that
-caused a property violation the build will be restarted with no speculation.
-If Rattle speculated a read cmd before a write then Rattle can continue and later re-execute the
-read command again.
-
-
-\subsection{Rebuilds}
-
-using hashes to determine if files have changed
-
-only rerun cmds whose dependencies have changed
-
-\subsection{Shared build cache}
-
-Store output files to copy if they are missing but cmd's dependencies haven't changed
-
-Other things Neil mentioned in the Rattle readme...
+Alternatively, we can execute the command locally, which is what \Rattle does. However, if the execution leads to a hazard, it is possible that the hazard is entirely an artefact of speculation. One simplistic approach is to simply rerun without speculation if speculation leads to a hazard. A more refined approach is to determine whether classification may have impacted the hazard, which can be categorised as per \S\ref{sec:proof:classify_hazard}, and either raise the error immediately (if the speculation was not at fault) or selectively eliminte a subset of commands from speculation (if speculation was at fault).

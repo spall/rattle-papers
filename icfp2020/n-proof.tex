@@ -1,5 +1,7 @@
 \section{Proofs}
 
+\subsection{Hazards, formally}
+
 \subsection{No rebuilds}
 \label{sec:proof:no_rebuild}
 
@@ -10,3 +12,12 @@ In a build system without hazards there is at most one write to any file, which 
 \label{sec:proof:reorder}
 
 Given a script with no hazards when executed sequentially, we can show that any interleaving of those commands that also has no hazards will result in an equivalent output.
+
+\subsection{Parallel commands}
+\label{sec:proof:parallel}
+
+\subsection{Additional commands have no effect}
+\label{sec:proof:additional}
+
+\subsection{Classifying Hazards}
+\label{sec:proof:classify_hazard}
