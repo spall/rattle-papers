@@ -5,7 +5,7 @@ url=$2
 
 here=$(pwd)
 
-for i in {10..9}
+for i in {5..0}
 do
 
     rm -rf output/${proj}
@@ -14,7 +14,7 @@ do
 
     cd output/${proj}
     git clone ${url} .
-    git reset --hard origin/master~${i}
+    git reset --hard HEAD~${i}
 
     commit="$(git show --oneline -s | cut -d ' ' -f 1)"
 
