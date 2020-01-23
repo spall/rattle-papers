@@ -1,0 +1,4 @@
+Lists of cmds that build redis on my (Sarah) machine.
+To test; go to top level redis directory and do  ./runtest
+
+

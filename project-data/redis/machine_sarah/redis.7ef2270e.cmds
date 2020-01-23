@@ -1,0 +1,854 @@
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c sh -c './mkreleasehdr.sh'
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c sh -c 'uname -s 2>/dev/null || echo not'
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c sh -c 'uname -m 2>/dev/null || echo not'
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c pkg-config --exists libsystemd ; echo $?
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"Makefile.dep"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MM *.c > Makefile.dep 2> /dev/null || true
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c sh -c './mkreleasehdr.sh'
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c sh -c 'uname -s 2>/dev/null || echo not'
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c sh -c 'uname -m 2>/dev/null || echo not'
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c pkg-config --exists libsystemd ; echo $?
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c rm -rf redis-server redis-sentinel redis-cli redis-benchmark redis-check-rdb redis-check-aof *.o *.gcda *.gcno *.gcov redis.info lcov-html Makefile.dep dict-benchmark
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c rm -f adlist.d quicklist.d ae.d anet.d dict.d server.d sds.d zmalloc.d lzf_c.d lzf_d.d pqsort.d zipmap.d sha1.d ziplist.d release.d networking.d util.d object.d db.d replication.d rdb.d t_string.d t_list.d t_set.d t_zset.d t_hash.d config.d aof.d pubsub.d multi.d debug.d sort.d intset.d syncio.d cluster.d crc16.d endianconv.d slowlog.d scripting.d bio.d rio.d rand.d memtest.d crc64.d bitops.d sentinel.d notify.d setproctitle.d blocked.d hyperloglog.d latency.d sparkline.d redis-check-rdb.d redis-check-aof.d geo.d lazyfree.d module.d evict.d expire.d geohash.d geohash_helper.d childinfo.d defrag.d siphash.d rax.d t_stream.d listpack.d localtime.d lolwut.d lolwut5.d lolwut6.d acl.d gopher.d tracking.d connection.d tls.d sha256.d anet.d adlist.d dict.d redis-cli.d zmalloc.d release.d anet.d ae.d crc64.d siphash.d crc16.d ae.d anet.d redis-benchmark.d adlist.d dict.d zmalloc.d siphash.d redis-benchmark.d
+dir: /home/spall/rattle-papers/tools/output/redis/deps
+-c sh -c 'uname -s 2>/dev/null || echo not'
+dir: /home/spall/rattle-papers/tools/output/redis/deps
+-c sh -c '[ -f .make-cflags ] && cat .make-cflags || echo none'
+dir: /home/spall/rattle-papers/tools/output/redis/deps
+-c sh -c '[ -f .make-ldflags ] && cat .make-ldflags || echo none'
+dir: /home/spall/rattle-papers/tools/output/redis/deps/hiredis
+-c sh -c 'type ${CC%% *} >/dev/null 2>/dev/null && echo cc || echo gcc'
+dir: /home/spall/rattle-papers/tools/output/redis/deps/hiredis
+-c sh -c 'type ${CXX%% *} >/dev/null 2>/dev/null && echo g++ || echo g++'
+dir: /home/spall/rattle-papers/tools/output/redis/deps/hiredis
+-c sh -c 'uname -s 2>/dev/null || echo not'
+dir: /home/spall/rattle-papers/tools/output/redis/deps/hiredis
+-c rm -rf libhiredis.so libhiredis.a libhiredis_ssl.so libhiredis_ssl.a hiredis-test hiredis.pc examples/hiredis-example* *.o *.gcda *.gcno *.gcov
+dir: /home/spall/rattle-papers/tools/output/redis/deps/linenoise
+-c rm -f linenoise_example *.o
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c rm -f liblua.a lua luac lapi.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o lmem.o lobject.o lopcodes.o lparser.o lstate.o lstring.o ltable.o ltm.o lundump.o lvm.o lzio.o strbuf.o fpconv.o lauxlib.o lbaselib.o ldblib.o liolib.o lmathlib.o loslib.o ltablib.o lstrlib.o loadlib.o linit.o lua_cjson.o lua_struct.o lua_cmsgpack.o lua_bit.o lua.o luac.o print.o
+dir: /home/spall/rattle-papers/tools/output/redis/deps
+-c (rm -f .make-*)
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c (rm -f .make-*)
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c echo STD=-std=c11 -pedantic -DREDIS_STATIC='' >> .make-settings && echo WARN=-Wall -W -Wno-missing-field-initializers >> .make-settings && echo OPT=-O2 >> .make-settings && echo MALLOC=jemalloc >> .make-settings && echo CFLAGS= >> .make-settings && echo LDFLAGS= >> .make-settings && echo REDIS_CFLAGS= >> .make-settings && echo REDIS_LDFLAGS= >> .make-settings && echo PREV_FINAL_CFLAGS=-std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include >> .make-settings && echo PREV_FINAL_LDFLAGS=  -g -ggdb -rdynamic >> .make-settings
+dir: /home/spall/rattle-papers/tools/output/redis/deps
+-c sh -c 'uname -s 2>/dev/null || echo not'
+dir: /home/spall/rattle-papers/tools/output/redis/deps
+-c sh -c '[ -f .make-cflags ] && cat .make-cflags || echo none'
+dir: /home/spall/rattle-papers/tools/output/redis/deps
+-c sh -c '[ -f .make-ldflags ] && cat .make-ldflags || echo none'
+dir: /home/spall/rattle-papers/tools/output/redis/deps/hiredis
+-c sh -c 'type ${CC%% *} >/dev/null 2>/dev/null && echo cc || echo gcc'
+dir: /home/spall/rattle-papers/tools/output/redis/deps/hiredis
+-c sh -c 'type ${CXX%% *} >/dev/null 2>/dev/null && echo g++ || echo g++'
+dir: /home/spall/rattle-papers/tools/output/redis/deps/hiredis
+-c sh -c 'uname -s 2>/dev/null || echo not'
+dir: /home/spall/rattle-papers/tools/output/redis/deps/hiredis
+-c rm -rf libhiredis.so libhiredis.a libhiredis_ssl.so libhiredis_ssl.a hiredis-test hiredis.pc examples/hiredis-example* *.o *.gcda *.gcno *.gcov
+dir: /home/spall/rattle-papers/tools/output/redis/deps/linenoise
+-c rm -f linenoise_example *.o
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c rm -f liblua.a lua luac lapi.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o lmem.o lobject.o lopcodes.o lparser.o lstate.o lstring.o ltable.o ltm.o lundump.o lvm.o lzio.o strbuf.o fpconv.o lauxlib.o lbaselib.o ldblib.o liolib.o lmathlib.o loslib.o ltablib.o lstrlib.o loadlib.o linit.o lua_cjson.o lua_struct.o lua_cmsgpack.o lua_bit.o lua.o luac.o print.o
+dir: /home/spall/rattle-papers/tools/output/redis/deps
+-c (rm -f .make-*)
+dir: /home/spall/rattle-papers/tools/output/redis/deps
+-c touch .make-prerequisites
+dir: /home/spall/rattle-papers/tools/output/redis/deps
+-c printf '%b %b\n' "\033[32;1m"MAKE"\033[0m" "\033[37;1m"hiredis"\033[0m" 
+dir: /home/spall/rattle-papers/tools/output/redis/deps/hiredis
+-c sh -c 'type ${CC%% *} >/dev/null 2>/dev/null && echo cc || echo gcc'
+dir: /home/spall/rattle-papers/tools/output/redis/deps/hiredis
+-c sh -c 'type ${CXX%% *} >/dev/null 2>/dev/null && echo g++ || echo g++'
+dir: /home/spall/rattle-papers/tools/output/redis/deps/hiredis
+-c sh -c 'uname -s 2>/dev/null || echo not'
+dir: /home/spall/rattle-papers/tools/output/redis/deps/hiredis
+-c cc -std=c99 -pedantic -c -O3 -fPIC   -Wall -W -Wstrict-prototypes -Wwrite-strings -Wno-missing-field-initializers -g -ggdb net.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/hiredis
+-c cc -std=c99 -pedantic -c -O3 -fPIC   -Wall -W -Wstrict-prototypes -Wwrite-strings -Wno-missing-field-initializers -g -ggdb hiredis.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/hiredis
+-c cc -std=c99 -pedantic -c -O3 -fPIC   -Wall -W -Wstrict-prototypes -Wwrite-strings -Wno-missing-field-initializers -g -ggdb sds.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/hiredis
+-c cc -std=c99 -pedantic -c -O3 -fPIC   -Wall -W -Wstrict-prototypes -Wwrite-strings -Wno-missing-field-initializers -g -ggdb async.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/hiredis
+-c cc -std=c99 -pedantic -c -O3 -fPIC   -Wall -W -Wstrict-prototypes -Wwrite-strings -Wno-missing-field-initializers -g -ggdb read.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/hiredis
+-c cc -std=c99 -pedantic -c -O3 -fPIC   -Wall -W -Wstrict-prototypes -Wwrite-strings -Wno-missing-field-initializers -g -ggdb sockcompat.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/hiredis
+-c ar rcs libhiredis.a net.o hiredis.o sds.o async.o read.o sockcompat.o
+dir: /home/spall/rattle-papers/tools/output/redis/deps
+-c printf '%b %b\n' "\033[32;1m"MAKE"\033[0m" "\033[37;1m"linenoise"\033[0m"
+dir: /home/spall/rattle-papers/tools/output/redis/deps/linenoise
+-c cc  -Wall -Os -g  -c linenoise.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps
+-c printf '%b %b\n' "\033[32;1m"MAKE"\033[0m" "\033[37;1m"lua"\033[0m"
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lapi.o lapi.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lcode.o lcode.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o ldebug.o ldebug.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o ldo.o ldo.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o ldump.o ldump.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lfunc.o lfunc.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lgc.o lgc.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o llex.o llex.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lmem.o lmem.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lobject.o lobject.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lopcodes.o lopcodes.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lparser.o lparser.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lstate.o lstate.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lstring.o lstring.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o ltable.o ltable.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o ltm.o ltm.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lundump.o lundump.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lvm.o lvm.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lzio.o lzio.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o strbuf.o strbuf.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o fpconv.o fpconv.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lauxlib.o lauxlib.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lbaselib.o lbaselib.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o ldblib.o ldblib.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o liolib.o liolib.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lmathlib.o lmathlib.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o loslib.o loslib.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o ltablib.o ltablib.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lstrlib.o lstrlib.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o loadlib.o loadlib.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o linit.o linit.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lua_cjson.o lua_cjson.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lua_struct.o lua_struct.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lua_cmsgpack.o lua_cmsgpack.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lua_bit.o lua_bit.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c ar rcu liblua.a lapi.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o lmem.o lobject.o lopcodes.o lparser.o lstate.o lstring.o ltable.o ltm.o lundump.o lvm.o lzio.o strbuf.o fpconv.o lauxlib.o lbaselib.o ldblib.o liolib.o lmathlib.o loslib.o ltablib.o lstrlib.o loadlib.o linit.o lua_cjson.o lua_struct.o lua_cmsgpack.o lua_bit.o	# DLL needs all object files && ranlib liblua.a
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o lua.o lua.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -o lua  lua.o liblua.a -lm 
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o luac.o luac.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -O2 -Wall -DLUA_ANSI -DENABLE_CJSON_GLOBAL -DREDIS_STATIC=''    -c -o print.o print.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/lua/src
+-c cc -o luac  luac.o print.o liblua.a -lm 
+dir: /home/spall/rattle-papers/tools/output/redis/deps
+-c printf '%b %b\n' "\033[32;1m"MAKE"\033[0m" "\033[37;1m"jemalloc"\033[0m"
+dir: /home/spall/rattle-papers/tools/output/redis/deps
+-c cd jemalloc && ./configure --with-version=5.1.0-0-g0 --with-lg-quantum=3 --with-jemalloc-prefix=je_ --enable-cc-silence CFLAGS="-std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops " LDFLAGS=""
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/jemalloc.sym.o src/jemalloc.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/jemalloc.sym.o -o src/jemalloc.sym.d src/jemalloc.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/jemalloc.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/jemalloc.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/arena.sym.o src/arena.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/arena.sym.o -o src/arena.sym.d src/arena.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/arena.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/arena.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/background_thread.sym.o src/background_thread.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/background_thread.sym.o -o src/background_thread.sym.d src/background_thread.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/background_thread.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/background_thread.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/base.sym.o src/base.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/base.sym.o -o src/base.sym.d src/base.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/base.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/base.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/bin.sym.o src/bin.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/bin.sym.o -o src/bin.sym.d src/bin.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/bin.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/bin.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/bitmap.sym.o src/bitmap.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/bitmap.sym.o -o src/bitmap.sym.d src/bitmap.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/bitmap.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/bitmap.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/ckh.sym.o src/ckh.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/ckh.sym.o -o src/ckh.sym.d src/ckh.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/ckh.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/ckh.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/ctl.sym.o src/ctl.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/ctl.sym.o -o src/ctl.sym.d src/ctl.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/ctl.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/ctl.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/div.sym.o src/div.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/div.sym.o -o src/div.sym.d src/div.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/div.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/div.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/extent.sym.o src/extent.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/extent.sym.o -o src/extent.sym.d src/extent.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/extent.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/extent.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/extent_dss.sym.o src/extent_dss.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/extent_dss.sym.o -o src/extent_dss.sym.d src/extent_dss.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/extent_dss.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/extent_dss.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/extent_mmap.sym.o src/extent_mmap.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/extent_mmap.sym.o -o src/extent_mmap.sym.d src/extent_mmap.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/extent_mmap.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/extent_mmap.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/hash.sym.o src/hash.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/hash.sym.o -o src/hash.sym.d src/hash.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/hash.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/hash.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/hooks.sym.o src/hooks.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/hooks.sym.o -o src/hooks.sym.d src/hooks.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/hooks.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/hooks.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/large.sym.o src/large.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/large.sym.o -o src/large.sym.d src/large.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/large.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/large.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/log.sym.o src/log.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/log.sym.o -o src/log.sym.d src/log.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/log.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/log.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/malloc_io.sym.o src/malloc_io.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/malloc_io.sym.o -o src/malloc_io.sym.d src/malloc_io.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/malloc_io.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/malloc_io.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/mutex.sym.o src/mutex.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/mutex.sym.o -o src/mutex.sym.d src/mutex.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/mutex.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/mutex.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/mutex_pool.sym.o src/mutex_pool.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/mutex_pool.sym.o -o src/mutex_pool.sym.d src/mutex_pool.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/mutex_pool.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/mutex_pool.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/nstime.sym.o src/nstime.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/nstime.sym.o -o src/nstime.sym.d src/nstime.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/nstime.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/nstime.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/pages.sym.o src/pages.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/pages.sym.o -o src/pages.sym.d src/pages.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/pages.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/pages.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/prng.sym.o src/prng.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/prng.sym.o -o src/prng.sym.d src/prng.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/prng.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/prng.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/prof.sym.o src/prof.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/prof.sym.o -o src/prof.sym.d src/prof.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/prof.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/prof.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/rtree.sym.o src/rtree.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/rtree.sym.o -o src/rtree.sym.d src/rtree.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/rtree.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/rtree.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/stats.sym.o src/stats.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/stats.sym.o -o src/stats.sym.d src/stats.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/stats.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/stats.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/sz.sym.o src/sz.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/sz.sym.o -o src/sz.sym.d src/sz.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/sz.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/sz.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/tcache.sym.o src/tcache.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/tcache.sym.o -o src/tcache.sym.d src/tcache.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/tcache.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/tcache.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/ticker.sym.o src/ticker.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/ticker.sym.o -o src/ticker.sym.d src/ticker.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/ticker.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/ticker.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/tsd.sym.o src/tsd.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/tsd.sym.o -o src/tsd.sym.d src/tsd.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/tsd.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/tsd.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -o src/witness.sym.o src/witness.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -DJEMALLOC_NO_PRIVATE_NAMESPACE -MT src/witness.sym.o -o src/witness.sym.d src/witness.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c nm -a src/witness.sym.o | mawk -f include/jemalloc/internal/private_symbols.awk > src/witness.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c /home/spall/rattle-papers/tools/cmd_shell.sh include/jemalloc/internal/private_namespace.sh src/jemalloc.sym src/arena.sym src/background_thread.sym src/base.sym src/bin.sym src/bitmap.sym src/ckh.sym src/ctl.sym src/div.sym src/extent.sym src/extent_dss.sym src/extent_mmap.sym src/hash.sym src/hooks.sym src/large.sym src/log.sym src/malloc_io.sym src/mutex.sym src/mutex_pool.sym src/nstime.sym src/pages.sym src/prng.sym src/prof.sym src/rtree.sym src/stats.sym src/sz.sym src/tcache.sym src/ticker.sym src/tsd.sym src/witness.sym > include/jemalloc/internal/private_namespace.gen.h
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+include/jemalloc/internal/private_namespace.sh src/jemalloc.sym src/arena.sym src/background_thread.sym src/base.sym src/bin.sym src/bitmap.sym src/ckh.sym src/ctl.sym src/div.sym src/extent.sym src/extent_dss.sym src/extent_mmap.sym src/hash.sym src/hooks.sym src/large.sym src/log.sym src/malloc_io.sym src/mutex.sym src/mutex_pool.sym src/nstime.sym src/pages.sym src/prng.sym src/prof.sym src/rtree.sym src/stats.sym src/sz.sym src/tcache.sym src/ticker.sym src/tsd.sym src/witness.sym
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c if ! `cmp -s include/jemalloc/internal/private_namespace.gen.h include/jemalloc/internal/private_namespace.h` ; then echo "cp include/jemalloc/internal/private_namespace.gen.h include/jemalloc/internal/private_namespace.gen.h"; cp include/jemalloc/internal/private_namespace.gen.h include/jemalloc/internal/private_namespace.h ; fi
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/jemalloc.o src/jemalloc.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/jemalloc.o -o src/jemalloc.d src/jemalloc.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/arena.o src/arena.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/arena.o -o src/arena.d src/arena.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/background_thread.o src/background_thread.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/background_thread.o -o src/background_thread.d src/background_thread.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/base.o src/base.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/base.o -o src/base.d src/base.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/bin.o src/bin.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/bin.o -o src/bin.d src/bin.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/bitmap.o src/bitmap.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/bitmap.o -o src/bitmap.d src/bitmap.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/ckh.o src/ckh.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/ckh.o -o src/ckh.d src/ckh.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/ctl.o src/ctl.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/ctl.o -o src/ctl.d src/ctl.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/div.o src/div.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/div.o -o src/div.d src/div.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/extent.o src/extent.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/extent.o -o src/extent.d src/extent.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/extent_dss.o src/extent_dss.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/extent_dss.o -o src/extent_dss.d src/extent_dss.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/extent_mmap.o src/extent_mmap.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/extent_mmap.o -o src/extent_mmap.d src/extent_mmap.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/hash.o src/hash.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/hash.o -o src/hash.d src/hash.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/hooks.o src/hooks.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/hooks.o -o src/hooks.d src/hooks.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/large.o src/large.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/large.o -o src/large.d src/large.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/log.o src/log.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/log.o -o src/log.d src/log.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/malloc_io.o src/malloc_io.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/malloc_io.o -o src/malloc_io.d src/malloc_io.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/mutex.o src/mutex.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/mutex.o -o src/mutex.d src/mutex.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/mutex_pool.o src/mutex_pool.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/mutex_pool.o -o src/mutex_pool.d src/mutex_pool.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/nstime.o src/nstime.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/nstime.o -o src/nstime.d src/nstime.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/pages.o src/pages.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/pages.o -o src/pages.d src/pages.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/prng.o src/prng.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/prng.o -o src/prng.d src/prng.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/prof.o src/prof.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/prof.o -o src/prof.d src/prof.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/rtree.o src/rtree.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/rtree.o -o src/rtree.d src/rtree.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/stats.o src/stats.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/stats.o -o src/stats.d src/stats.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/sz.o src/sz.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/sz.o -o src/sz.d src/sz.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/tcache.o src/tcache.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/tcache.o -o src/tcache.d src/tcache.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/ticker.o src/ticker.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/ticker.o -o src/ticker.d src/ticker.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/tsd.o src/tsd.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/tsd.o -o src/tsd.d src/tsd.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops  -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/witness.o src/witness.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c gcc -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/witness.o -o src/witness.d src/witness.c
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p src
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c g++ -Wall -g3 -fvisibility=hidden -O3 -c -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -o src/jemalloc_cpp.o src/jemalloc_cpp.cpp
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c g++ -MM -D_GNU_SOURCE -D_REENTRANT -Iinclude -Iinclude -MT src/jemalloc_cpp.o -o src/jemalloc_cpp.d src/jemalloc_cpp.cpp
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c mkdir -p lib
+dir: /home/spall/rattle-papers/tools/output/redis/deps/jemalloc
+-c ar crus lib/libjemalloc.a src/jemalloc.o src/arena.o src/background_thread.o src/base.o src/bin.o src/bitmap.o src/ckh.o src/ctl.o src/div.o src/extent.o src/extent_dss.o src/extent_mmap.o src/hash.o src/hooks.o src/large.o src/log.o src/malloc_io.o src/mutex.o src/mutex_pool.o src/nstime.o src/pages.o src/prng.o src/prof.o src/rtree.o src/stats.o src/sz.o src/tcache.o src/ticker.o src/tsd.o src/witness.o src/jemalloc_cpp.o
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c touch .make-prerequisites
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"adlist.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o adlist.o -c adlist.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"quicklist.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o quicklist.o -c quicklist.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"ae.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o ae.o -c ae.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"anet.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o anet.o -c anet.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"dict.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o dict.o -c dict.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"server.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o server.o -c server.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"sds.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o sds.o -c sds.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"zmalloc.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o zmalloc.o -c zmalloc.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"lzf_c.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o lzf_c.o -c lzf_c.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"lzf_d.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o lzf_d.o -c lzf_d.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"pqsort.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o pqsort.o -c pqsort.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"zipmap.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o zipmap.o -c zipmap.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"sha1.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o sha1.o -c sha1.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"ziplist.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o ziplist.o -c ziplist.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"release.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o release.o -c release.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"networking.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o networking.o -c networking.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"util.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o util.o -c util.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"object.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o object.o -c object.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"db.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o db.o -c db.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"replication.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o replication.o -c replication.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"rdb.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o rdb.o -c rdb.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"t_string.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o t_string.o -c t_string.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"t_list.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o t_list.o -c t_list.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"t_set.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o t_set.o -c t_set.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"t_zset.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o t_zset.o -c t_zset.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"t_hash.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o t_hash.o -c t_hash.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"config.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o config.o -c config.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"aof.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o aof.o -c aof.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"pubsub.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o pubsub.o -c pubsub.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"multi.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o multi.o -c multi.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"debug.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o debug.o -c debug.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"sort.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o sort.o -c sort.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"intset.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o intset.o -c intset.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"syncio.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o syncio.o -c syncio.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"cluster.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o cluster.o -c cluster.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"crc16.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o crc16.o -c crc16.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"endianconv.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o endianconv.o -c endianconv.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"slowlog.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o slowlog.o -c slowlog.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"scripting.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o scripting.o -c scripting.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"bio.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o bio.o -c bio.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"rio.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o rio.o -c rio.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"rand.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o rand.o -c rand.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"memtest.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o memtest.o -c memtest.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"crc64.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o crc64.o -c crc64.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"bitops.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o bitops.o -c bitops.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"sentinel.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o sentinel.o -c sentinel.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"notify.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o notify.o -c notify.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"setproctitle.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o setproctitle.o -c setproctitle.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"blocked.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o blocked.o -c blocked.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"hyperloglog.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o hyperloglog.o -c hyperloglog.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"latency.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o latency.o -c latency.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"sparkline.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o sparkline.o -c sparkline.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"redis-check-rdb.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o redis-check-rdb.o -c redis-check-rdb.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"redis-check-aof.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o redis-check-aof.o -c redis-check-aof.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"geo.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o geo.o -c geo.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"lazyfree.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o lazyfree.o -c lazyfree.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"module.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o module.o -c module.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"evict.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o evict.o -c evict.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"expire.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o expire.o -c expire.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"geohash.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o geohash.o -c geohash.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"geohash_helper.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o geohash_helper.o -c geohash_helper.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"childinfo.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o childinfo.o -c childinfo.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"defrag.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o defrag.o -c defrag.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"siphash.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o siphash.o -c siphash.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"rax.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o rax.o -c rax.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"t_stream.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o t_stream.o -c t_stream.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"listpack.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o listpack.o -c listpack.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"localtime.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o localtime.o -c localtime.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"lolwut.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o lolwut.o -c lolwut.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"lolwut5.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o lolwut5.o -c lolwut5.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"lolwut6.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o lolwut6.o -c lolwut6.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"acl.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o acl.o -c acl.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"gopher.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o gopher.o -c gopher.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"tracking.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o tracking.o -c tracking.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"connection.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o connection.o -c connection.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"tls.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o tls.o -c tls.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"sha256.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o sha256.o -c sha256.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34;1m"LINK"\033[0m" "\033[37;1m"redis-server"\033[0m" 1>&2;cc   -g -ggdb -rdynamic -o redis-server adlist.o quicklist.o ae.o anet.o dict.o server.o sds.o zmalloc.o lzf_c.o lzf_d.o pqsort.o zipmap.o sha1.o ziplist.o release.o networking.o util.o object.o db.o replication.o rdb.o t_string.o t_list.o t_set.o t_zset.o t_hash.o config.o aof.o pubsub.o multi.o debug.o sort.o intset.o syncio.o cluster.o crc16.o endianconv.o slowlog.o scripting.o bio.o rio.o rand.o memtest.o crc64.o bitops.o sentinel.o notify.o setproctitle.o blocked.o hyperloglog.o latency.o sparkline.o redis-check-rdb.o redis-check-aof.o geo.o lazyfree.o module.o evict.o expire.o geohash.o geohash_helper.o childinfo.o defrag.o siphash.o rax.o t_stream.o listpack.o localtime.o lolwut.o lolwut5.o lolwut6.o acl.o gopher.o tracking.o connection.o tls.o sha256.o ../deps/hiredis/libhiredis.a ../deps/lua/src/liblua.a ../deps/jemalloc/lib/libjemalloc.a -lm -ldl -pthread -lrt
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34;1m"INSTALL"\033[0m" "\033[37;1m"redis-sentinel"\033[0m" 1>&2;install redis-server redis-sentinel
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"redis-cli.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o redis-cli.o -c redis-cli.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34;1m"LINK"\033[0m" "\033[37;1m"redis-cli"\033[0m" 1>&2;cc   -g -ggdb -rdynamic -o redis-cli anet.o adlist.o dict.o redis-cli.o zmalloc.o release.o ae.o crc64.o siphash.o crc16.o ../deps/hiredis/libhiredis.a ../deps/linenoise/linenoise.o ../deps/jemalloc/lib/libjemalloc.a -lm -ldl -pthread -lrt
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34m"CC"\033[0m" "\033[33m"redis-benchmark.o"\033[0m" 1>&2;cc -std=c11 -pedantic -DREDIS_STATIC='' -Wall -W -Wno-missing-field-initializers -O2 -g -ggdb   -I../deps/hiredis -I../deps/linenoise -I../deps/lua/src -DUSE_JEMALLOC -I../deps/jemalloc/include -MMD -o redis-benchmark.o -c redis-benchmark.c
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34;1m"LINK"\033[0m" "\033[37;1m"redis-benchmark"\033[0m" 1>&2;cc   -g -ggdb -rdynamic -o redis-benchmark ae.o anet.o redis-benchmark.o adlist.o dict.o zmalloc.o siphash.o ../deps/hiredis/libhiredis.a ../deps/jemalloc/lib/libjemalloc.a -lm -ldl -pthread -lrt
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34;1m"INSTALL"\033[0m" "\033[37;1m"redis-check-rdb"\033[0m" 1>&2;install redis-server redis-check-rdb
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c printf '    %b %b\n' "\033[34;1m"INSTALL"\033[0m" "\033[37;1m"redis-check-aof"\033[0m" 1>&2;install redis-server redis-check-aof
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c echo ""
+dir: /home/spall/rattle-papers/tools/output/redis/src
+-c echo "Hint: It's a good idea to run 'make test' ;)"
