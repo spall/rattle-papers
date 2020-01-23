@@ -5,7 +5,7 @@ We want to take a list of commands, and turn it into a build system. To do that,
 
 \subsection{Executing commands}
 
-In it's simplest variant, a build script can be a list of shell commands, like in \S\ref{sec:introduction}. To execute such commands correctly, it is sufficient to run each command sequentially in the order they were given. We consider this the reference semantics, and want any optimised/cached implementation to give the same results. For now, we assume commands are deterministic, but discuss how to weaken that assumption in \S\ref{sce:determinism}. We also assume that each command is atomic - it cannot be subdivided into smaller parts.
+In it's simplest variant, a build script can be a list of shell commands, like in \S\ref{sec:introduction}. To execute such commands correctly, it is sufficient to run each command sequentially in the order they were given. We consider this the reference semantics, and want any optimised/cached implementation to give the same results. For now, we assume commands are deterministic, but discuss how to weaken that assumption in \S\ref{sec:determinism}. We also assume that each command is atomic - it cannot be subdivided into smaller parts.
 
 \subsection{Monadic builds}
 \label{sec:monadic}
@@ -44,11 +44,31 @@ To implement \Rattle we treat the script as a sequence of commands with no obser
 
 When \Rattle runs a command, it records the files it reads and writes, and their hashes at that point. If you subsequently run the same command, and the inputs and outputs haven't changed (same hashes), it can be skipped. This is mostly true -- you get old but correct values. If you are running \texttt{date} it won't work, and if you are running \texttt{gcc} it will have an old compilation time. But it's good enough.
 
+Given a command, if you know what files it reads and writes, and none of those files have changed, you can skip running it providing that if it were deterministic it wouldn't be harmful. As an example, if the compiler produces a different object file each time, but it would be OK with not doing that, then you're fine. In practice this means that any command that isn't relied on to produce fresh entropy (the time, a GUID, a random number) is fine to skip subsequent times. Those commands that do produce fresh entropy are not well suited to a build system anyway, so aren't typically used in build systems.
+
+This got solved by fabricate. You can use a system access tracer to watch what a process reads/writes, and have a database storing the command, previous reads/writes, and then skip it if the values haven't changed. This step is not complex.
+
 \subsection{Cloud builds}
 
 If \Rattle matches on the files read, but not on the files written, but a previous run had the same files read/written and cached the written files, you can copy them over. If that store is in a cloud, you end up with cloud build functionality. It's pretty simple. Moreover, whether a command uses a cloud oracle or runs locally, that's not observable to the rest of the system, so we ignore it for proofs.
 
+Given knowledge of the reads/writes of a command, it's not too hard to store them in a cloud, and satisfy commands not by rerunning them, but by copying their result from a shared cache. While this works beautifully in theory, in practice it leads to at least three separate problems which we solve.
+
+Relative build dirs
+
+Often the current directory, or users profile directory, will be accessed by commands. These change either if the user has two working directories, or if they use different machines. We solve this by having a substitution table.
+
+Compound commands
+
+Sometimes a command will produce something that is user specific, but the next step will make it not user specific. To fix that we add compound commands. You can do it with a shell script, using `pipeline`, or with TemplateHaskell blocks.
+
+Non-deterministic builds
+
+We solve this by having `.rattle.hash` files which we substitute for reading.
+
 \subsection{Build consistency}
+
+However, it a build writes a file \emph{twice} in a run, or reads it then writes to it, the result will be that a subsequent rebuild will have stuff to do, as it won't end at a quiescent state. To detect that, we introduce the concept of hazards.
 
 For a \Make build system to be stable, it must be the case that after a build, a rebuild will not execute any other commands. It's easy to construct examples of sequences of commands that violate this property, for example:
 
