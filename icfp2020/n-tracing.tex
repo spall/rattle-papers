@@ -1,0 +1,14 @@
+\section{Tracing}
+\label{sec:tracing}
+
+Can only do files at the end.
+
+We ignore files that are deleted after, they are temporary.
+
+We'd like a more powerful oracle that intercepts each action, but that doesn't exist.
+
+We'd like to know the precise time of each read/write, but we generalise to the time the command was running.
+
+We use either fsatrace or libbigbro. That gives us call hooking on Windows, syscall hooking on Linux or \verb"LD_LIBRARY" preload on Linux.
+
+We don't trace things like file system listings, modtime info etc. It's a little approx as a result.

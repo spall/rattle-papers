@@ -20,14 +20,14 @@ gcc -c util.c
 gcc -o main.exe main.o util.o
 \end{verbatim}
 
-That's shorter, simpler and easier to follow. There are two main downsides: 1) everything will always rebuild even if it's dependencies haven't changed; 2) while make could run the two \texttt{gcc -c} commands in parallel, that non-interference information has been lost. But at the same time, we've fixed an inadvertent bug -- these commands all depend on the undeclared dependency \texttt{gcc}, and potentially whatever header files are imported by \texttt{main.c} and \texttt{util.c}. Furthermore, as the files \texttt{main.c} and \texttt{util.c} evolve, and their dependencies change (by adding additional \texttt{\#include} directives), the shell script remains correct, while the \Make script \emph{must} always be consistent (or builds will become stagnant).
+That's shorter, simpler and easier to follow. There are two main downsides: 1) everything will always rebuild even if it's dependencies haven't changed; 2) while \Make could run the two \texttt{gcc -c} commands in parallel, that non-interference information has been lost. But at the same time, we've fixed an inadvertent bug -- these commands all depend on the undeclared dependency \texttt{gcc}, and potentially whatever header files are imported by \texttt{main.c} and \texttt{util.c}. Furthermore, as the files \texttt{main.c} and \texttt{util.c} evolve, and their dependencies change (by adding additional \texttt{\#include} directives), the shell script remains correct, while the \Make script \emph{must} always be consistent (or builds will become stagnant).
 
 In this paper we introduce a build system \Rattle\footnote{\url{https://github.com/ndmitchell/rattle}}, which can take the above shell script, and gain the benefits of the \Make script -- skipping those dependencies that haven't changed and running it in parallel. Furthermore, it can source compilation results from a shared cloud store. It performs this feat by \emph{tracing} which files are read/written by each command and using this information to offer a build-like experience.
 
 This paper makes the following contributions:
 
 \begin{itemize}
-\item In \S\ref{sec:rattle} we describe how tracing can turn a shell script into a build system, while skipping dependencies and using a cloud store. % \item In \S\ref{sec:speculation} we add parallelism, which requires speculation.
+\item In \S\ref{sec:rattle} we describe how tracing can turn a shell script into a build system, while skipping dependencies and using a cloud store. To make this transformation requires \emph{tracing}, which we describe in \S\ref{sec:tracing}. % \item In \S\ref{sec:speculation} we add parallelism, which requires speculation.
 \item In \S\ref{sec:evaluation} we describe how we converted existing \Make scripts into \Rattle scripts, and show the performance characteristics and bugs uncovered.
 % \item In \S\ref{sec:theory} we outline the theory behind hazards that happen when build steps go wrong.
 \item In \S\ref{sec:related} we describe related work, in particular the \Fabricate system which pioneered the way.
