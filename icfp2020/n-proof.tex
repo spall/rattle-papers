@@ -5,7 +5,7 @@
 \subsection{No rebuilds}
 \label{sec:proof:no_rebuild}
 
-We proove that a build system with deterministic control logic with no hazards always results in no rebuilds.
+We prove that a build system with deterministic control logic with no hazards always results in no rebuilds.
 In a build system without hazards there is at most one write to any file, which occurs before any reads of that file. We can therefore prove there are no rebuilds by showing the first command can't rebuild, and proceeding by induction.
 
 \subsection{Reordered builds}

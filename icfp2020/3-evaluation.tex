@@ -1,4 +1,32 @@
 \section{Evaluation}
 \label{sec:evaluation}
 
+\subsection{Validating the claims from earlier}
+
+In \S\ref{sec:introduction} we claimed that the following build script is ``just as good'' as a proper \Make script.
+
+\begin{verbatim}
+
+gcc -c main.c
+gcc -c util.c
+gcc -o main.exe main.o util.o
+
+So, let's compare it on the axes that matter, and see where it is as good, and where it isn't.
+
+Rattle:
+Single threaded clean build = 0.84
+Single threaded noop = 0.04
+Single threaded with main.c changed (whitespace only) = 0.34
+Single threaded with main.c changed = 0.72
+Single threaded with main.c and util.c changed = 0.84
+
+Multi threaded clean build = 0.84
+Multi threaded noop = 0.04
+Multi threaded with main.c changed (whitespace only) = 0.34
+Multi threaded with main.c changed = 0.72
+Multi threaded with main.c and util.c changed = 0.74
+\end{verbatim}
+
+\subsection{Rest of the evaluation}
+
 Let's consider the VIM build system. It's wrong in lots of ways Sarah can describe. But these were expert software engineers - has anyone got it right? To a first approximation, no. Unless you go for something like Bazel, and then it's tedious but sandboxing makes you get it right.
