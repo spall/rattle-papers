@@ -63,6 +63,8 @@ gcc -c foo.c
 echo x >> foo.c
 \end{verbatim}
 
+In fact, we assume commands are idempotent, so that a read/write combination is invariant to the read. Otherwise you get an immediate read-write hazard. Therefore \texttt{echo x >> foo.c} is invalid.
+
 This script compiles \texttt{foo.c}, then appends the character \texttt{x} to \texttt{foo.c}. Each time around, the input to \texttt{gcc} will have changed, necessitating a recompile. We define such a build as \emph{hazardous}, because it violates one of our consistency rules:
 
 \begin{description}
