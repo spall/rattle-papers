@@ -27,9 +27,9 @@ In this paper we introduce a build system \Rattle\footnote{\url{https://github.c
 This paper makes the following contributions:
 
 \begin{itemize}
-\item In \S\ref{sec:rattle} we describe how tracing can turn a shell script into a build system, while skipping dependencies and using a cloud store. To make this transformation requires \emph{tracing}, which we describe in \S\ref{sec:tracing}. % \item In \S\ref{sec:speculation} we add parallelism, which requires speculation.
+\item In \S\ref{sec:rattle} we describe how tracing can turn a shell script into a build system, while skipping dependencies and using a cloud store. The major inovation is to explicitly model hazards \S\ref{sec:hazards}, which enables speculative execution \S\ref{sec:speculation}. To make this transformation requires \emph{dependency tracing}, which we describe in \S\ref{sec:tracing}.
+\item The alternative interpretations of a script described in \S\ref{sec:rattle} are only safe because of our underlying theory of hazards, which we prove in \S\ref{sec:proof}.
 \item In \S\ref{sec:evaluation} we describe how we converted existing \Make scripts into \Rattle scripts, and show the performance characteristics and bugs uncovered.
-% \item In \S\ref{sec:theory} we outline the theory behind hazards that happen when build steps go wrong.
 \item In \S\ref{sec:related} we describe related work, in particular the \Fabricate system which pioneered the way.
 \item Finally, in \S\ref{sec:conclusion} we conclude and describe future work.
 \end{itemize}

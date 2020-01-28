@@ -1,7 +1,7 @@
 \section{Rattle}
 \label{sec:rattle}
 
-Our goal is to take a list of commands, and turn that into a build system. To do that, we assume the existence of a \emph{tracing oracle} which can, after a command completes, tell us which files that command read and which files it wrote -- we discuss the implementation and limitations of the tracing oracle in \S\ref{sec:tracing}. In this section we start by describing the most simple system possible, and progressively add features to obtain the benefits of a conventional build system.
+Our goal is to take a list of commands, and turn that into a build system. In this section we start by describing the most simple system possible, and progressively add features to obtain the benefits of a conventional build system.
 
 \subsection{Executing commands}
 
@@ -38,11 +38,22 @@ main = runRattle $ do
 
 Now we have a curious mixture of build system commands (e.g. \texttt{ls}, \texttt{gcc}), some control logic (e.g. \texttt{for}) and simple manipulation (e.g. changing file extension). The way we cope with this is to consider the build system as a series of commands, where the future commands may depend on the results of previous commands. These are glued together with ``cheap'' functions like the control logic and simple manipulations. We take the approach that the cheap commands are fixed overhead, run on every build, and not cached or parallelised in any way. If any of these cheap manipulations becomes expensive, they can be replaced by a command, which will then be cached and parallelised.
 
-To implement \Rattle we treat the script as a sequence of commands with no observation on which commands are coming next. As a consequence, even if you are using a simple static script, and then manually edit it, the \Rattle build remains correct -- it has no knowledge that you manually edited the script, or if it was instead conditional on something it didn't observe.
+To implement \Rattle we treat the script as a sequence of commands with no knowledge of which commands are coming next. As a consequence, even if you are using a simple static script, and then manually edit it, the \Rattle build remains correct -- it has no knowledge that you manually edited the script, or if it was instead conditional on something it didn't observe.
+
+\subsection{Dependency tracing}
+
+For the rest of this section we assume the existence of a \emph{depdendency tracing} which can, after a command completes, tell us which files that command read and which files it wrote -- we discuss the implementation and limitations of the tracing oracle in \S\ref{sec:tracing}. Concretely, we can run a command in a special mode such that when the command completes (and not before) we can determine which files it read and which it wrote. We cannot determine at which point of the execution these files were accessed, or which order they were accessed in. We cannot prevent or otherwise redirect an in progress access. These limitations are a (frustrating!) consequence of the tracing techology used.
 
 \subsection{Skipping unnecessary commands}
 
-When \Rattle runs a command, it records the files it reads and writes, and their hashes at that point. If you subsequently run the same command, and the inputs and outputs haven't changed (same hashes), it can be skipped. This statement is true for deterministic commands, but for nondeterministic ones you get old but consistent values. In practice this means that any command that isn't relied on to produce fresh entropy (the time, a GUID, a random number) is fine to skip subsequent times. This insight was pioneered by the \Fabricate\citep{fabricate} build system.
+When \Rattle runs a command, it uses tracing to capture the files read and written, and then captures their hashes after the command finishes. If you subsequently run the same command, and the inputs and outputs haven't changed (same hashes), it can be skipped. This approach is the fundamental aspect of \Fabricate\citep{fabricate}. However, this approach has some issues that can make it invalid.
+
+\begin{itemize}
+\item If the command is deterministic, then running it again will change nothing. However, many commands are not deterministic -- e.g. the output of \texttt{ghc} object files contains random values within it. We assume that where such non-determinism exists any possible output is equally valid.
+\item If the command incorporates information such as the timestamp, then a cached value will represent the first time the command was run, not the current time. For commands like compilation that embed the timestamp in an object header, the original timestamp is probably fine. For commands that want to actually get the current time, we suggest they be made part of the control logic (as per \S\ref{sec:monadic}). The same applies to commands that require unique information, e.g. the generation of a GUID or random number.
+\item If the command both reads and writes the same file, and the information written is fundamentally influenced by the file that was read, then the command never results in a stable state. As an example, \texttt{echo x >> foo} will append the character \texttt{x} every time the command is run. Equally, there are also commands that read the existing file to avoid rewriting a file that hasn't changed (e.g. \texttt{ghc} generating a \texttt{.hi} file) and commands that can cheaply update an existing file in some circumstances (the Micrsoft C++ linker). We make the assumption that if a command both reads and writes to a file that the read was not meaningful.
+\item If you read a file that gets modified by something not under the observation of \Rattle (e.g. a human or the untracked control logic), then \Rattle will not know the cause of the change, or what it invalidates. Therefore, we make the assumption that only \Rattle tracked commands are working on the relevant files at the time.
+\end{itemize}
 
 \subsection{Cloud builds}
 
@@ -52,13 +63,10 @@ If \Rattle matches on the files read, but not on the files written, but a previo
 
 \paragraph{Compound commands} Sometimes a command will produce something that is user specific (not great for caching), but the next step will remove the user specificity (good for caching). To fix that we allow compound commands, by conjoining two commands with \texttt{\&\&}.
 
-\paragraph{Non-deterministic builds} If a user builds something locally, they can leave the cache path. We solve that by allowing the user to specify different hashes to use, see \S\ref{sec:determinism}.
-
-\subsection{Assumptions}
-
-If you read a file that gets modified by something not under the observation of \Rattle (e.g. a human), then \Rattle will only be able to see the file after the command completes. It can use modification time to check, but you can change that too.
+\paragraph{Non-deterministic builds} If a user builds something locally, they can leave the cache path. We solve that by allowing the user to specify different hashes to use, see \S\ref{sec:determinism}. We use \texttt{.forward} files to get some determinism in some places. If a command is non-det we cope, but might have more restartable hazards. We assume that if given a set of files, a command previous wrote some inputs, then those inputs are still a plausible value. That is fine for commands that produce non-deteministic output (e.g. \texttt{ghc -c}), but no OK for commands where a stale result is invalid (e.g. \texttt{date}).
 
 \subsection{Build consistency}
+\label{sec:hazards}
 
 For a \Make build system to be stable, it must be the case that after a build, a rebuild will not execute any other commands. It's easy to construct examples of sequences of commands that violate this property, for example:
 
@@ -93,14 +101,10 @@ In the Haskell API for \Rattle there is a parallel combinator \texttt{forP}. Rep
 Interestingly, given complete \emph{dependency} information (e.g. as available to \Make) it is possible to infer complete \emph{parallelism} information. However, the difficult of writing such information is the attraction to a tracing approach in the first place.
 
 \subsubsection{Implicit Parallelism}
+\label{sec:speculation}
 
 The other source of parallelism is implicit, using speculation. If we can predict what commands are coming up next, and predict that their execution will not cause hazards, then we could speculatively execute them. Such predictions can be made by simply recording the last known execution and using that. If speculation suggests that running a command would be beneficial there are two possible approaches to take.
 
 Firstly, we can execute the command remotely, or in a sandboxed manner - ensuring all writes do \emph{not} end up on the file system, but are recorded to the cloud cache. In such a mode we are filling up the coud cache speculative, with the hope that when the future command does arrive it can be satisfied from the cache. However, running remotely requires syncronising the files across, or using a sycronise on demand approach (CITE Microsoft Remote Execution talk). Running with a sandbox which intercepts writes is not an easily available cross-platform feature.
 
 Alternatively, we can execute the command locally, which is what \Rattle does. However, if the execution leads to a hazard, it is possible that the hazard is entirely an artefact of speculation. One simplistic approach is to simply rerun without speculation if speculation leads to a hazard. A more refined approach is to determine whether classification may have impacted the hazard, which can be categorised as per \S\ref{sec:proof:classify_hazard}, and either raise the error immediately (if the speculation was not at fault) or selectively eliminte a subset of commands from speculation (if speculation was at fault).
-
-\subsection{Determinism}
-\label{sec:determinism}
-
-We use \texttt{.forward} files to get some determinism in some places. If a command is non-det we cope, but might have more restartable hazards. We assume that if given a set of files, a command previous wrote some inputs, then those inputs are still a plausible value. That is fine for commands that produce non-deteministic output (e.g. \texttt{ghc -c}), but no OK for commands where a stale result is invalid (e.g. \texttt{date}).
