@@ -54,6 +54,10 @@ If \Rattle matches on the files read, but not on the files written, but a previo
 
 \paragraph{Non-deterministic builds} If a user builds something locally, they can leave the cache path. We solve that by allowing the user to specify different hashes to use, see \S\ref{sec:determinism}.
 
+\subsection{Assumptions}
+
+If you read a file that gets modified by something not under the observation of \Rattle (e.g. a human), then \Rattle will only be able to see the file after the command completes. It can use modification time to check, but you can change that too.
+
 \subsection{Build consistency}
 
 For a \Make build system to be stable, it must be the case that after a build, a rebuild will not execute any other commands. It's easy to construct examples of sequences of commands that violate this property, for example:
@@ -95,3 +99,8 @@ The other source of parallelism is implicit, using speculation. If we can predic
 Firstly, we can execute the command remotely, or in a sandboxed manner - ensuring all writes do \emph{not} end up on the file system, but are recorded to the cloud cache. In such a mode we are filling up the coud cache speculative, with the hope that when the future command does arrive it can be satisfied from the cache. However, running remotely requires syncronising the files across, or using a sycronise on demand approach (CITE Microsoft Remote Execution talk). Running with a sandbox which intercepts writes is not an easily available cross-platform feature.
 
 Alternatively, we can execute the command locally, which is what \Rattle does. However, if the execution leads to a hazard, it is possible that the hazard is entirely an artefact of speculation. One simplistic approach is to simply rerun without speculation if speculation leads to a hazard. A more refined approach is to determine whether classification may have impacted the hazard, which can be categorised as per \S\ref{sec:proof:classify_hazard}, and either raise the error immediately (if the speculation was not at fault) or selectively eliminte a subset of commands from speculation (if speculation was at fault).
+
+\subsection{Determinism}
+\label{sec:determinism}
+
+We use \texttt{.forward} files to get some determinism in some places. If a command is non-det we cope, but might have more restartable hazards. We assume that if given a set of files, a command previous wrote some inputs, then those inputs are still a plausible value. That is fine for commands that produce non-deteministic output (e.g. \texttt{ghc -c}), but no OK for commands where a stale result is invalid (e.g. \texttt{date}).
