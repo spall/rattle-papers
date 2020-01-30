@@ -1,11 +1,13 @@
 \section{Rattle}
 \label{sec:rattle}
 
-Our goal is to take a list of commands, and turn that into a build system. In this section we start by describing the most simple system possible, and progressively add features to obtain the benefits of a conventional build system.
+Our goal is to turn a list of commands into a build system.  In this section we begin by describing the most simple system possible, a shell script, and progressively add features, more expressive power, dependency tracking, minimal rebuilds, to obtain the benefits of a conventional build system.
+
+% tried to add a list of the traditional build system features that were mentioned in section.
 
 \subsection{Executing commands}
 
-In it's simplest variant, a build script can be a list of shell commands, like in \S\ref{sec:introduction}. To execute such commands correctly, it is sufficient to run each command sequentially in the order they were given. We consider this the reference semantics, and want any optimised/cached implementation to give the same results. We assume that each command is atomic - it cannot be subdivided into smaller parts.
+In it's simplest variant, a build script can be a list of shell commands, like in \S\ref{sec:introduction}.  To execute such a build script correctly, it is sufficient to run each command sequentially in the order they were given. We consider this sequential execution the reference semantics, and want any optimised/cached implementation to give the same results. We assume that each command is atomic - it cannot be subdivided into smaller parts.  % this paragraph hangs but I'm not sure what Neil is getting at with the atomic commands bit
 
 \subsection{Monadic builds}
 \label{sec:monadic}
@@ -25,34 +27,33 @@ gcc -o main.exe $FILES{/.c/.o/}
 import Development.Rattle
 
 main = runRattle $ do
-    -- TODO: Convert
-    FILES=$(ls *.c)
-    for FILE in $FILES; do
-        gcc -c $FILE
-    done
-    gcc -o main.exe $FILES{/.c/.o/}
+    let toO x = takeBaseName x <.> "o"
+    cs <- liftIO $ getDirectoryFiles "." [root </> "*.c"]
+    forM_ cs $ \c -> cmd "gcc -c" c
+    cmd "gcc -o main.exe" (map toO cs)
 \end{verbatim}
 \caption{A Haskell/\Rattle version of the script from \S\ref{sec:monadic}}
 \label{fig:monadic}
 \end{figure}
 
-Now we have a curious mixture of build system commands (e.g. \texttt{ls}, \texttt{gcc}), some control logic (e.g. \texttt{for}) and simple manipulation (e.g. changing file extension). The way we cope with this is to consider the build system as a series of commands, where the future commands may depend on the results of previous commands. These are glued together with ``cheap'' functions like the control logic and simple manipulations. We take the approach that the cheap commands are fixed overhead, run on every build, and not cached or parallelised in any way. If any of these cheap manipulations becomes expensive, they can be replaced by a command, which will then be cached and parallelised.
+% I'm not 100% sure what ``this'' is in ``the way we cope with this''.
+This script now has a curious mixture of build system commands (e.g. \texttt{ls}, \texttt{gcc}), control logic (e.g. \texttt{for}) and simple manipulation (e.g. changing file extension). The way we cope with this build script is by considering the build system as a series of commands, where future commands may depend on the results of previous commands, and commands are glued together with ``cheap'' functions like the control logic and simple manipulations. We take the approach that the cheap commands are fixed overhead, run on every build, and not cached or parallelised in any way. If any of these cheap manipulations becomes expensive, they can be replaced by a command, which will then be cached and parallelised.
 
-To implement \Rattle we treat the script as a sequence of commands with no knowledge of which commands are coming next. As a consequence, even if you are using a simple static script, and then manually edit it, the \Rattle build remains correct -- it has no knowledge that you manually edited the script, or if it was instead conditional on something it didn't observe. This approach solves the problem listed in \cite{build_systems_a_la_carte} \S?? of determining when the build system changes.
+\Rattle treats the script as a sequence of commands with no knowledge of which commands are coming next. As a consequence, even if you are using a simple static script, such as the one in \ref{}, and then manually edit it, the \Rattle build remains correct -- it has no knowledge that you manually edited the script, or if it was instead conditional on something it didn't observe. This approach solves the problem listed in \cite{build_systems_a_la_carte} \S?? of determining when the build system changes.
 
 \subsection{Dependency tracing}
 
-For the rest of this section we assume the existence of \emph{depdendency tracing} which can, after a command completes, tell us which files that command read and which files it wrote -- we discuss the implementation and limitations of dependency tracing in \S\ref{sec:tracing}. Concretely, we can run a command in a special mode such that when the command completes (and not before) we can determine which files it read and which it wrote. We cannot determine at which point during the execution these files were accessed, or which order they were accessed in. We cannot prevent or otherwise redirect an in-progress access. These limitations are a (frustrating!) consequence of the tracing techology used.
+For the rest of this section we assume the existence of \emph{dependency tracing} which can, after a command completes, tell us which files that command read and which files it wrote -- we discuss the implementation and limitations of dependency tracing in \S\ref{sec:tracing}. Concretely, we can run a command in a special mode such that when the command completes (and not before) we can determine which files it read and which it wrote. We cannot determine at which point during the execution these files were accessed, or which order they were accessed in. We cannot prevent or otherwise redirect an in-progress access. These limitations are a (frustrating!) consequence of the tracing technology used.
 
 \subsection{Skipping unnecessary commands}
 \label{sec:skipping_unnecessary}
 
-When \Rattle runs a command, it uses tracing to capture the files read and written, and then captures their hashes after the command finishes. If you subsequently run the same command, and the inputs and outputs haven't changed (same hashes), it can be skipped. This approach is the fundamental aspect of \Fabricate\citep{fabricate}. However, this approach has some issues that can make it incorrect.
+When \Rattle runs a command, it uses tracing to capture the files read and written, and then records their hashes after the command finishes. If \Rattle subsequently runs the same command, and the inputs and outputs haven't changed (same hashes), it can be skipped. This approach is the fundamental aspect of \Fabricate\citep{fabricate}. However, this approach has some issues that can result in incorrect builds.
 
 \begin{itemize}
 \item If the command is deterministic, then running it again will change nothing. However, many commands are not deterministic -- e.g. the output of \texttt{ghc} object files contains random values within it. We assume that where such non-determinism exists any possible output is equally valid.
 \item If the command incorporates information such as the timestamp, then a cached value will represent the first time the command was run, not the current time. For commands like compilation that embed the timestamp in an object header, the original timestamp is probably fine. For commands that want to actually get the current time, we suggest they be made part of the control logic (as per \S\ref{sec:monadic}). The same applies to commands that require unique information, e.g. the generation of a GUID or random number.
-\item If the command both reads and writes the same file, and the information written is fundamentally influenced by the file that was read, then the command never results in a stable state. As an example, \texttt{echo x >> foo.txt} will append the character \texttt{x} every time the command is run. As another example, the GHC package database has additional entries added every time a package is installed, making the output a consequence of the original file\footnote{As a consequence many build systems, including \Bazel and \Rattle, use multiple package databases with only one entry per database}. Equally, there are also commands that read the existing file to avoid rewriting a file that hasn't changed (e.g. \texttt{ghc} generating a \texttt{.hi} file) and commands that can cheaply update an existing file in some circumstances (the Micrsoft C++ linker). We make the assumption that if a command both reads and writes to a file that the read does not meaningfully influence the write. Thought of another way, we can consider the write non-deterministic anve the previous points apply.
+\item If the command both reads and writes the same file, and the information written is fundamentally influenced by the file that was read, then the command never results in a stable state. As an example, \texttt{echo x >> foo.txt} will append the character \texttt{x} every time the command is run. As another example, the GHC package database has additional entries added every time a package is installed, making the output a consequence of the original file\footnote{As a consequence many build systems, including \Bazel and \Rattle, use multiple package databases with only one entry per database}. Equally, there are also commands that read the existing file to avoid rewriting a file that hasn't changed (e.g. \texttt{ghc} generating a \texttt{.hi} file) and commands that can cheaply update an existing file in some circumstances (the Micrsoft C++ linker). We make the assumption that if a command both reads and writes to a file that the read does not meaningfully influence the write. Thought of another way, we can consider the write non-deterministic and the previous points apply.
 \item If a command reads a file that gets modified by something not under the observation of \Rattle (e.g. a human or the untracked control logic), then the command may have seen multiple distinct values of the file, and the final hash will not match what the command saw. Therefore, we make the assumption that only \Rattle tracked commands are working on the relevant files at the time. We can detect such errors by checking the modification time of the read file pre-dates the start of the command execution.
 \end{itemize}
 
@@ -77,48 +78,54 @@ For a \Make build system to be stable, it must be the case that after a build, a
 echo x >> foo.txt
 \end{verbatim}
 
-As discussed in \S\ref{sec:skipping_unnecessary}, this command does not meet our restrictions. But we can find other sequences of command, where each command is fine in isolation, but the conjunction is problematic, for example:
+% not very clear in skipping unnecessary that those things listed are ``Restrictions''  
+As discussed in \S\ref{sec:skipping_unnecessary}, this command does not meet our restrictions that a read not meaningfully influence a write. But we can find other sequences of commands, where each command is fine in isolation, but the conjunction is problematic, for example:
 
 \begin{verbatim}
 echo 1 > foo.txt
 echo 2 > foo.txt
-\begin{verbatim}
+\end{verbatim}
 
-This program writes \texttt{1} to \texttt{foo.txt}, then writes \texttt{2}. If the commands are reexecuted then the first command is invalid by virtue of its output changing, and after the first command has run, now the second command is invalid. More generally, if a build writes different values to the same file multiple times, it will not have a consistent build. But even without writing twice, it is possible to have an inconsistent build:
+This program writes \texttt{1} to \texttt{foo.txt}, then writes \texttt{2}. If the commands are re-executed then the first command is invalid by virtue of its output changing, and after the first command has re-run, now the second command is invalid. More generally, if a build writes different values to the same file multiple times, it will not be consistent. But even without writing to the same file twice, it is possible to have an inconsistent build:
 
 \begin{verbatim}
 sha1sum foo.txt > bar.txt
 sha1sum bar.txt > foo.txt
 \end{verbatim}
 
-Here \texttt{sha1sum} takes the SHA1 hash of a file, firstly taking the SHA of \texttt{foo.txt} and storing it in \texttt{bar.txt}, then using the same files the other way around. The root of the problem is that the script first reads from \texttt{foo.txt} on the first line, then writes to \texttt{foo.txt} on the second line, meaning that when the script is rerun the read will have to be repeated as the value has changed.
+Here \texttt{sha1sum} takes the SHA1 hash of a file, firstly taking the SHA of \texttt{foo.txt} and storing it in \texttt{bar.txt}, then taking the SHA of \texttt{bar.txt} and storing it in \texttt{foo.txt}. The root of the problem is that the script first reads from \texttt{foo.txt} on the first line, then writes to \texttt{foo.txt} on the second line, meaning that when the script is rerun the read will have to be repeated as the value has changed.
 
-It turns out these are the only circumstances in which a build where every individual command is well-forced (as per \S\ref{sec:skipping_unnecessary}). We define such a build as \emph{hazardous} if it violates one of these consistency rules:
+It turns out writing to a file after it has already been either read or written are the only circumstances in which a build where every individual command is well-formed (as per \S\ref{sec:skipping_unnecessary}) is inconsistent. We define such a build as \emph{hazardous} if it violates one of the following consistency rules:
 
 \begin{description}
-\item[read-write hazard] When one command reads from a file, and a subsequent command writes to that file. On a future build, the first command will have to be rerun.
-\item[write-write hazard] When two commands both write to the same file. On a future build, the first will be rerun (it's output has changed), which is likely to then cause the second to be rerun.
+\item[write after read] If one command reads from a file, and a subsequent command writes to that file, on a future build, the first command will have to be rerun.  This behavior causes a \emph{read-write hazard}.
+\item[write after write] If two commands both write to the same file, on a future build, the first will be rerun (it's output has changed), which is likely to then cause the second to be rerun.  This behavior causes a \emph{write-write hazard}.
 \end{description}
 
-Using the tracing we spot hazards and raise errors if they occur. We prove that a build system with deterministic control logic with no hazards always results in no rebuilds in \S\ref{sec:proof:no_rebuild}. In a build system without hazards there is at most one write to any file, which occurs before any reads of that file. We can therefore prove there are no rebuilds by showing the first command can't rebuild, and proceeding by induction. It is not the case that the presence of hazards guarantees subsequent executions will definitely rebuild, for example if the a write doesn't actually change the value, but such a build system is dangerous -- if the write definitely can't change the output, the write should not be present.
+Using tracing \Rattle spots hazards and raises errors if they occur. We prove that a build system with deterministic control logic with no hazards always results in no rebuilds in \S\ref{sec:proof:no_rebuild}. In a build system without hazards there is at most one write to any file, which occurs before any reads of that file. We can therefore prove there are no rebuilds by showing the first command can't rebuild, and proceeding by induction. It is not the case that the presence of hazards guarantees subsequent executions will definitely rebuild, for example if the a write doesn't actually change the value, but such a build system is dangerous -- if the write definitely can't change the output, the write should not be present.
 
 \subsection{Parallelism}
 
-Given a script with no hazards when executed sequentially, we can show that any interleaving of those commands that also has no hazards will result in an equivalent output in \S\ref{sec:proof:reorder}. Moreover, any parallel or interleaved execution without hazards will remain also be equivalent, see \S\ref{sec:proof:parallel}. And even further, if we execute any additional commands that don't cause hazards, they can be shown to have no impact on the rest of the build, see \S\ref{sec:proof:additional}.
+Given a script with no hazards when executed sequentially, we can show that any interleaving of those commands that also has no hazards will result in an equivalent output in \S\ref{sec:proof:reorder}. Moreover, any parallel or interleaved execution without hazards will also be equivalent, see \S\ref{sec:proof:parallel}. And even further, if \Rattle executes any additional commands that don't cause hazards, they can be shown to have no impact on the rest of the build, see \S\ref{sec:proof:additional}.
+% What does no impact mean?
 
-As a consequence of the above, we have quite a lot of freedom to optimise the commands, provided they do not cause hazards. There are two ways we allow parallelism.
+As a consequence of the above, we have quite a lot of freedom to schedule the commands, provided they do not cause hazards.  There are two ways \Rattle enabled parallelism.
 
 \subsubsection{Explicit Parallelism}
 
 In the Haskell API for \Rattle there is a parallel combinator \texttt{forP}. Replacing \texttt{forM} with \texttt{forP} in Figure \ref{fig:monadic} causes the commands to be given to \Rattle in parallel. As a consequence, they can be executed in parallel. The use of explicit parallelism is convenient when replacing a loop, but harder when expressing that three executables can be built in parallel, but that a single shared object common to all of them must complete before starting, so it is difficult to provide \emph{complete} parallelism annotations.
 
-Interestingly, given complete \emph{dependency} information (e.g. as available to \Make) it is possible to infer complete \emph{parallelism} information. However, the difficult of writing such information is the attraction to a tracing approach in the first place.
+Interestingly, given complete \emph{dependency} information (e.g. as available to \Make) it is possible to infer complete \emph{parallelism} information, but the difficulty of specifying complete dependnecy information is the attraction of a tracing based approach to build systems.
 
 \subsubsection{Implicit Parallelism}
 \label{sec:speculation}
 
-The other source of parallelism is implicit, using speculation. If we can predict what commands are coming up next, and predict that their execution will not cause hazards, then we can speculatively execute them. Such predictions can be made by simply recording the last known execution and using that. If speculation suggests that running a command would be beneficial there are two possible approaches to take.
+The other source of parallelism is implicit, using speculation. If we can predict what commands are coming up next, and predict that their execution will not cause hazards, then we can speculatively execute them.  Such predictions can be made by simply recording the last known execution and using that information to predict the next execution.  If speculation suggests that running a command would be beneficial there are two possible approaches to take.
 
-Firstly, we can execute the command remotely, or in a sandboxed manner - ensuring all writes do \emph{not} end up on the file system, but are recorded to the cloud cache. In such a mode we are filling up the coud cache speculative, with the hope that when the future command does arrive it can be satisfied from the cache. However, running remotely requires syncronising the files across, or using a sycronise on demand approach (CITE Microsoft Remote Execution talk). Running with a sandbox which intercepts writes is not an easily available cross-platform feature, so we have not explored it further.
+Firstly, the command can execute remotely, or in a sandboxed manner - ensuring all writes do \emph{not} end up on the file system, but are recorded to the cloud cache. In such a mode we are filling up the coud cache speculative, with the hope that when the future command does arrive it can be satisfied from the cache. However, running remotely requires syncronising the files across, or using a sycronise on demand approach (CITE Microsoft Remote Execution talk). Running with a sandbox which intercepts writes is not an easily available cross-platform feature, so we have not explored it further.
 
-Alternatively, we can execute the command locally, which is what \Rattle does. However, if the execution leads to a hazard, it is possible that the hazard is entirely an artefact of speculation. One simplistic approach is to simply rerun without speculation if speculation leads to a hazard. A more refined approach is to determine whether classification may have impacted the hazard, which can be categorised as per \S\ref{sec:proof:classify_hazard}, and either raise the error immediately (if the speculation was not at fault) or selectively eliminte a subset of commands from speculation (if speculation was at fault).
+Alternatively, the command can execute locally, which is what \Rattle does. If the build execution lead to a hazard, and commands were executed speculatively, then it is possible that the hazard
+is entirely an artefact of speculation.  A simple approach to resolving this is to re-run the build without speculation.  A more nuanced approach is to use the hazard's classification, which can be categorised as per \S\ref{sec:proof:classify_hazard}, to decide whether to raise the error immediately (if the speculation was not at fault) or take alternative measures to resolve the hazard, such as
+selectively eliminating a subset of commands from speculation, or re-executing specific commands.
+
+%  selectively eliminte a subset of commands from speculation (if speculation was at fault).
