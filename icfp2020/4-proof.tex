@@ -3,16 +3,44 @@
 
 \subsection{Hazards, formally}
 
+A hazard occurs when a Build command writes to a file that a previous command has already read from or written to.  So, hazards can be classified as either: \emph{read-write hazards} or \emph{write-write hazards}.  
+
 \subsection{No rebuilds}
 \label{sec:proof:no_rebuild}
 
 We prove that a build system with deterministic control logic with no hazards always results in no rebuilds.
 In a build system without hazards there is at most one write to any file, which occurs before any reads of that file. We can therefore prove there are no rebuilds by showing the first command can't rebuild, and proceeding by induction.
 
+Let us have a build of \emph{n} commands that meets the above restrictions.  
+
+Base case: Command $1$ of $1$  will not be re-run because from the definition of the claim none of its inputs has changed, and the build system's control logic is deterministic.  Because, command $1$ is not re-running, it will not write to any files.  
+
+Induction step:  Let us assume the above claim is true for a build with $n$ commands.  Let us show the claim is true for a build of $n+1$ commands.
+
+If the first $n$ commands of the build did not run and did not write to any files, then the dependencies of command $n+1$ could not have changed during the build, and from the claim above we know they did not change before the build, therefore, command $n+1$ will not run.
+
 \subsection{Reordered builds}
 \label{sec:proof:reorder}
 
 Given a script with no hazards when executed sequentially, we can show that any interleaving of those commands that also has no hazards will result in an equivalent output.
+
+% What 
+
+Proof by contradiction.  Let us assume we have a build script with no hazards.  Let us also assume there exists an alternative ordering of the commands in the build script that has no hazards
+and produces a different output.  Here we consider the output of a build script to be the set of files written and their hashes.  So, if two builds produce the same output, they write to the same set of files and the same file will have the same hash after either build wrote to it.
+
+Build $A$ is the original script which has no hazards and build $B$ is the re-ordered script which also has no hazards but produces a different output from build $A$.  From the definition of the output of a build script, this means $B$ either writes to a different set of files, or at least one of the files written by $B$ and $A$ has a different hash after build $A$ runs and build $B$ runs.
+
+\begin{description}
+\item [case: $B$'s set of output files does not equal $A$'s set of output files.]
+  \begin{description}
+  \item [$B$ writes at least one file not written by $A$.]  
+  \item [$A$ writes at least one file not written by $B$.]
+  \end{description}
+  
+\item [case: There is at least 1 file whose hash is different when written by $A$ and $B$.]
+\end{description}
+
 
 \subsection{Parallel commands}
 \label{sec:proof:parallel}
@@ -22,3 +50,36 @@ Given a script with no hazards when executed sequentially, we can show that any 
 
 \subsection{Classifying Hazards}
 \label{sec:proof:classify_hazard}
+
+Hazards are first classified as either \emph{read-write} or \emph{write-write}.  The command execution that led to the hazard classifies it further.
+
+\paragraph{Non Recoverable}
+Commands in the build script when executed sequentially violate the consistency rules in \ref{sec:hazards}.  A non-recoverable hazard results in \Rattle terminating the build immediately with an error.  See the two examples from \ref{sec:hazards}.
+
+\paragraph{Recoverable}
+Speculatively executed command(s) read file(s) which were later written to during the build.  If \Rattle speculatively executed a command which read from a file which was later written to, that command
+probably read stale data.  \Rattle can re-execute the speculatively executed command with no loss of correctness.  A proof of this claim is provided in \ref{}.
+
+\begin{verbatim}
+cp foo.o baz.o [speculate]
+gcc -c foo.c
+cp foo.o baz.o [re-execute]
+\end{verbatim}
+
+\paragraph{Restartable} % when speculation causes a consistency violation. or a command to read incorrect data.
+If \Rattle speculatively executed a command that wrote to a file that was later written to or read by another command, then incorrectness was potentially introduced into the build.  In the following example \emph{cp foo.o baz.o} was speculated, and wrote to \emph{baz.o}, then \emph{gcc -c baz.c} was executed and also wrote to \emph{baz.o}.  Normally a build script that executed these two commands would violate \Rattle's consistency properties, but in this case the consistency violation might have been avoided if \emph{cp foo.o baz.o} were not executed by the build.  Therefore, if \Rattle were to re-execute the build script and not speculate \emph{cp foo.o baz.o} then the consistency violation might not occur.
+
+\begin{verbatim}
+cp foo.o baz.o [speculate]
+gcc -c baz.c
+\end{verbatim}
+
+Another possible situation is \Rattle executing something like the following:
+
+\begin{verbatim}
+cp old-foo.c foo.c [speculate]
+gcc -c foo.c
+\end{verbatim}
+
+Maybe the build script originally included \emph{cp old-foo.c foo.c}, but it was removed in the most recent version of the build.  By speculating this old command \Rattle caused \emph{gcc -c foo.c} to
+potentially build the wrong \emph{foo.c}.  If \Rattle were to re-execute the build and not speculate \emph{cp old-foo.c foo.c} then \emph{gcc -c foo.c} would build the correct \emph{foo.c} during the next build.  % This is a bad example since Rattle would have corrupted foo.c with the bad copy.  Need a new example or address this
