@@ -24,26 +24,28 @@ If the first $n$ commands of the build did not run and did not write to any file
 
 Given a script with no hazards when executed sequentially, we can show that any interleaving of those commands that also has no hazards will result in an equivalent output.
 
-% What 
+Proof by contradiction.
 
-Proof by contradiction.  Let us assume we have a build script with no hazards.  Let us also assume there exists an alternative ordering of the commands in the build script that has no hazards
-and produces a different output.  Here we consider the output of a build script to be the set of files written and their hashes.  So, if two builds produce the same output, they write to the same set of files and the same file will have the same hash after either build wrote to it.
+Let us assume we have a build script $A$, with no hazards.  Let us also assume there exists a build script $B$, which is an alternative ordering of the build script $A$, which also has no hazards and produces an output different from the output produced by $A$.  Here, the output of a build script is the set of files written and their hashes.
 
-Build $A$ is the original script which has no hazards and build $B$ is the re-ordered script which also has no hazards but produces a different output from build $A$.  From the definition of the output of a build script, this means $B$ either writes to a different set of files, or at least one of the files written by $B$ and $A$ has a different hash after build $A$ runs and build $B$ runs.
+Therefore, $B$ produces a different set of file and hashes than $A$ does when running the same set of commands.
 
 \begin{description}
-\item [case: $B$'s set of output files does not equal $A$'s set of output files.]
-  \begin{description}
-  \item [$B$ writes at least one file not written by $A$.]  
-  \item [$A$ writes at least one file not written by $B$.]
-  \end{description}
-  
-\item [case: There is at least 1 file whose hash is different when written by $A$ and $B$.]
-\end{description}
+\item [$B$ writes to a file $A$ does not write to. Or $A$ writes to a file $B$ does not write to]
+  There must exist a cmd $c$ which when run by $A$ and $B$ writes to a different set of files.  The set of files written to by $c$ is affected by the content of the cmd, and the set of input files.  Since, the content of the cmd is the same between $A$ and $B$, the input files must differ.
 
+  By the definition of $A$ and $B$ having no hazards, any files read by $c$ must be written to by commands that precede $c$ in the build. And because $A$ and $B$ contain the same commands, $c$'s input files must be the same regardless of build.  Therefore, a contradiction.
+
+\item [$B$ writes to a file $f$ whose hash is $h$ and $A$ writes to the same file but its hash is $K$; $h \neq k$]
+  There must exist a cmd $c$ which when run by $A$ and $B$ writes to the file $f$ and produces the different hashes, $k$ and $h$ respectively.  The files written to by $c$ is affected by the content of the cmd and the set of input files. Since $c$ is the same between $A$ and $B$, the input files must differ.
+
+  By the definition of $A$ and $B$ having no hazards, any files read by $c$ must be written to by commands that precede $c$ in the build.  And because $A$ and $B$ containt he same commands, $c$'s input files must be the same regardless of build.  Therefore, a contradiction.
+  
+\end{description}
 
 \subsection{Parallel commands}
 \label{sec:proof:parallel}
+
 
 \subsection{Additional commands have no effect}
 \label{sec:proof:additional}
