@@ -34,3 +34,43 @@ We see \Rattle has low overhead, in the millisecond range. We see three threads 
 \subsection{Rest of the evaluation}
 
 Let's consider the VIM build system. It's wrong in lots of ways Sarah can describe. But these were expert software engineers - has anyone got it right? To a first approximation, no. Unless you go for something like Bazel, and then it's tedious but sandboxing makes you get it right.
+
+
+
+\subsection{vim}
+
+Comparing building Vim \cite{} with \Make and with \Rattle for commits \emph{21109272f} to \emph{7cc96923c}.  For two commits \Make and \Rattle did noticeably different work; note, both of these commits were build incrementally, \emph{21109272f} was built from scratch by both build systems and all subsequent commits were built incrementally.
+
+\begin{description}
+\item[\emph{e258368b4}]
+  Looking at the git commit, only two files changed: \emph{osdef.sh} and \emph{version.c}.  Rattle re-ran \emph{osdef.sh}, which generates \emph{osdef.h}.  Rattle also rebuilt \emph{version.o}, which depends on \emph{version.c}
+  The header file \emph{osdef.h} did not change when it was re-created, which \Rattle detected since it uses hashes to determine when files have changed.  \Make, which uses timestamps, did not detect this and built an additional 109 object files because they depend on \emph{osdef.h}
+
+  Rattle avoided rebuilding 109 object files by using a more accurate standard for detecting changes in dependencies.
+
+\item[\emph{a259d8d30}]
+  The files changed by the commit are: \emph{src/evalfunc.c}, \emph{src/proto/evalfunc.pro},
+  \emph{src/testdir/test\_vim9\_script.vim}, \emph{src/userfunc.c}, \emph{src/version.c}, and
+  \emph{src/vim9compile.c}.
+  \Rattle rebuilt the following object files, because \emph{evalfunc.pro} changed.
+  \begin{description}
+  \item[Object files rebuilt which did \emph{not change}.] \Rattle rebuilt 32 object files because \emph{evalfunc.pro} changed, but the object files did not change when rebuilt.
+    %arabic.o, blob.o, blowfish.o, crypto.o, dict.o, evalbuffer.o, evalwindow.o, ex\_cmds2.o, ex\_eval.o, hashtab.o, list.o, map.o, move.o, pathdef.o, popupmenu.o, session.o, sign.o, sound.o,
+    %undo.o, vim9execute.o, vim9script.o, bufwrite.o, gui\_beval.o, xdiffi.o, xemit.o, xprepare.o, xutils.o, xhistogram.o, xpatience.o, charset.o, json.o, memfile.o.
+  \item[Object files rebuilt which did \emph{change}.] \Rattle rebuilt an additional 78 object files because \emph{evalfunc.pro} changed, whose object files did change after being rebuilt.
+    4 of these object files corresponding c files had changed, also causing them to rebuild.
+
+  % arglist.o, autocmd.o, beval.o, buffer.o, change.o, cindent.o, cmdexpand.o, cmdhist.o, crypt_zip.o, debugger.o, diff.o, digraph.o, drawline.o, drawscreen.o, edit.o, eval.o
+  % evalfunc.o (evalfunc.c had also changed), evalvars.o, ex\_cmds.o, ex\_docmd.o, ex\_getln.o, fileio.o, filepath.o, findfile.o, fold.o, getchar.o, hardcopy.o, highlight.o, if\_cscope.o
+  % if\_xcmdsrv.o, indent.o, insexpand.o, mark.o, mbyte.o, memline.o, menu.o, misc1.o, misc2.o, mouse.o, normal.o, ops.o, option.o, optionstr.o, os\_unix.o, popupwin.o
+  % profiler.o, pty.o, quickfix.o, regexp.o, register.o, screen.o, scriptfile.o, search.o, sha256.o, spell.o, spellfile.o, spellsuggest.o, syntax.o, tag.o, term.o, terminal.o
+  % testing.o, textprop.o, ui.o, usercmd.o, userfunc.o (userfunc.c also changed), vim9compile.o (vim9compile.c alos changed) , viminfo.o, window.o, gui.o, gui\_gtk.o,
+    % gui\_gtk\_x11.o, gui\_gtk\_f.o, netbeans.o, channel.o, main.o, message.o version.o (version.c also changed)
+    \end{description}
+\end{description}
+
+  \Make rebuilt 4 object files, the ones whose corresponding c files had changed.  It didn't rebuild the other object files rebuilt by \Rattle because the Makefile does not state that these object files
+  depend on \emph{src/proto/evalfunc.pro}.
+
+
+\subsection{redis}
