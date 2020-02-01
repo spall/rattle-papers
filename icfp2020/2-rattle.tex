@@ -3,11 +3,12 @@
 
 Our goal is to turn a list of commands into a build system.  In this section we begin by describing the most simple system possible, a shell script, and progressively add features, more expressive power, dependency tracking, minimal rebuilds, to obtain the benefits of a conventional build system.
 
-% tried to add a list of the traditional build system features that were mentioned in section.
+% SS tried to add a list of the traditional build system features that were mentioned in section.
+% NM figured the intro lists them so wasn't required?
 
 \subsection{Executing commands}
 
-In it's simplest variant, a build script can be a list of shell commands, like in \S\ref{sec:introduction}.  To execute such a build script correctly, it is sufficient to run each command sequentially in the order they were given. We consider this sequential execution the reference semantics, and want any optimised/cached implementation to give the same results. We assume that each command is atomic - it cannot be subdivided into smaller parts.  % this paragraph hangs but I'm not sure what Neil is getting at with the atomic commands bit
+In it's simplest variant, a build script can be a list of shell commands, like in \S\ref{sec:introduction}.  To execute such a build script correctly, it is sufficient to run each command sequentially in the order they were given. We consider this sequential execution the reference semantics, and want any optimised/cached implementation to give the same results.
 
 \subsection{Monadic builds}
 \label{sec:monadic}
@@ -29,17 +30,17 @@ import Development.Rattle
 main = runRattle $ do
     let toO x = takeBaseName x <.> "o"
     cs <- liftIO $ getDirectoryFiles "." [root </> "*.c"]
-    forM_ cs $ \c -> cmd "gcc -c" c
+    forM_ cs $ \c ->
+        cmd "gcc -c" c
     cmd "gcc -o main.exe" (map toO cs)
 \end{verbatim}
 \caption{A Haskell/\Rattle version of the script from \S\ref{sec:monadic}}
 \label{fig:monadic}
 \end{figure}
 
-% I'm not 100% sure what ``this'' is in ``the way we cope with this''.
-This script now has a curious mixture of build system commands (e.g. \texttt{ls}, \texttt{gcc}), control logic (e.g. \texttt{for}) and simple manipulation (e.g. changing file extension). The way we cope with this build script is by considering the build system as a series of commands, where future commands may depend on the results of previous commands, and commands are glued together with ``cheap'' functions like the control logic and simple manipulations. We take the approach that the cheap commands are fixed overhead, run on every build, and not cached or parallelised in any way. If any of these cheap manipulations becomes expensive, they can be replaced by a command, which will then be cached and parallelised.
+This script now has a curious mixture of build system commands (e.g. \texttt{ls}, \texttt{gcc}), control logic (e.g. \texttt{for}) and simple manipulation (e.g. changing file extension). Importantly, there is \emph{no fixed list of commands}, but the future commands themselves are influenced by the previous commands -- concretely, the result of \texttt{ls} changes which \texttt{gcc} commands are executed. To deal with this flexibility our abstract model is that a build system is a series of commands, where future commands may depend on the results of previous commands, and commands are glued together with ``cheap'' functions like the control logic and simple manipulations. We take the approach that the cheap commands are fixed overhead, run on every build, and not cached or parallelised in any way. If any of these cheap manipulations becomes expensive, they can be replaced by a command, which will then be cached and parallelised.
 
-\Rattle treats the script as a sequence of commands with no knowledge of which commands are coming next. As a consequence, even if you are using a simple static script, such as the one in \ref{}, and then manually edit it, the \Rattle build remains correct -- it has no knowledge that you manually edited the script, or if it was instead conditional on something it didn't observe. This approach solves the problem listed in \cite{build_systems_a_la_carte} \S?? of determining when the build system changes.
+\Rattle treats the script as a sequence of commands with no knowledge of which commands are coming next. As a consequence, even if you are using a simple static script, such as the one in the introduction, and then manually edit it, the \Rattle build remains correct -- it has no knowledge that you manually edited the script, or if it was instead conditional on something it didn't observe. This approach solves the problem listed in \cite{build_systems_a_la_carte} \S?? of determining when the build system changes.
 
 \subsection{Dependency tracing}
 
@@ -51,6 +52,7 @@ For the rest of this section we assume the existence of \emph{dependency tracing
 When \Rattle runs a command, it uses tracing to capture the files read and written, and then records their hashes after the command finishes. If \Rattle subsequently runs the same command, and the inputs and outputs haven't changed (same hashes), it can be skipped. This approach is the fundamental aspect of \Fabricate\citep{fabricate}. However, this approach has some issues that can result in incorrect builds.
 
 \begin{itemize}
+\item We assume that each command is atomic - it cannot be subdivided into smaller parts. If a command is secretly two independent commands then they should usually be expressed as such so they can be individually skipped.
 \item If the command is deterministic, then running it again will change nothing. However, many commands are not deterministic -- e.g. the output of \texttt{ghc} object files contains random values within it. We assume that where such non-determinism exists any possible output is equally valid.
 \item If the command incorporates information such as the timestamp, then a cached value will represent the first time the command was run, not the current time. For commands like compilation that embed the timestamp in an object header, the original timestamp is probably fine. For commands that want to actually get the current time, we suggest they be made part of the control logic (as per \S\ref{sec:monadic}). The same applies to commands that require unique information, e.g. the generation of a GUID or random number.
 \item If the command both reads and writes the same file, and the information written is fundamentally influenced by the file that was read, then the command never results in a stable state. As an example, \texttt{echo x >> foo.txt} will append the character \texttt{x} every time the command is run. As another example, the GHC package database has additional entries added every time a package is installed, making the output a consequence of the original file\footnote{As a consequence many build systems, including \Bazel and \Rattle, use multiple package databases with only one entry per database}. Equally, there are also commands that read the existing file to avoid rewriting a file that hasn't changed (e.g. \texttt{ghc} generating a \texttt{.hi} file) and commands that can cheaply update an existing file in some circumstances (the Micrsoft C++ linker). We make the assumption that if a command both reads and writes to a file that the read does not meaningfully influence the write. Thought of another way, we can consider the write non-deterministic and the previous points apply.
@@ -60,6 +62,7 @@ When \Rattle runs a command, it uses tracing to capture the files read and writt
 In general we assume individual commands are well behaved, and if not, they can be lifted into the control logic.
 
 \subsection{Cloud builds}
+\label{sec:cloud_builds}
 
 When skipping an execution \Rattle checks that all files accessed have the same hashes as a previous execution. However, if the files read all match a previous execution, and the corresponding output files have been cached, those output files can be copied over \emph{without} rerunning the command. If that cache is in on a server, you end up with cloud build functionality. Assuming commands that can be cached, whether a command uses a cloud oracle or runs locally is not observable to the rest of the system, so we don't need to consider it for the rest of the system. While this approach works beautifully in theory, in practice it leads to at least three separate problems:
 
@@ -78,8 +81,10 @@ For a \Make build system to be stable, it must be the case that after a build, a
 echo x >> foo.txt
 \end{verbatim}
 
-% not very clear in skipping unnecessary that those things listed are ``Restrictions''  
-As discussed in \S\ref{sec:skipping_unnecessary}, this command does not meet our restrictions that a read not meaningfully influence a write. But we can find other sequences of commands, where each command is fine in isolation, but the conjunction is problematic, for example:
+% SS not very clear in skipping unnecessary that those things listed are ``Restrictions''
+% NM tried to make it more obvious. It's actually an example in restrictions
+
+As discussed in \S\ref{sec:skipping_unnecessary}, this command does not meet our restrictions that a command which both reads and writes a file should not be meaningfully influenced by the initial read. But we can find other sequences of commands, where each command is fine in isolation, but the conjunction is problematic, for example:
 
 \begin{verbatim}
 echo 1 > foo.txt
@@ -106,8 +111,7 @@ Using tracing \Rattle spots hazards and raises errors if they occur. We prove th
 
 \subsection{Parallelism}
 
-Given a script with no hazards when executed sequentially, we can show that any interleaving of those commands that also has no hazards will result in an equivalent output in \S\ref{sec:proof:reorder}. Moreover, any parallel or interleaved execution without hazards will also be equivalent, see \S\ref{sec:proof:parallel}. And even further, if \Rattle executes any additional commands that don't cause hazards, they can be shown to have no impact on the rest of the build, see \S\ref{sec:proof:additional}.
-% What does no impact mean?
+Given a script with no hazards when executed sequentially, we can show that any interleaving of those commands that also has no hazards will result in an equivalent output in \S\ref{sec:proof:reorder}. Moreover, any parallel or interleaved execution without hazards will also be equivalent, see \S\ref{sec:proof:parallel}. And even further, if \Rattle executes any additional commands that don't cause hazards, they can be shown not to change the results the normal build produced, see \S\ref{sec:proof:additional}.
 
 As a consequence of the above, we have quite a lot of freedom to schedule the commands, provided they do not cause hazards.  There are two ways \Rattle enabled parallelism.
 
@@ -124,8 +128,6 @@ The other source of parallelism is implicit, using speculation. If we can predic
 
 Firstly, the command can execute remotely, or in a sandboxed manner - ensuring all writes do \emph{not} end up on the file system, but are recorded to the cloud cache. In such a mode we are filling up the coud cache speculative, with the hope that when the future command does arrive it can be satisfied from the cache. However, running remotely requires syncronising the files across, or using a sycronise on demand approach (CITE Microsoft Remote Execution talk). Running with a sandbox which intercepts writes is not an easily available cross-platform feature, so we have not explored it further.
 
-Alternatively, the command can execute locally, which is what \Rattle does. If the build execution lead to a hazard, and commands were executed speculatively, then it is possible that the hazard
-is entirely an artefact of speculation.  A simple approach to resolving this is to re-run the build without speculation.  A more nuanced approach is to use the hazard's classification, which can be categorised as per \S\ref{sec:proof:classify_hazard}, to decide whether to raise the error immediately (if the speculation was not at fault) or take alternative measures to resolve the hazard, such as
-selectively eliminating a subset of commands from speculation, or re-executing specific commands.
+Alternatively, the command can execute locally, which is what \Rattle does. If the build execution lead to a hazard, and commands were executed speculatively, then it is possible that the hazard is entirely an artefact of speculation.  A simple approach to resolving this is to re-run the build without speculation.  A more nuanced approach is to use the hazard's classification, which can be categorised as per \S\ref{sec:proof:classify_hazard}, to decide whether to raise the error immediately (if the speculation was not at fault) or take alternative measures to resolve the hazard, such as selectively eliminating a subset of commands from speculation, or re-executing specific commands.
 
-%  selectively eliminte a subset of commands from speculation (if speculation was at fault).
+TODO: Write a lot about selectively eliminate a subset of commands from speculation (if speculation was at fault).
