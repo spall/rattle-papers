@@ -1,31 +1,35 @@
 \section{Evaluation}
 \label{sec:evaluation}
 
-\subsection{Validating the claims from earlier}
+\subsection{Validating the claims from \S\ref{sec:introduction}}
 
 In \S\ref{sec:introduction} we claimed that the following build script is ``just as good'' as a proper \Make script.
 
 \begin{verbatim}
-
 gcc -c main.c
 gcc -c util.c
 gcc -o main.exe main.o util.o
-
-So, let's compare it on the axes that matter, and see where it is as good, and where it isn't.
-
-Rattle:
-Single threaded clean build = 0.84
-Single threaded noop = 0.04
-Single threaded with main.c changed (whitespace only) = 0.34
-Single threaded with main.c changed = 0.72
-Single threaded with main.c and util.c changed = 0.84
-
-Multi threaded clean build = 0.84
-Multi threaded noop = 0.04
-Multi threaded with main.c changed (whitespace only) = 0.34
-Multi threaded with main.c changed = 0.72
-Multi threaded with main.c and util.c changed = 0.74
 \end{verbatim}
+
+There are two axes on which to measure ``just as good'' -- correctness and performance. Performance can be further broken down into how much rebuilds, how much parallelism can be acheived and overhead.
+
+\paragraph{Correctness} \Rattle is correct, in that the reference semantics is running all the commands, and as we have shown in \S\ref{sec:rattle} and \S\ref{sec:proof}, \Rattle obeys that semantics. In contrast, the \Make version may have missing dependencies which causes it not to rebuild. Examples of failure to rebuild include both if \texttt{gcc} changes, one of the system headers used by \texttt{gcc} or any headers included but not listed in the \Make script.
+
+\paragraph{Rebuilding too much} \Rattle never rebuilds too much, as if none of the inputs to a command have changed, then nothing rebuilds. As a matter of implementation, to implement cloud builders as per \ref{sec:cloud_builds}, \Rattle uses hashes of the file contents. In contrast, \Make uses the modification time, so if a file is resaved, but it's contents do not change, \Make will rebuild but \Rattle will not. It would be possible for \Make to use modification times, if it chose to store additional metadata not in the file system.
+
+\paragraph{Parallelism} The script from \S\ref{sec:introduction} has three commands, the first two of which can run in parallel, the the third of which must wait for the first two to finish. \Make is given all this information by dependencies, so will always acheive as much parallelism as is available. In constrast, \Rattle has no such knowledge, so has to recover the parallelism by speculation, as per \ref{sec:speculation}. During the first execution, \Rattle has no knowledge about even which commands are coming next (as described in \S\ref{sec:monadic}), so has no choice but to execute each command serially, with less parallelism than \Make. In subsequent executions \Rattle will use speculation to always speculate on the second command (as it never has a hazard with the first), but never speculate on the third until the first two have finished (as they are known to conflict). Interesting, sometimes \Rattle executes the third command (because it got to that point in the script), and sometimes it speculates it (because the previous two have finished) -- it is a race condition where both alternatives are equivalent. So \Rattle has less parallelism on the first execution, but using the cloud features, that can be reduced to the first execution \emph{ever}, rather than the first execution for a given user.
+
+\paragraph{Overhead} The overhead inherent in \Rattle is greater than that of \Make as it hashes files, traces command execution, computes potential hazards to figure out speculation and writes to a shared cloud store. To measure the overhead we created a very simple pair of \texttt{main.c} and \texttt{util.c} files where \texttt{main.c} calls \texttt{printf} using a number computed by a function in \texttt{util.c}. We then measured the time to do an initial build, a rebuild when nothing had changed, a rebuild with whitespace changes to \texttt{main.c}, and a rebuild with changes to both C files. We did all the above both single threaded and with two and three threads. The numbers are:
+
+\begin{tabular}{|l|r|r|r|}
+Number of threads & 1 & 2 & 3 \\
+Initial build \\
+Nothing changed \\
+\texttt{main.c} changed \\
+Both C files changed \\
+\end{tabular}
+
+We see \Rattle has low overhead, in the millisecond range. We see three threads has no change over two threads, as this build contains no more parallelism opportunities.
 
 \subsection{Rest of the evaluation}
 
