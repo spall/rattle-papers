@@ -15,6 +15,7 @@ In it's simplest variant, a build script can be a list of shell commands, like i
 
 A build system which can only execute a static list of commands is restricted in its expressive power. Taking the build system from \S\ref{sec:introduction} - it would be better to compile and link \emph{all} \texttt{*.c} files -- not just those explicitly listed in the script. A more plausible script might be:
 
+\vspace{3mm}
 \begin{verbatim}
 FILES=$(ls *.c)
 for FILE in $FILES; do
@@ -22,6 +23,7 @@ for FILE in $FILES; do
 done
 gcc -o main.exe $FILES{/.c/.o/}
 \end{verbatim}
+\vspace{3mm}
 
 \begin{figure}
 \begin{verbatim}
@@ -56,7 +58,7 @@ When \Rattle runs a command, it uses tracing to capture the files read and writt
 \item We assume that each command is atomic - it cannot be subdivided into smaller parts. If a command is secretly two independent commands then they should usually be expressed as such so they can be individually skipped.
 \item If the command is deterministic, then running it again will change nothing. However, many commands are not deterministic -- e.g. the output of \texttt{ghc} object files contains random values within it. We assume that where such non-determinism exists any possible output is equally valid.
 \item If the command incorporates information such as the timestamp, then a cached value will represent the first time the command was run, not the current time. For commands like compilation that embed the timestamp in an object header, the original timestamp is probably fine. For commands that want to actually get the current time, we suggest they be made part of the control logic (as per \S\ref{sec:monadic}). The same applies to commands that require unique information, e.g. the generation of a GUID or random number.
-\item If the command both reads and writes the same file, and the information written is fundamentally influenced by the file that was read, then the command never results in a stable state. As an example, \texttt{echo x >> foo.txt} will append the character \texttt{x} every time the command is run. As another example, the GHC package database has additional entries added every time a package is installed, making the output a consequence of the original file\footnote{As a consequence many build systems, including \Bazel and \Rattle, use multiple package databases with only one entry per database}. Equally, there are also commands that read the existing file to avoid rewriting a file that hasn't changed (e.g. \texttt{ghc} generating a \texttt{.hi} file) and commands that can cheaply update an existing file in some circumstances (the Micrsoft C++ linker). We make the assumption that if a command both reads and writes to a file that the read does not meaningfully influence the write. Thought of another way, we can consider the write non-deterministic and the previous points apply.
+\item If the command both reads and writes the same file, and the information written is fundamentally influenced by the file that was read, then the command never results in a stable state. As an example, \verb"echo x >> foo.txt" will append the character \texttt{x} every time the command is run. As another example, the GHC package database has additional entries added every time a package is installed, making the output a consequence of the original file\footnote{As a consequence many build systems, including \Bazel and \Rattle, use multiple package databases with only one entry per database}. Equally, there are also commands that read the existing file to avoid rewriting a file that hasn't changed (e.g. \texttt{ghc} generating a \texttt{.hi} file) and commands that can cheaply update an existing file in some circumstances (the Micrsoft C++ linker). We make the assumption that if a command both reads and writes to a file that the read does not meaningfully influence the write. Thought of another way, we can consider the write non-deterministic and the previous points apply.
 \item If a command reads a file that gets modified by something not under the observation of \Rattle (e.g. a human or the untracked control logic), then the command may have seen multiple distinct values of the file, and the final hash will not match what the command saw. Therefore, we make the assumption that only \Rattle tracked commands are working on the relevant files at the time. We can detect such errors by checking the modification time of the read file pre-dates the start of the command execution.
 \end{itemize}
 
