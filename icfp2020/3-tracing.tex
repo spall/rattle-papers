@@ -1,26 +1,44 @@
 \section{Tracing}
 \label{sec:tracing}
 
-Can only do files at the end.
+In \S\ref{sec:assume_tracing} we assume the existence of \emph{dependency tracing} which can, after a command completes, tell us which files that command read and which files it wrote. Unfortunately, such an API is \emph{not} part of the POSIX standard, and is not easily available on any standard platform. We aim to make \Rattle work on Linux, Mac and Windows, which requires using a variety of approaches.
 
-We ignore files that are deleted after, they are temporary.
+\subsection{Tracing approaches}
 
-We'd like a more powerful oracle that intercepts each action, but that doesn't exist.
+In this section we outline some of the approaches that can be used for tracing, their advantages and disadvantages:
 
-We'd like to know the precise time of each read/write, but we generalise to the time the command was running.
+\begin{description}
+\item[Syscall tracing] On Linux you can trace every system call made, examine it's arguments, and thus record which files are accessed. Moreover, you can tell which have information about them queried (via the \texttt{stat} system call). The syscall tracking approach can be made complete, but because \emph{every} syscall must be hooked, can end up being a bit slow. This approach is used by \libbigbro \cite{libbigbro}.
+\item[Library preload] On both Linux and Mac most programs refer to a dynamically linked C library for their file accesses. By using \texttt{LD\_LIBRARY\_PRELOAD} it is possible to inject another dynamic library into the program memory which intercepts the relevant C library calls, recording which files are read and written. This approach is simpler than hooking syscalls, but only works if all access to syscalls is made through the C library. For programs written in Go \cite{go}, the design is that the syscalls are invoked directly, meaning that nothing is observed by tracing the C library. For statically linked programs, the location of the C library is not available, and similarly they will not be traced. While the technique works on a Mac, from Mac OS X 1.10 or higher system binaries can't be traced due to System Integrity Protection\footnote{\url{https://developer.apple.com/library/content/documentation/Security/Conceptual/System_Integrity_Protection_Guide/ConfiguringSystemIntegrityProtection/ConfiguringSystemIntegrityProtection.html}}. As an example, the C compiler is typically installed as a system binary. It is possible to disable System Integrity Protection (but not recommended by Apple), to use non-system binaries (e.g. those supplied by \Nix \cite{nix} work well), or to copy the system binary to a temporary directory (which works provided the binary does not afterwards invoke another system binary to do its work). The library preload mechanism is implemented by \Fsatrace \cite{fsatrace} and the copying system binaries trick is implemented by \Shake \cite{shake}.
+\item[File system tracing] An alternative approach on Linux would be to implement a file system that reported which files were accessed. We are aware of one such implementation, \tracedfs \cite{tracedfs}, which is unfortunately not yet complete. Such an approach would track all accesses, but may require privileges to mount a file system.
+\item[Custom Mac tracing] \BuildXL \cite{buildxl}\footnote{\url{https://github.com/Microsoft/BuildXL/blob/master/Documentation/Specs/Sandboxing.md\#macos-sandboxing}} uses a Mac sandbox based on KAuth combined with TrustedBSD Mandatory Access Control (MAC) to both detect which files are accessed and also block access to specific files. The approach is based on internal Mac OS X detils which have been reversed engineered, some of which are deprecated and scheduled for removal.
+\item[Windows Kernel API hooking] On Windows it is possible to hook the Kernel API, which can be used to detect when files are accessed. Hooking the kernel detects everything, but is not trivial. In particular, 32bit v 64bit differences are problematic, as Windows trampolines between the two and the hooks must cope with the differences using assembly code. Furthermore, some antivirus products are more likely to (incorrectly) detect such programs as viruses. The Windows kernel hooking is available in both \Fsatrace and \libbigbro, although without the 32bit calling 64bit assembly code.
+\end{description}
 
-We use either fsatrace or libbigbro. That gives us call hooking on Windows, syscall hooking on Linux or \verb"LD_LIBRARY" preload on Linux.
+\Rattle currently uses \Fsatrace as wrapped by \Shake for tracing. That means it uses library preloading on Linux/Mac and kernel hooking on Windows. The biggest limitations in practice vary by OS:
 
-We don't trace things like file system listings, modtime info etc. It's a little approx as a result.
+\begin{itemize}
+\item On \textbf{Linux} it can't trace into Go programs and statically linked binaries. We are planning to integrate \libbigbro as an alternative, to address these concerns.
+\item On \textbf{Mac} it can't trace into system binaries called from other system binaries. We recommend using \Nix binaries if this limitation is problematic.
+\item On \textbf{Windows} it can't trace into 64bit programs invoked by 32bit programs. In most cases the 32bit binaries can easily be replaced by 64bit binaries. The only instance we've seen thus far was an outdated version of \texttt{sh} one of the authors of this paper downloaded over five years ago, which was easily remedied with a newer version.
+\end{itemize}
 
-Rattle fundamentally relies on tracing the files used by system commands, and currently uses the [`fsatrace`](https://github.com/jacereda/fsatrace) program to do so, which must be installed. As a consequence of the design, if `fsatrace` fails, then `rattle` won't work properly. Reasons that `fsatrace` might fail include:
+However, in practice, none of the limitations have been overly problematic in the examples we have explored.
 
-* If you use Go compiled binaries on Linux or Mac then it's unlikely to be traced, see [Issue 24](https://github.com/jacereda/fsatrace/issues/24).
-* If you a Mac OS X 1.10 or higher then system binaries that themselves invoke system binaries they won't be traced, unless you disable System Integrity Protection \url{https://developer.apple.com/library/content/documentation/Security/Conceptual/System_Integrity_Protection_Guide/ConfiguringSystemIntegrityProtection/ConfiguringSystemIntegrityProtection.html} (which you do at your own risk).
-* If you use statically linked binaries on Linux they probably won't be traced.
+\subsection{Possible tracing enhancements}
 
-It is possible to write alternative tracing mechanisms that wouldn't have these limitations, for example:
+Using the approaches listed above we are able to detect when files are openned for read or write access. After the command has finished, we then report which files were accessed and in what mode. That restricted interface has driven the design of \Rattle to ensure that it is possible to implement \Rattle robustly in realistic situations. However, there are places where a more refined interface would be useful.
 
-* [Bigbro](https://github.com/droundy/bigbro/) uses `ptrace` so works for Go binaries and statically linked binaries.
-* [traced-fs](https://github.com/jacereda/traced-fs) is an unfinished file system tracer that implements a user file system that would also work for Go binaries and static linking.
-* [BuildXL] \url{https://github.com/Microsoft/BuildXL/blob/master/Documentation/Specs/Sandboxing.md#macos-sandboxing} uses a Mac sandbox based on KAuth + TrustedBSD Mandatory Access Control (MAC).
+Tracing file accesses is the most important file system information, but there is other information about a file a command may query -- for example the existence of a file or its modification time and size. We model these as reads of a file, with all the associated read/write hazard detection. We don't rerun if a file has changed modification time as we suspect it likely that modification time is used as a proxy for incremental building, which \Rattle already does. By virtue of storing the hash, a size change is going to cause a rebuild. For the existence, as a consequence of treating it as a read, we both cause slightly too much rebuilding (we depend on the whole contents) and have to deal with files that are read but don't exist.
+
+The current mechanisms provide information about which files were accessed at the end. If they could interactively stream back which files were read, it would lead to better guesses in speculation (see \S\ref{sec:speculation}) about what files had been accessed by running system commands. With the tracing mechanisms available, there is no reason they couldn't report on which files had been read at any point via a socket, but such engineering work has not been done.
+
+The approaches only report whether a file was accessed or not -- not at what time the access occurred. With a precise time it would be possible to have a more refined notion of hazard when commands are run in parallel. However, assuming commands are relatively short and that generally commands should not be relying on race conditions to avoid hazards, we consider the current approach quite reasonable. The enhancement could be implemented if descired.
+
+It would be nice if the accesses could be intercepted and denied if there was a hazard violation, but that would require two way communication from the tracing to \Rattle. In many of the contexts being called (e.g. kernel tracing or syscall hooking) such communication is problematic, so while useful, we don't have it.
+
+Finally, it would be useful to know the purpose of a file system access, but that is generally not available to the tracing system. As an example, many programs create, use and then delete temporary files. If multiple programs are run in a single \Rattle build then it is not unreasonable (and in fact, somewhat common) to see them access the \emph{same} temporary file, but distinct instances of it, which should not be reported as a hazard despite multiple writes. We solve such issues by ignoring reads and writes to the temporary directory.
+
+\subsection{Tracing standardisation}
+
+The tracing pieces of \Rattle have been some of the most difficult engineering pieces to develop. We suggest that such features should be standardised and made available in a cross-platform way.

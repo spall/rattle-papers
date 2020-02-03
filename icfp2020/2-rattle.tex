@@ -43,6 +43,7 @@ This script now has a curious mixture of build system commands (e.g. \texttt{ls}
 \Rattle treats the script as a sequence of commands with no knowledge of which commands are coming next. As a consequence, even if you are using a simple static script, such as the one in the introduction, and then manually edit it, the \Rattle build remains correct -- it has no knowledge that you manually edited the script, or if it was instead conditional on something it didn't observe. This approach solves the problem listed in \cite{build_systems_a_la_carte} \S?? of determining when the build system changes.
 
 \subsection{Dependency tracing}
+\label{sec:assume_tracing}
 
 For the rest of this section we assume the existence of \emph{dependency tracing} which can, after a command completes, tell us which files that command read and which files it wrote -- we discuss the implementation and limitations of dependency tracing in \S\ref{sec:tracing}. Concretely, we can run a command in a special mode such that when the command completes (and not before) we can determine which files it read and which it wrote. We cannot determine at which point during the execution these files were accessed, or which order they were accessed in. We cannot prevent or otherwise redirect an in-progress access. These limitations are a (frustrating!) consequence of the tracing technology used.
 
