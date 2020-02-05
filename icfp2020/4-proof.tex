@@ -46,9 +46,19 @@ Therefore, $B$ produces a different set of file and hashes than $A$ does when ru
 \subsection{Parallel commands}
 \label{sec:proof:parallel}
 
+Given a script with no hazards when executed sequentially, we can show it is safe to execute commands that only read the same files in parallel.
+
+% This seems so obvious i'm not sure how to ``prove'' it.
+
 
 \subsection{Additional commands have no effect}
 \label{sec:proof:additional}
+
+Given a script with no hazards when executed sequentially, we can show that speculating unnecessary commands will not affect the build's output. % hmm
+
+Let us assume we have a build $A$ which has $n$ commands, $c1$ to $cn$.  Let us assume there is a command $d1$, which is not a member of $A$.  Let us also assume it does not write to any file read by any command in $A$.  Then \Rattle can safely execute $d1$ concurrently with $c1$ through $cn$ without affecting the build's output.
+
+% I think I missed the point here.
 
 \subsection{Classifying Hazards}
 \label{sec:proof:classify_hazard}
@@ -58,15 +68,26 @@ Hazards are first classified as either \emph{read-write} or \emph{write-write}. 
 \paragraph{Non Recoverable}
 Commands in the build script when executed sequentially violate the consistency rules in \ref{sec:hazards}.  A non-recoverable hazard results in \Rattle terminating the build immediately with an error.  See the two examples from \ref{sec:hazards}.
 
+
 \paragraph{Recoverable}
 Speculatively executed command(s) read file(s) which were later written to during the build.  If \Rattle speculatively executed a command which read from a file which was later written to, that command
-probably read stale data.  \Rattle can re-execute the speculatively executed command with no loss of correctness.  A proof of this claim is provided in \ref{}.
+probably read stale data.  \Rattle can re-execute the speculatively executed command with no loss of correctness.
 
 \begin{verbatim}
 cp foo.o baz.o [speculate]
 gcc -c foo.c
 cp foo.o baz.o [re-execute]
 \end{verbatim}
+
+% Proof that Rattle can re-execute the read portion of a recoverable hazard
+A recoverable hazard is made up of two commands, $c1$ and $c2$, where $c1$ reads one or more files written by $c2$, and $c2$ does not read or write to any files written by $c1$.  Additionally, $c1$ ran before or at the same time as $c2$.  Because, $c1$ does not write to any files read or written to by $c2$, executing $c1$ again after $c2$ terminates will never cause $c2$ to need to rebuild.
+
+% State something about re-executing c1 causing new hazards.
+After re-executing $c1$ there is the possibility of a new hazard occuring. 
+\begin{description}
+\item[hazard] The new hazard will be handled in the same manner as already described.
+\item[no hazard] The build continues.
+\end{description}
 
 \paragraph{Restartable} % when speculation causes a consistency violation. or a command to read incorrect data.
 If \Rattle speculatively executed a command that wrote to a file that was later written to or read by another command, then incorrectness was potentially introduced into the build.  In the following example \emph{cp foo.o baz.o} was speculated, and wrote to \emph{baz.o}, then \emph{gcc -c baz.c} was executed and also wrote to \emph{baz.o}.  Normally a build script that executed these two commands would violate \Rattle's consistency properties, but in this case the consistency violation might have been avoided if \emph{cp foo.o baz.o} were not executed by the build.  Therefore, if \Rattle were to re-execute the build script and not speculate \emph{cp foo.o baz.o} then the consistency violation might not occur.
@@ -85,3 +106,7 @@ gcc -c foo.c
 
 Maybe the build script originally included \emph{cp old-foo.c foo.c}, but it was removed in the most recent version of the build.  By speculating this old command \Rattle caused \emph{gcc -c foo.c} to
 potentially build the wrong \emph{foo.c}.  If \Rattle were to re-execute the build and not speculate \emph{cp old-foo.c foo.c} then \emph{gcc -c foo.c} would build the correct \emph{foo.c} during the next build.  % This is a bad example since Rattle would have corrupted foo.c with the bad copy.  Need a new example or address this
+
+%Proof that restartable hazard are handled
+
+
