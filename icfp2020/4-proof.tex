@@ -3,7 +3,10 @@
 
 \subsection{Hazards, formally}
 
-A hazard occurs when a Build command writes to a file that a previous command has already read from or written to.  So, hazards can be classified as either: \emph{read-write hazards} or \emph{write-write hazards}.  
+A hazard occurs when a Build command writes to a file that a previous command has already read from or written to.  Hazards can be classified as either: \emph{read-write hazards} or \emph{write-write hazards}.  In section \S\ref{sec:proof:classify_hazards} hazards are explained in greater detail.  For the following sections though it suffices to say that in a build being executed sequentially a
+hazard occurs when a command read or writes a file and a later command writes to the same file.  In a build being executed in parallel with speculation, a hazard can occur when a command reads or writes a file and a later command writes to the same file, or if two commands running concurrently access the same file and are not both just reading the file.  Therefore, for a sequential \Rattle build to have no hazards means for every command $c$ in the build, if $c$ reads or writes a file, no later command will write to that file.  For a parallel \Rattle build to have no hazards means for every command $c$ in the build, if $c$ reads or writes a file, no later command will write to that file, and no command will concurrently read the file if it is being written, or write to the file if it is being read.
+
+% SS seems this section should just be a brief explanation of hazards so the following claims of ``no hazards'' makes sense.
 
 \subsection{No rebuilds}
 \label{sec:proof:no_rebuild}
