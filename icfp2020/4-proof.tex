@@ -39,16 +39,34 @@ Therefore, $B$ produces a different set of file and hashes than $A$ does when ru
 \item [$B$ writes to a file $f$ whose hash is $h$ and $A$ writes to the same file but its hash is $K$; $h \neq k$]
   There must exist a cmd $c$ which when run by $A$ and $B$ writes to the file $f$ and produces the different hashes, $k$ and $h$ respectively.  The files written to by $c$ is affected by the content of the cmd and the set of input files. Since $c$ is the same between $A$ and $B$, the input files must differ.
 
-  By the definition of $A$ and $B$ having no hazards, any files read by $c$ must be written to by commands that precede $c$ in the build.  And because $A$ and $B$ containt he same commands, $c$'s input files must be the same regardless of build.  Therefore, a contradiction.
+  By the definition of $A$ and $B$ having no hazards, any files read by $c$ must be written to by commands that precede $c$ in the build.  And because $A$ and $B$ contain the same commands, $c$'s input files must be the same regardless of build.  Therefore, a contradiction.
   
 \end{description}
 
 \subsection{Parallel commands}
 \label{sec:proof:parallel}
 
-Given a script with no hazards when executed sequentially, we can show it is safe to execute commands that only read the same files in parallel.
+Given a script with no hazards when executed sequentially, we can show that any parallel or interleaved execution without hazards will also be equivalent.
 
-% This seems so obvious i'm not sure how to ``prove'' it.
+Proof by contradiction.
+
+Let us assume we have a build $A$, which has no hazards.  Let us also assume there is an alternative execution of $A$, which has no hazards, but is not equivalent.
+Recall that for the builds to be equivalent, they write to the same set of files and a file will have the same hash regardless of the build that wrote it.
+Therefore, the parallel execution must write to a different set of files than $A$ or at least one of those files has a different hash.
+
+\begin{description}
+\item [parallel build writes to a file $A$ does not write to, or $A$ writes to a file the parallel build does not write to.]
+  There must exist a cmd $c$ which when run in parallel with one or more other commands, writes to a different set of files than when run sequentially.  The set of files written to by $c$ is affected by the content of the cmd, and the files it reads.  Since, the content of the cmd is the same between the parallel and sequential builds, the input files must differ.
+  By the defintion of the parallel build of $A$ having no hazards, any files read by $c$ must be written to by commands that precede $c$ in the build.  Therefore, the files written by $c$ in the parallel build will be the same as the files written by $c$ in the sequential build.  Therefore, a contradiction.
+
+  
+\item [parallel build writes to a file $f$ whose hash is $h$ and $A$ writes to the same file but its hash is $k$; $h \neq k$]
+  There must exist a cmd $c$ which when run in parallel with one or more other commands, writes to the file $f$ and produces the hash $h$ and when run sequentially in build $A$ produces the hash $k$.
+  The files written to by $c$, and their hashes, is affected by the content of the command and the files read by the command.  Since $c$ is unchanged between $A$ the sequential run of $A$ and the parallel run of $A$, the files and their hashes read by $c$ must differ.  By the definition of parallel $A$ having no hazards, any files read by $c$ must be written to by commands that precede $c$ in the build.  And because parallel $A$ and sequential $A$ contain the same commands, $c$'s input must be the same regardless of whether $A$ was run in parallel or sequentially.  Therefore, a contradiction.
+
+  % clean up
+\end{description}
+
 
 
 \subsection{Additional commands have no effect}
@@ -56,9 +74,16 @@ Given a script with no hazards when executed sequentially, we can show it is saf
 
 Given a script with no hazards when executed sequentially, we can show that speculating unnecessary commands will not affect the build's output. % hmm
 
-Let us assume we have a build $A$ which has $n$ commands, $c1$ to $cn$.  Let us assume there is a command $d1$, which is not a member of $A$.  Let us also assume it does not write to any file read by any command in $A$.  Then \Rattle can safely execute $d1$ concurrently with $c1$ through $cn$ without affecting the build's output.
+Proof by induction.
 
-% I think I missed the point here.
+Let us assume we have a build $A$ which has no hazards when executed sequentially.
+
+Base case:  Build $A$ has 1 command $c$.  Let us assume we have a command $d$ that does not write to any file read or written by $c$.  By this definition of $d$, it is obvious that $d$ running before or
+concurrently with $c$ as part of build $A$, will not affect the files written by $c$ and therefore will not affect the output of $A$.
+
+Inductive case: Let us assume the above claim is true for a build with $n$ commands.  Let us show the claim is true for a build of $n+1$ commands.
+
+Let $A$ have $n+1$ command.  From the inductive hypothesis we know the output of the first $n$ commands is unchanged.  And, we know that $c$ does not write to any file read or written by command $n+1$.  And, because the build has no hazards, all files read by $n+1$ were written to before $n+1$ ran, so the output files of $n+1$ remain unchanged as well.  Therefore, the output of $A$ remained unaffected by $c$.
 
 \subsection{Classifying Hazards}
 \label{sec:proof:classify_hazard}
