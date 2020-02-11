@@ -81,6 +81,8 @@ When skipping an execution \Rattle checks that all files accessed have the same 
 
 \paragraph{Non-deterministic builds} If a command has non-deterministic output then if a user is temporarily disconnected from the cloud storage, and try and build something, then it will result in a different hash. If the user then reconnects to the cloud all actions depending on that non-deterministic build will fail to get a cache hit. There is one solution in \Rattle, where the hash of an output can be considered to be the hash of its inputs, but this setting is enabled on a per-file basis, and has all the problems of deep-constructive traces from \cite{build_systems_a_la_carte} \S?? and cannot benefit from unchanging outputs.
 
+As a technical note, currently \Rattle uses a shared drive for sharing build artefacts, using tools such as NFS or Samba to provide the internet style ``cloud'' part.
+
 \subsection{Build consistency}
 \label{sec:hazards}
 

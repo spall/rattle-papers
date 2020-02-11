@@ -1,14 +1,10 @@
 \section{Conclusion and future work}
 \label{sec:conclusion}
 
-Persuade people to use it!
+In this paper we present a system that can take a sequence of actions and treat them as a build script. From the user perspective, they get most of the benefits of a conventional build system (incrementality, parallelism) but with lower cost (less time thinking about dependencies, only supplying one valid ordering). We believe this approach is viable for small projects and could be adopted immediately. For larger projects, it is as yet unclear whether the build can be described compositionally or not. \Rattle also has no story for how services such as remotely executing commands might work.
 
-Rattle build systems are simple to write - just write commands to build your project. There is only one "Rattle" specific thing, and that's running a command, giving it a tiny API. Rattle build systems can delegate to other build systems quite happily -- if a dependency is built with `make`, just shell out to `make` -- no need to recreate the dependencies with Rattle. You don't need to think about dependencies, and because you aren't writing dependencies, there's no way to get them wrong.
+Comparing \Rattle to other build systems, e.g. \Make, it is fair to say that \Rattle presents a simpler interface (no dependencies), but a more complex implementation model. In particular the overhead of tracing, the overhead of the parts that are always run and the potential for speculation to not work out can mean that \Rattle is slower.
 
-The disadvantages of Rattle are that only system commands are skipped, so the zero build time might not be as quick as it could. Rattle also has to guess at useful commands to get parallelism, and that might go wrong.
-
-Compare Rattle to Shake. The interface to Rattle is basically "run this command", providing a vastly simpler API. In contast, Shake has a lot of API to learn and use.
-
-It works well in the small to medium sized builds, but its less compositional than backward build systems, hard to do remote execution and requires more effort to get less parallelism.
+As future work, we think that \Rattle would benefit from real users.
 
 \paragraph{Acknowledgements} We'd like to thank J Gareda (Rattle guy) and David Roundry for their work on \Fsatrace and \libbigbro respectively.
