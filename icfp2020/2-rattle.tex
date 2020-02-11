@@ -13,7 +13,7 @@ In it's simplest variant, a build script can be a list of shell commands, like i
 \subsection{Monadic builds}
 \label{sec:monadic}
 
-A build system which can only execute a static list of commands is restricted in its expressive power. Taking the build system from \S\ref{sec:introduction} - it would be better to compile and link \emph{all} \texttt{*.c} files -- not just those explicitly listed in the script. A more plausible script might be:
+A build system which can only execute a static list of commands is restricted in its expressive power. Taking the build system from \S\ref{sec:introduction} - it would be better to compile and link \emph{all} \texttt{.c} files -- not just those explicitly listed in the script. A more plausible script might be:
 
 \vspace{3mm}
 \begin{verbatim}
@@ -21,7 +21,7 @@ FILES=$(ls *.c)
 for FILE in $FILES; do
     gcc -c $FILE
 done
-gcc -o main.exe $FILES{/.c/.o/}
+gcc -o main.exe ${FILES%.c}.o
 \end{verbatim}
 \vspace{3mm}
 
@@ -58,13 +58,13 @@ When \Rattle runs a command, it uses tracing to capture the files read and writt
 
 \begin{itemize}
 \item \Rattle assumes that each command is atomic - it cannot be subdivided into smaller parts. If a command is secretly two independent commands then they should usually be expressed as such so they can be individually skipped.
-  
+
 \item If a command is deterministic, then running it again will change nothing. However, many commands are not deterministic -- e.g. the output of \texttt{ghc} object files contains random values within it. \Rattle assumes that where such non-determinism exists any possible output is equally valid.
-  
+
 \item If a command incorporates information such as the timestamp, then a cached value will represent the first time the command was run, not the current time. For commands like compilation that embed the timestamp in an object header, the original timestamp is probably fine.  If a command wants to actually get the current time, we suggest it be made part of the control logic (as per \S\ref{sec:monadic}) so it will run everytime the build runs. The same applies to commands that require unique information, e.g. the generation of a GUID or random number.
-  
-\item If a command both reads and writes the same file, and the information written is fundamentally influenced by the file that was read, then the command never results in a stable state. As an example, \verb"echo x >> foo.txt" will append the character \texttt{x} every time the command is run. As another example, the GHC package database has additional entries added every time a package is installed, making the output a consequence of the original file\footnote{As a consequence many build systems, including \Bazel and \Rattle, use multiple package databases with only one entry per database}. Equally, there are also commands that read the existing file to avoid rewriting a file that hasn't changed (e.g. \texttt{ghc} generating a \texttt{.hi} file) and commands that can cheaply update an existing file in some circumstances (the Micrsoft C++ linker). \Rattle makes the assumption that if a command both reads and writes to a file that the read does not meaningfully influence the write. Thought of another way, \Rattle can consider the command to be non-deterministic and the previous points apply.  
-  
+
+\item If a command both reads and writes the same file, and the information written is fundamentally influenced by the file that was read, then the command never results in a stable state. As an example, \verb"echo x >> foo.txt" will append the character \texttt{x} every time the command is run. As another example, the GHC package database has additional entries added every time a package is installed, making the output a consequence of the original file\footnote{As a consequence many build systems, including \Bazel and \Rattle, use multiple package databases with only one entry per database}. Equally, there are also commands that read the existing file to avoid rewriting a file that hasn't changed (e.g. \texttt{ghc} generating a \texttt{.hi} file) and commands that can cheaply update an existing file in some circumstances (the Micrsoft C++ linker). \Rattle makes the assumption that if a command both reads and writes to a file that the read does not meaningfully influence the write. Thought of another way, \Rattle can consider the command to be non-deterministic and the previous points apply.
+
 \item If a command reads a file that during a build is modified by something not under the observation of \Rattle (e.g. a human or the untracked control logic), then the command may have seen multiple distinct values of the file, and the final hash will not match what the command saw. Therefore, \Rattle makes the assumption that only \Rattle tracked commands are working on the relevant files during the build. \Rattle can detect such errors by checking the modification time of the read file pre-dates the start of the command execution.
 \end{itemize}
 
@@ -143,7 +143,7 @@ Alternatively, the command can execute locally, which is what \Rattle does. If t
 
 
 % Rattle's requirements:
-% deterministic, if reading adn writing same file write does not rely on read; aka no appending, 
+% deterministic, if reading adn writing same file write does not rely on read; aka no appending,
 
 % So up above in the intro to this section we say that ``we have freedom to schedule commands provided they do not cause hazards''.  But there is the distinct possiblity that they WILL cause hazards,
 % so what does Rattle do in that situation?
@@ -160,7 +160,7 @@ Alternatively, the command can execute locally, which is what \Rattle does. If t
 % have a read-write hazard:
 % speculatively write then require a read: Read read bad information.... we need to have to read read the correct file so we just restart.... same thing as above about dleeting speculative commands
 
-% require a read then speculatively write: need to undo-write some how..... 
+% require a read then speculatively write: need to undo-write some how.....
 
 % require a read then require a write; error obviously.
 
@@ -198,20 +198,20 @@ In the case that speculating caused a hazard, there are potential resolutions \R
   cp foo.o baz.o [speculate]
   cp bar.o baz.o [speculate]
   gcc -o baz.c
-  . 
+  .
   .
   -- re-run build
   gcc -o baz.c [re-execute]
   .
   .
-\end{verbatim}        
-  
+\end{verbatim}
+
 \item [A speculated command writes to a file that a command in build script reads from]
   If \Rattle speculated a command which writes to the same file as a command in the build script reads from, then a \emph{read-write hazard} has occurred entirely due to speculation.  Normally a \emph{read-write hazard} indicated that the build script violates \Rattle's consistency requirement, but in this case the violation might not have occurred if \Rattle didn't speculate the offending command.  To recover from this, \Rattle can re-execute the build script, and remove the offending command from the speculation list.
 
 \begin{verbatim}
 gcc -c foo.c
-gcc -o Main foo.o bar.o 
+gcc -o Main foo.o bar.o
 gcc -o Main foo.o baz.o [speculate]
 ./Main
 -- re-run build
@@ -229,7 +229,7 @@ SS TODO : fix above because it isn't an example of this, actually an example of 
 
 \begin{verbatim}
   cp foo.o baz.o [speculate]
-  gcc -c foo.c 
+  gcc -c foo.c
   cp foo.o baz.o [re-execute]
 \end{verbatim}
 
