@@ -1,6 +1,8 @@
 \section{Proofs}
 \label{sec:proof}
 
+The design of \Rattle relies on taking a sequence of commands and instead of running them all sequentially, instead running different commands in different orders. In this section we prove that the manipulations we perform are safe with respect to the reference semantics.
+
 \subsection{Hazards, formally}
 
 A hazard occurs when a Build command writes to a file that a previous command has already read from or written to.  Hazards can be classified as either: \emph{read-write hazards} or \emph{write-write hazards}.  In section \S\ref{sec:proof:classify_hazards} hazards are explained in greater detail.  For the following sections though it suffices to say that in a build being executed sequentially a
@@ -14,9 +16,9 @@ hazard occurs when a command read or writes a file and a later command writes to
 We prove that a build system with deterministic control logic with no hazards always results in no rebuilds.
 In a build system without hazards there is at most one write to any file, which occurs before any reads of that file. We can therefore prove there are no rebuilds by showing the first command can't rebuild, and proceeding by induction.
 
-Let us have a build of \emph{n} commands that meets the above restrictions.  
+Let us have a build of \emph{n} commands that meets the above restrictions.
 
-Base case: Command $1$ of $1$  will not be re-run because from the definition of the claim none of its inputs has changed, and the build system's control logic is deterministic.  Because, command $1$ is not re-running, it will not write to any files.  
+Base case: Command $1$ of $1$  will not be re-run because from the definition of the claim none of its inputs has changed, and the build system's control logic is deterministic.  Because, command $1$ is not re-running, it will not write to any files.
 
 Induction step:  Let us assume the above claim is true for a build with $n$ commands.  Let us show the claim is true for a build of $n+1$ commands.
 
@@ -43,7 +45,7 @@ Therefore, $B$ produces a different set of file and hashes than $A$ does when ru
   There must exist a cmd $c$ which when run by $A$ and $B$ writes to the file $f$ and produces the different hashes, $k$ and $h$ respectively.  The files written to by $c$ is affected by the content of the cmd and the set of input files. Since $c$ is the same between $A$ and $B$, the input files must differ.
 
   By the definition of $A$ and $B$ having no hazards, any files read by $c$ must be written to by commands that precede $c$ in the build.  And because $A$ and $B$ contain the same commands, $c$'s input files must be the same regardless of build.  Therefore, a contradiction.
-  
+
 \end{description}
 
 \subsection{Parallel commands}
@@ -62,7 +64,7 @@ Therefore, the parallel execution must write to a different set of files than $A
   There must exist a cmd $c$ which when run in parallel with one or more other commands, writes to a different set of files than when run sequentially.  The set of files written to by $c$ is affected by the content of the cmd, and the files it reads.  Since, the content of the cmd is the same between the parallel and sequential builds, the input files must differ.
   By the defintion of the parallel build of $A$ having no hazards, any files read by $c$ must be written to by commands that precede $c$ in the build.  Therefore, the files written by $c$ in the parallel build will be the same as the files written by $c$ in the sequential build.  Therefore, a contradiction.
 
-  
+
 \item [parallel build writes to a file $f$ whose hash is $h$ and $A$ writes to the same file but its hash is $k$; $h \neq k$]
   There must exist a cmd $c$ which when run in parallel with one or more other commands, writes to the file $f$ and produces the hash $h$ and when run sequentially in build $A$ produces the hash $k$.
   The files written to by $c$, and their hashes, is affected by the content of the command and the files read by the command.  Since $c$ is unchanged between $A$ the sequential run of $A$ and the parallel run of $A$, the files and their hashes read by $c$ must differ.  By the definition of parallel $A$ having no hazards, any files read by $c$ must be written to by commands that precede $c$ in the build.  And because parallel $A$ and sequential $A$ contain the same commands, $c$'s input must be the same regardless of whether $A$ was run in parallel or sequentially.  Therefore, a contradiction.
@@ -142,7 +144,7 @@ There are two possible outputs:
 A recoverable hazard is made up of two commands, $c1$ and $c2$, where $c1$ reads one or more files written by $c2$, and $c2$ does not read or write to any files written by $c1$.  Additionally, $c1$ ran before or at the same time as $c2$.  Because, $c1$ does not write to any files read or written to by $c2$, executing $c1$ again after $c2$ terminates will never cause $c2$ to need to rebuild.
 
 % State something about re-executing c1 causing new hazards.
-After re-executing $c1$ there is the possibility of a new hazard occuring. 
+After re-executing $c1$ there is the possibility of a new hazard occuring.
 \begin{description}
 \item[hazard] The new hazard will be handled in the same manner as already described.
 \item[no hazard] The build continues.
