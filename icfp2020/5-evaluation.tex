@@ -72,5 +72,55 @@ Comparing building Vim \cite{} with \Make and with \Rattle for commits \emph{211
   \Make rebuilt 4 object files, the ones whose corresponding c files had changed.  It didn't rebuild the other object files rebuilt by \Rattle because the Makefile does not state that these object files
   depend on \emph{src/proto/evalfunc.pro}.
 
+\subsection{node}
 
-\subsection{redis}
+% Brief into to the project
+Node.js is a JavaScript runtime built on Chrome's V8 Javascript engine and can be found on \hyperref[github]{``https://github.com/nodejs/node''}.  The project is largely written in JavaScript, C++, Python, and C, and is built using Make and a meta-build tool called \emph{Generate Your Projects (GYP)}.  To build Node.js from source, a user first runs \emph{./configure} which runs a python script that configures the build and runs \GYP.  \GYP generates the majority of the Makefiles used to build the project.
+
+\GYP takes a series of \emph{.gyp} files and produces the project build from those.  It puts all generated files in the project's \emph{out} directory and generates a separate \emph{*.mk} Makefile for each target, all of which are included by the top-level Makefile.  The generated top-level Makefile includes a \emph{do\_cmd} function which first checks if a command changed since the last time it was run, and if it has runs the command.  Additionally, it writes the command run to a generated dependency file, and if the command run was a \emph{g++} command that produced a file with dependencies, the dependencies in that file are cleaned up and written to the generated dependency file.
+
+These dependency files are included in the top-level \emph{out/Makefile}, presumably so on future runs Make can consider the recorded dependencies of these object files as well as check whether the command has changed since it was previously run.  Most of these targets include the dependency \emph{FORCE\_DO\_CMD} which is an empty phony target and serves the purpose of forcing the build to check everytime whether the command has changed since it was previously run. Each time a command is re-run, these dependency files are re-generated.
+
+% Explain the makefile insanity and all of this dependency stuff they do
+% Still trying to make coherent since of what this gyp is doing, so here is my current understanding
+
+The build both seems to be using a form of tracing to keep track of accurate dependencies as well as tracking whether or not the build itself has changed.  \Rattle would make it unnecessary for the build to explicitely do this, since it internally traces and tracks the depencencies of all commands run, and doesn't need to worry about when a build changes.
+
+% The generator/make.py
+
+% what is this
+% # Helper that is non-empty when a prerequisite changes.
+% # Normally make does this implicitly, but we force rules to always run
+% # so we can check their command lines.
+% #   $? -- new prerequisites
+% #   $| -- order-only dependencies
+% prereq_changed = $(filter-out FORCE_DO_CMD,$(filter-out $|,$?))
+
+% # do_cmd: run a command via the above cmd_foo names, if necessary.
+% # Should always run for a given target to handle command-line changes.
+
+% Explain the intermediate files and how on a rebuild with no changes stuff still happens
+
+When building certain targets, \emph{.intermediate} files are created and at the end of the build deleted.  These \emph{.intermediate} commands are for ...
+
+% SS TODO fill in because I still don't totally understand why they did this.
+
+What are these intermediate files for?
+As an example of this, take the \emph{v8\_snapshot} target.
+A file \Make rebuilt when nothing had changed was \emph{out/Release/obj.target/v8\_snapshot/geni/snapshot.cc.  This file depends on \emph{598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate}, and
+  \emph{598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate} depends on \emph{mksnapshot} and \emph{FORCE\_DO\_CMD}.
+
+  \emph{598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate} is touched; and then
+  \emph{cmd\_598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate := touch 598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate'} is written to \emph{598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate.d}.
+
+  This is then almost immediately overwritten by \emph{cmd\_598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate := LD\_LIBRARY_PATH=/home/spall/rattle-papers/tools/output/node3/out/Release/lib.host:/home/spall/rattle-papers/tools/output/node3/out/Release/lib.target:$$LD\_LIBRARY_PATH; export LD\_LIBRARY\_PATH; cd ../tools/v8\_gypfiles; mkdir -p /home/spall/rattle-papers/tools/output/node3/out/Release/obj.target/v8\_snapshot/geni; "/home/spall/rattle-papers/tools/output/node3/out/Release/mksnapshot" --turbo\_instruction_scheduling "--target\_os=linux" "--target\_arch=x64" --startup\_src "/home/spall/rattle-papers/tools/output/node3/out/Release/obj.target/v8_snapshot/geni/snapshot.cc" --embedded\_variant Default --embedded\_src "/home/spall/rattle-papers/tools/output/node3/out/Release/obj.target/v8\_snapshot/geni/embedded.S" --no-native-code-counters}
+  
+  % Other things like parallelism and rattle rebuilding less
+
+% Comment from the Makefile 
+%# .buildstamp needs $(NODE_EXE) but cannot depend on it
+%# directly because it calls make recursively.  The parent make cannot know
+%# if the subprocess touched anything so it pessimistically assumes that
+%# .buildstamp is out of date and need a rebuild.
+%# Just goes to show that recursive make really is harmful...
+%# TODO(bnoordhuis) Force rebuild after gyp update.
