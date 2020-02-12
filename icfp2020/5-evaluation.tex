@@ -66,18 +66,18 @@ Comparing building Vim \cite{} with \Make and with \Rattle for commits \emph{211
   % profiler.o, pty.o, quickfix.o, regexp.o, register.o, screen.o, scriptfile.o, search.o, sha256.o, spell.o, spellfile.o, spellsuggest.o, syntax.o, tag.o, term.o, terminal.o
   % testing.o, textprop.o, ui.o, usercmd.o, userfunc.o (userfunc.c also changed), vim9compile.o (vim9compile.c alos changed) , viminfo.o, window.o, gui.o, gui\_gtk.o,
     % gui\_gtk\_x11.o, gui\_gtk\_f.o, netbeans.o, channel.o, main.o, message.o version.o (version.c also changed)
-    \end{description}
+  \end{description}
 \end{description}
 
-  \Make rebuilt 4 object files, the ones whose corresponding c files had changed.  It didn't rebuild the other object files rebuilt by \Rattle because the Makefile does not state that these object files
-  depend on \emph{src/proto/evalfunc.pro}.
+\Make rebuilt 4 object files, the ones whose corresponding c files had changed.  It didn't rebuild the other object files rebuilt by \Rattle because the Makefile does not state that these object files
+depend on \emph{src/proto/evalfunc.pro}.
 
 \subsection{node}
 
 % Brief into to the project
-Node.js is a JavaScript runtime built on Chrome's V8 Javascript engine and can be found on \hyperref[github]{``https://github.com/nodejs/node''}.  The project is largely written in JavaScript, C++, Python, and C, and is built using Make and a meta-build tool called \emph{Generate Your Projects (GYP)}.  To build Node.js from source, a user first runs \emph{./configure} which runs a python script that configures the build and runs \GYP.  \GYP generates the majority of the Makefiles used to build the project.
+Node.js is a JavaScript runtime built on Chrome's V8 Javascript engine and can be found on \href{``https://github.com/nodejs/node''}{github}.  The project is largely written in JavaScript, C++, Python, and C, and is built using Make and a meta-build tool called \emph{Generate Your Projects (GYP)}.  To build Node.js from source, a user first runs \emph{./configure} which runs a python script that configures the build and runs GYP.  GYP generates the majority of the Makefiles used to build the project.
 
-\GYP takes a series of \emph{.gyp} files and produces the project build from those.  It puts all generated files in the project's \emph{out} directory and generates a separate \emph{*.mk} Makefile for each target, all of which are included by the top-level Makefile.  The generated top-level Makefile includes a \emph{do\_cmd} function which first checks if a command changed since the last time it was run, and if it has runs the command.  Additionally, it writes the command run to a generated dependency file, and if the command run was a \emph{g++} command that produced a file with dependencies, the dependencies in that file are cleaned up and written to the generated dependency file.
+GYP takes a series of \emph{.gyp} files and produces the project build from those.  It puts all generated files in the project's \emph{out} directory and generates a separate \emph{*.mk} Makefile for each target, all of which are included by the top-level Makefile.  The generated top-level Makefile includes a \emph{do\_cmd} function which first checks if a command changed since the last time it was run, and if it has runs the command.  Additionally, it writes the command run to a generated dependency file, and if the command run was a \emph{g++} command that produced a file with dependencies, the dependencies in that file are cleaned up and written to the generated dependency file.
 
 These dependency files are included in the top-level \emph{out/Makefile}, presumably so on future runs Make can consider the recorded dependencies of these object files as well as check whether the command has changed since it was previously run.  Most of these targets include the dependency \emph{FORCE\_DO\_CMD} which is an empty phony target and serves the purpose of forcing the build to check everytime whether the command has changed since it was previously run. Each time a command is re-run, these dependency files are re-generated.
 
@@ -107,13 +107,13 @@ When building certain targets, \emph{.intermediate} files are created and at the
 
 What are these intermediate files for?
 As an example of this, take the \emph{v8\_snapshot} target.
-A file \Make rebuilt when nothing had changed was \emph{out/Release/obj.target/v8\_snapshot/geni/snapshot.cc.  This file depends on \emph{598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate}, and
+A file \Make rebuilt when nothing had changed was \emph{out/Release/obj.target/v8\_snapshot/geni/snapshot.cc}.  This file depends on \emph{598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate}, and
   \emph{598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate} depends on \emph{mksnapshot} and \emph{FORCE\_DO\_CMD}.
 
   \emph{598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate} is touched; and then
   \emph{cmd\_598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate := touch 598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate'} is written to \emph{598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate.d}.
 
-  This is then almost immediately overwritten by \emph{cmd\_598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate := LD\_LIBRARY_PATH=/home/spall/rattle-papers/tools/output/node3/out/Release/lib.host:/home/spall/rattle-papers/tools/output/node3/out/Release/lib.target:$$LD\_LIBRARY_PATH; export LD\_LIBRARY\_PATH; cd ../tools/v8\_gypfiles; mkdir -p /home/spall/rattle-papers/tools/output/node3/out/Release/obj.target/v8\_snapshot/geni; "/home/spall/rattle-papers/tools/output/node3/out/Release/mksnapshot" --turbo\_instruction_scheduling "--target\_os=linux" "--target\_arch=x64" --startup\_src "/home/spall/rattle-papers/tools/output/node3/out/Release/obj.target/v8_snapshot/geni/snapshot.cc" --embedded\_variant Default --embedded\_src "/home/spall/rattle-papers/tools/output/node3/out/Release/obj.target/v8\_snapshot/geni/embedded.S" --no-native-code-counters}
+  % This is then almost immediately overwritten by \emph{cmd\_598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate := LD\_LIBRARY\_PATH=/home/spall/rattle-papers/tools/output/node3/out/Release/lib.host:/home/spall/rattle-papers/tools/output/node3/out/Release/lib.target:$$LD\_LIBRARY_PATH; export LD\_LIBRARY\_PATH; cd ../tools/v8\_gypfiles; mkdir -p /home/spall/rattle-papers/tools/output/node3/out/Release/obj.target/v8\_snapshot/geni; "/home/spall/rattle-papers/tools/output/node3/out/Release/mksnapshot" --turbo\_instruction_scheduling "--target\_os=linux" "--target\_arch=x64" --startup\_src "/home/spall/rattle-papers/tools/output/node3/out/Release/obj.target/v8_snapshot/geni/snapshot.cc" --embedded\_variant Default --embedded\_src "/home/spall/rattle-papers/tools/output/node3/out/Release/obj.target/v8\_snapshot/geni/embedded.S" --no-native-code-counters}
   
   % Other things like parallelism and rattle rebuilding less
 
