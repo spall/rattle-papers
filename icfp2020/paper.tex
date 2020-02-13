@@ -27,7 +27,7 @@
 \newcommand{\Memoize}{\textsc{Memoize}\xspace}
 
 
-\title{Build Systems with Perfect Dependencies}
+\title{Build Scripts with Perfect Dependencies}
 
 \author{Author name}
 \affiliation{
@@ -38,10 +38,11 @@
 
 
 \begin{abstract}
-Users of build systems have to write down the dependencies of each step - but they get it wrong.
-Most build systems have both \emph{too few dependencies} (leading to stagnant build outputs) and \emph{too many dependencies} (leading to excessive rebuilds and reduced parallelism).
+Build scripts for most build systems describe the actions to run, and the dependencies those actions use -- but often build scripts get those dependencies wrong.
+Most build scripts have both \emph{too few dependencies} (leading to stagnant build outputs) and \emph{too many dependencies} (leading to excessive rebuilds and reduced parallelism).
 In this paper we outline a build system where dependencies are \emph{not specified}, but instead \emph{captured by tracing execution}.
-The consequence is that dependencies are always correct, build systems are easier to specify, but speculative execution is required to recover parallelism.
+The consequence is that dependencies are always correct by construction and build scripts are easier to write.
+A direct implementaton of our approach would lose parallelism, but we are able to recover parallelism using speculation.
 \end{abstract}
 
 %% 2012 ACM Computing Classification System (CSS) concepts
