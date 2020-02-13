@@ -1,19 +1,17 @@
-\section{Rattle}
+\section{Build Scripts from Commands}
 \label{sec:rattle}
 
-Our goal is to turn a list of commands into a build system.  In this section we begin by describing the most simple system possible, a shell script, and progressively add features, more expressive power, dependency tracking, minimal rebuilds, to obtain the benefits of a conventional build system.
-
-% SS tried to add a list of the traditional build system features that were mentioned in section.
-% NM figured the intro lists them so wasn't required?
+Our goal is to design a build system where a build script is simply a list of commands. In this section we develop our design, starting with the simplest system that just executes all the commands in order, and ending up with the benefits of a conventional build system.
 
 \subsection{Executing commands}
+\label{sec:executing_commands}
 
-In it's simplest variant, a build script can be a list of shell commands, like in \S\ref{sec:introduction}.  To execute such a build script correctly, it is sufficient to run each command sequentially in the order they were given. We consider this sequential execution the reference semantics, and want any optimised/cached implementation to give the same results.
+Given a build script as a list of commands, like in \S\ref{sec:introduction}, the simplest execution model is to run each command sequentially in the order they were given. Importantly, we require that list of commands to be ordered, such that any dependencies are produced before they are used. We consider this sequential execution the reference semantics, and as we develop our design further, require that any any optimised/cached implementation to give the same results.
 
-\subsection{Monadic builds}
+\subsection{Value-dependent commands}
 \label{sec:monadic}
 
-A build system which can only execute a static list of commands is restricted in its expressive power. Taking the build system from \S\ref{sec:introduction} - it would be better to compile and link \emph{all} \texttt{.c} files -- not just those explicitly listed in the script. A more plausible script might be:
+While a static list of commands is sufficient for simple programs, it is limited in its expressive power. Taking the build system from \S\ref{sec:introduction}, it would be better to compile and link \emph{all} \texttt{.c} files -- not just those explicitly listed by the script. A more realistic script might be\footnote{We take some liberties with how we replace the extensions, so as not to obscure the main focus.}:
 
 \vspace{3mm}
 \begin{verbatim}
@@ -28,6 +26,8 @@ gcc -o main.exe ${FILES%.c}.o
 \begin{figure}
 \begin{verbatim}
 import Development.Rattle
+import System.FilePath
+import System.FilePattern
 
 main = runRattle $ do
     let toO x = takeBaseName x <.> "o"
@@ -40,9 +40,40 @@ main = runRattle $ do
 \label{fig:monadic}
 \end{figure}
 
-This script now has a curious mixture of build system commands (e.g. \texttt{ls}, \texttt{gcc}), control logic (e.g. \texttt{for}) and simple manipulation (e.g. changing file extension). Importantly, there is \emph{no fixed list of commands}, but the future commands themselves are influenced by the previous commands -- concretely, the result of \texttt{ls} changes which \texttt{gcc} commands are executed. To deal with this flexibility our abstract model is that a build system is a series of commands, where future commands may depend on the results of previous commands, and commands are glued together with ``cheap'' functions like the control logic and simple manipulations. We take the approach that the cheap commands are fixed overhead, run on every build, and not cached or parallelised in any way. If any of these cheap manipulations becomes expensive, they can be replaced by a command, which will then be cached and parallelised.
+This script now has a curious mixture of commands (e.g. \texttt{ls}, \texttt{gcc}), control logic (e.g. \texttt{for}) and simple manipulation (e.g. changing file extension). Importantly, there is \emph{no fixed list of commands}, but the future commands themselves are influenced by the previous commands -- concretely, the result of \texttt{ls} changes which \texttt{gcc} commands are executed. The transition from a fixed list of commands to a dynamic list matches the \texttt{Applicative} vs \texttt{Monadic} destinction of \citet{build_systems_a_la_carte} \S3.5.
 
-\Rattle treats the script as a sequence of commands with no knowledge of which commands are coming next. As a consequence, even if you are using a simple static script, such as the one in the introduction, and then manually edit it, the \Rattle build remains correct -- \Rattle has no knowledge that you manually edited the script, or if it was instead conditional on something it didn't observe. This approach solves the problem listed in \cite{build_systems_a_la_carte} \S?? of determining when the build system changes.
+Consequently, we adapt our model so that a build script is a series of commands, where future commands may depend on the results of previous commands in ways that are not visible to the build system. These commands are produced with ``cheap'' functions such as control logic and simple manipulations. We consider the cheap commands to be fixed overhead, run on every build, and not cached or parallelised in any way. If any of these cheap manipulations becomes expensive, they can be replaced by a command, which will then be handled properly. The simple list of commands from \S\ref{sec:executing_commands} is then a degenerate case of no meaningful logic.
+
+An important consequence of the control logic not being visible to the build system is that the build system has no prior knowledge of which commands are coming next, or if they have changed. As a result, even if you are using a simple static script such as from \S\ref{sec:introduction}, and then manually edit the script, the build will execute correctly. The build system is unaware if you edited the script, or if the commands were conditional on something that it cannot observe. Therefore, this model solves the problem of self-tracking from \citet{build_systems_a_la_carte} \S6.5.
+
+\subsection{Haskell embdding}
+\label{sec:haskell}
+
+For \Rattle we choose to use Haskell as the host language, meaning that the control logic is in Haskell, with a special \texttt{cmd} function for informing the build system part about commands. The complete \Rattle script that compiles all \texttt{.c} files as per \S\ref{sec:monadic} is given in Figure \ref{fig:monadic}.
+
+\begin{figure}
+\begin{verbatim}
+-- key functions
+data Run a = ... deriving (Functor, Applicative, Monad, MonadIO)
+runRattle :: Run a -> IO a
+data CmdOption = Cwd FilePath | ...
+cmd :: CmdArguments args => args
+cmdReadFile :: FilePath -> Run String
+cmdWriteFile :: FilePath -> String -> Run ()
+
+-- useful combinators
+forP :: [a] -> (a -> Run b) -> Run [b]
+memo :: (Eq a, Hashable a, MonadIO m) => (a -> m b) -> m (a -> m b)
+\end{verbatim}
+\caption{The \Rattle API}
+\label{fig:api}
+\end{figure}
+
+The most important functions in the \Rattle API are shown in Figure \ref{fig:api}. The main type is \texttt{Run} which serves as a monad wrapping \texttt{IO} with the necessary state required, which can be executed by \texttt{runRattle}. The function \texttt{cmd} is a variadic function \cite{variadic_functions} which takes a command as a series of \texttt{String} (a series of space-separated arguments), \texttt{[String]} (a list of arguments) and \texttt{CmdOption} (command execution modifiers, e.g. to change the current directory), returning a value of type \texttt{Run ()}. In general, our model assumes that nothing else is concurrently modifying files, so the special functions \texttt{cmdReadFile} and \texttt{cmdWriteFile} are required to declare such operations.
+
+\Rattle also ships with a series of useful combinators, e.g. an explicitly parallel mapping function (\texttt{forP}) and some memoisation operations (\texttt{memo}). However, these functions are merely useful helpers that are often required when writing build systems -- none of them interacts fundamentally with the build system.
+
+In addition, most \Rattle programs make use of standard libraries such as \texttt{System.FilePath} for path manipulation, and \texttt{System.FilePattern} for matching files. The control logic is free to use any Haskell functions, provided they do not read/write files.
 
 \subsection{Dependency tracing}
 \label{sec:assume_tracing}
