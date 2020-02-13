@@ -17,6 +17,10 @@ The design space of backward build systems is discussed in \cite{build_systems_a
 
 \paragraph{Rebuild} In this sense \Rattle looks a lot like the constructive trace model -- traces are made, stored in a cloud, and accessible for future use. The one wrinkle is that a trace may be later invalidated, if it turns out a hazard occurred. In particular, the correspondence to constructive traces illuminates the consequences of moving to a deep constructive trace model (see \S\ref{sec:cloud_builds}) -- it solves non-determinism at the cost of losing unchanging builds.
 
+\subsection{Analysis of existing build systems}
+
+We aren't the first to point out that existing build systems are wrong. See \url{https://ieeexplore.ieee.org/document/8812082}.
+
 \subsection{Other related work}
 
 The notion of hazards is used extensively in processor design. This is standard terminology.
