@@ -1,7 +1,7 @@
 \section{Introduction}
 \label{sec:introduction}
 
-Build systems \citep{build_systems_a_la_carte} describe \emph{commands to run} and \emph{dependencies to respect}. For example, a simple \Make build system might look like:
+Build scripts \cite{build_systems_a_la_carte} describe \emph{commands to run} and \emph{dependencies to respect}. For example, using the \Make build system, a build script might look like:
 
 \vspace{3mm}
 \begin{verbatim}
@@ -14,7 +14,7 @@ main.exe: main.o util.o
 \end{verbatim}
 \vspace{3mm}
 
-It contains three rules - taking a look at the first it says \texttt{main.o} depends on \texttt{main.c}, and is produced by running \texttt{gcc -c main.c}. But, what if we just wrote a shell script? We'd end up with:
+This script contains three rules -- taking a look at the first, it says \texttt{main.o} depends on \texttt{main.c}, and is produced by running \texttt{gcc -c main.c}. But what if we copied just the commands into a shell script? We get:
 
 \vspace{3mm}
 \begin{verbatim}
@@ -24,16 +24,10 @@ gcc -o main.exe main.o util.o
 \end{verbatim}
 \vspace{3mm}
 
-That's shorter, simpler and easier to follow. Instead of declaring dependencies, we've merely given one valid ordering of the commands (we could equally have put \texttt{gcc -c util.c} first). There are two main downsides: 1) everything will always rebuild even if it's dependencies haven't changed; 2) while \Make could run the two \texttt{gcc -c} commands in parallel, they will now be run sequentially. But at the same time, we've fixed an inadvertent bug -- these commands all depend on the undeclared dependency \texttt{gcc}, and potentially whatever header files are imported by \texttt{main.c} and \texttt{util.c}. Furthermore, as the files \texttt{main.c} and \texttt{util.c} evolve, and their dependencies change (by adding additional \texttt{\#include} directives), the shell script remains correct, while the \Make script \emph{must} always be consistent (or builds will become stagnant).
+That's shorter, simpler and easier to follow. Instead of declaring the outputs and dependencies of each command, we've merely given one valid ordering of the commands (we could equally have put \texttt{gcc -c util.c} first). There are two main downsides: 1) everything will always rebuild even if it's dependencies haven't changed; 2) the commands will run sequentially, while \Make can run the two \texttt{gcc -c} commands in parallel. But there are some benefits. We've fixed an inadvertent bug -- these commands depend on the undeclared dependency \texttt{gcc}, and potentially whatever header files are used by \texttt{main.c} and \texttt{util.c}. Furthermore, as the files \texttt{main.c} and \texttt{util.c} evolve, and their dependencies change (by changing the \texttt{\#include} directives), the shell script remains correct, while the \Make script \emph{must} be kept consistent (or builds will become stagnant).
 
-In this paper we introduce a build system \Rattle\footnote{\url{https://github.com/ndmitchell/rattle}}, which can take the above shell script, and gain the benefits of the \Make script -- skipping those dependencies that haven't changed and running it in parallel. Furthermore, it can source compilation results from a shared cloud store. It performs this feat by \emph{tracing} which files are read/written by each command and using this information to offer a build-like experience.
+\subsection{Overview}
 
-This paper makes the following contributions:
+In this paper we show how to take the above shell script and gain the benefits of a \Make script (\S\ref{sec:rattle}). Firstly, we can skip those commands whose dependencies haven't changed by \emph{tracing} which files are read/written by each command and using that information to detect and skip those commands whose result wouldn't change (\S\ref{sec:skipping_unnecessary}). Secondly, we can run some commands in parallel, using \emph{speculation} to guess at which commands are likely to come next and won't interfere with things already running (\S\ref{sec:speculation}). The key to speculation is a robust model of what ``interfering'' means -- we call a problematic interference a \emph{hazard}, which we define in \S\ref{sec:hazards} and use to prove important properties about the safety of speculation in \S\ref{sec:proof}.
 
-\begin{itemize}
-\item In \S\ref{sec:rattle} we describe how tracing can turn a shell script into a build system, while skipping dependencies and using a cloud store. The major innovation is to explicitly model hazards \S\ref{sec:hazards}, which enables speculative execution \S\ref{sec:speculation}. To make this transformation requires \emph{dependency tracing}, which we describe in \S\ref{sec:tracing}.
-\item The alternative interpretations of a script described in \S\ref{sec:rattle} are only safe because of our underlying theory of hazards, which we prove in \S\ref{sec:proof}.
-\item In \S\ref{sec:evaluation} we describe how we converted existing \Make scripts into \Rattle scripts, and show the performance characteristics and bugs uncovered.
-\item In \S\ref{sec:related} we describe related work, in particular the \Fabricate system which pioneered the way.
-\item Finally, in \S\ref{sec:conclusion} we conclude and describe future work.
-\end{itemize}
+We have implemented these techniques in a build system called \Rattle\footnote{\url{https://github.com/author_name_omitted/rattle}}, introduced throughout \S\ref{sec:rattle}. A key part of the implementation is the ability to trace commands, using techniques we describe in \S\ref{sec:tracing}. To evaluate our claims, and properly understand the subtlties of our design, we converted existing \Make scripts into \Rattle scripts, and discuss the performance characteristics and \Make script bugs uncovered in \S\ref{sec:evaluation}. Our design can be considered a successor to the \Memoize build system \cite{memoize}, and we compare the differences between that and other related work in \S\ref{sec:related}. Finally, in \S\ref{sec:conclusion} we conclude and describe future work.
