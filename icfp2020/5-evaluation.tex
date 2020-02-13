@@ -36,8 +36,11 @@ We see \Rattle has low overhead, in the millisecond range. We see three threads 
 Let's consider the VIM build system. It's wrong in lots of ways Sarah can describe. But these were expert software engineers - has anyone got it right? To a first approximation, no. Unless you go for something like Bazel, and then it's tedious but sandboxing makes you get it right.
 
 
-
 \subsection{vim}
+
+Vim is a popular text editor whose source code can be found on \href{https://github.com/vim/vim}{github}.  The majority of the source code is Vim script and C, and it is built with Make.  To build Make on a Unix based system one can merely call \Make from the top-level project directory.  To compare the original \Make based build to a new \Rattle build, we generated Vim over a series of commits checked-out from github with both the original build system and the adapted \Rattle build.  The \Rattle build script was created by recording every command executed by the original build, except for those invoking \Make.  Additionally, some commands which may have been separate shell commands in the original build were combined to create one command if they caused either \emph{read-write} or \emph{write-write} hazards.  A \Rattle build script was generated for each commit where the orginal build system changed or files were added to or removed from the project.  This was necessary since the \Rattle build was created from a literal list of hard-coded shell commands rather than the ideal Haskell program with variables.
+
+% SS todo add list of the commits
 
 Comparing building Vim \cite{} with \Make and with \Rattle for commits \emph{21109272f} to \emph{7cc96923c}.  For two commits \Make and \Rattle did noticeably different work; note, both of these commits were build incrementally, \emph{21109272f} was built from scratch by both build systems and all subsequent commits were built incrementally.
 
@@ -72,6 +75,8 @@ Comparing building Vim \cite{} with \Make and with \Rattle for commits \emph{211
 \Make rebuilt 4 object files, the ones whose corresponding c files had changed.  It didn't rebuild the other object files rebuilt by \Rattle because the Makefile does not state that these object files
 depend on \emph{src/proto/evalfunc.pro}.
 
+% SS todo add timing data
+
 \subsection{node}
 
 % Brief into to the project
@@ -101,21 +106,40 @@ The build both seems to be using a form of tracing to keep track of accurate dep
 
 % Explain the intermediate files and how on a rebuild with no changes stuff still happens
 
-When building certain targets, \emph{.intermediate} files are created and at the end of the build deleted.  These \emph{.intermediate} commands are for ...
+When building certain targets, \emph{.intermediate} files are created and at the end of the build deleted.  These \emph{.intermediate} commands appear to be for doing code generation.  So, the generated files depend on the \emph{.intermediate} target which runs the code generator.  As with the object file targets mentioned, a \emph{.intermediate.d} dependency file is generated for the \emph{.intermediate} target.  This dependency file contains the \emph{.intermediate} code generation command run, so the build can check whether the command changed since it was last run.
 
-% SS TODO fill in because I still don't totally understand why they did this.
+These \emph{.intermediate} files are specified as prereqs of the special \Make target {.INTERMEDIATE}, which means that when one does not exist \Make won't bother updating it unless one of its prerequisites has changed.  Because these \emph{.intermediate} targets have \emph{DO\_/FORCE\_CMD} as a prereq they always run.  This would enable the build to check if the command changed since it was last run, but this only works if the Makefile includes the dependency file storing that information.  The dependency files of these \emph{.intermediate} targets, which run everytime, are not included in the Makefile.  Because of this the Makefile thinks the command has never run before, causing them to run everytime.  Even if the Makefile is modified to include the dependency files of these \emph{.intermediate} targets, the targets still execute the recipe which does the file generation even though the command has not changed. % SS comment on this further when I fully understand why the commands are registering as changed...
 
-What are these intermediate files for?
-As an example of this, take the \emph{v8\_snapshot} target.
-A file \Make rebuilt when nothing had changed was \emph{out/Release/obj.target/v8\_snapshot/geni/snapshot.cc}.  This file depends on \emph{598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate}, and
-  \emph{598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate} depends on \emph{mksnapshot} and \emph{FORCE\_DO\_CMD}.
-
-  \emph{598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate} is touched; and then
-  \emph{cmd\_598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate := touch 598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate'} is written to \emph{598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate.d}.
-
-  % This is then almost immediately overwritten by \emph{cmd\_598e7eaef0d59ad60e6e924931a138bd5d9d8789.intermediate := LD\_LIBRARY\_PATH=/home/spall/rattle-papers/tools/output/node3/out/Release/lib.host:/home/spall/rattle-papers/tools/output/node3/out/Release/lib.target:$$LD\_LIBRARY_PATH; export LD\_LIBRARY\_PATH; cd ../tools/v8\_gypfiles; mkdir -p /home/spall/rattle-papers/tools/output/node3/out/Release/obj.target/v8\_snapshot/geni; "/home/spall/rattle-papers/tools/output/node3/out/Release/mksnapshot" --turbo\_instruction_scheduling "--target\_os=linux" "--target\_arch=x64" --startup\_src "/home/spall/rattle-papers/tools/output/node3/out/Release/obj.target/v8_snapshot/geni/snapshot.cc" --embedded\_variant Default --embedded\_src "/home/spall/rattle-papers/tools/output/node3/out/Release/obj.target/v8\_snapshot/geni/embedded.S" --no-native-code-counters}
-  
   % Other things like parallelism and rattle rebuilding less
+
+It appears the authors of this build are attempting to keep track of accurate dependencies by recording them every time a command runs, they are also tracking the build by recording every command run and checking whether a command or its prerequisites have changed when deciding whether to run it.  The scheme to accomplish this is in my opinion quite complicated and confusing and relies on various hacks to work around \Make and the fact that this isn't a full-fledged programming language.  \Rattle accomplishes both of these things the build authors are trying to accomplish with \Make without forcing them to work so hard.
+
+To compare the \Make based build to a \Rattle version, we built Node.js over a series of commits checked-out from github with both the original build system and the adapted \Rattle build.  The \Rattle build was created by recording every command executed by the original build, except for the commands creating dependency files and those invoking \Make.  A new such \Rattle build script was generated for any commit where the original build system changed or files were added to or removed from the project.
+% data
+
+
+% SS add the differences in commits
+% 1. make list of commits run
+
+% in order from latest to oldest.
+% d80c40047b 0fe810168b 22724894c9 ab9e89439e cb210110e9 d10927b687   
+% 023ecbccc8 be6596352b [54c1a09202] 470511ae78 25c3f7c61a 13fe56bbbb
+% [43fb6ffef7] a171314003 dd4c62eabe abe6a2e3d1 9225939528 d4c81be4a0
+% 38aa31554c 1d9511127c d227d22bd9 5cf789e554 d65e6a5017 24e81d7c5a
+% 2cd9892425 [64161f2a86] 0f8941962d 2170259940 32f63fcf0e 2462a2c5d7
+% b851d7b986 70c32a6d19 3d456b1868 f2ec64fbcf 59a1981a22 [7b7e7bd185]
+% 78743f8e39 a5d4a397d6
+% [] indicate a commit where build appears to have changed. so need new rattle build too
+
+
+% So, pretty much everything needs to be re-run. awesome.
+
+% 5. Record here
+% 6. Run on tank? with various threads; ask sam
+
+
+
+
 
 % Comment from the Makefile 
 %# .buildstamp needs $(NODE_EXE) but cannot depend on it
