@@ -1,5 +1,5 @@
 \section{Build Scripts from Commands}
-\label{sec:rattle}
+\label{sec:design}
 
 Our goal is to design a build system where a build script is simply a list of commands. In this section we develop our design, starting with the simplest system that just executes all the commands in order, and ending up with the benefits of a conventional build system.
 
@@ -49,7 +49,7 @@ An important consequence of the control logic not being visible to the build sys
 \subsection{Haskell embdding}
 \label{sec:haskell}
 
-For \Rattle we choose to use Haskell as the host language, meaning that the control logic is in Haskell, with a special \texttt{cmd} function for informing the build system part about commands. The complete \Rattle script that compiles all \texttt{.c} files as per \S\ref{sec:monadic} is given in Figure \ref{fig:monadic}.
+For our evaluation testbed, \Rattle, we choose to use Haskell as the host language, meaning that the control logic is in Haskell, with a special \texttt{cmd} function for informing the build system part about commands. The complete \Rattle script that compiles all \texttt{.c} files as per \S\ref{sec:monadic} is given in Figure \ref{fig:monadic}.
 
 \begin{figure}
 \begin{verbatim}

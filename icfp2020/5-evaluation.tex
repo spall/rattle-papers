@@ -13,7 +13,7 @@ gcc -o main.exe main.o util.o
 
 There are two axes on which to measure ``just as good'' -- correctness and performance. Performance can be further broken down into how much rebuilds, how much parallelism can be acheived and overhead.
 
-\paragraph{Correctness} \Rattle is correct, in that the reference semantics is running all the commands, and as we have shown in \S\ref{sec:rattle} and \S\ref{sec:proof}, \Rattle obeys that semantics. In contrast, the \Make version may have missing dependencies which causes it not to rebuild. Examples of failure to rebuild include both if \texttt{gcc} changes, one of the system headers used by \texttt{gcc} or any headers included but not listed in the \Make script.
+\paragraph{Correctness} \Rattle is correct, in that the reference semantics is running all the commands, and as we have shown in \S\ref{sec:design} and \S\ref{sec:proof}, \Rattle obeys that semantics. In contrast, the \Make version may have missing dependencies which causes it not to rebuild. Examples of failure to rebuild include both if \texttt{gcc} changes, one of the system headers used by \texttt{gcc} or any headers included but not listed in the \Make script.
 
 \paragraph{Rebuilding too much} \Rattle never rebuilds too much, as if none of the inputs to a command have changed, then nothing rebuilds. As a matter of implementation, to implement cloud builders as per \ref{sec:cloud_builds}, \Rattle uses hashes of the file contents. In contrast, \Make uses the modification time, so if a file is resaved, but it's contents do not change, \Make will rebuild but \Rattle will not. It would be possible for \Make to use modification times, if it chose to store additional metadata not in the file system.
 
@@ -122,7 +122,7 @@ To compare the \Make based build to a \Rattle version, we built Node.js over a s
 % 1. make list of commits run
 
 % in order from latest to oldest.
-% d80c40047b 0fe810168b 22724894c9 ab9e89439e cb210110e9 d10927b687   
+% d80c40047b 0fe810168b 22724894c9 ab9e89439e cb210110e9 d10927b687
 % 023ecbccc8 be6596352b [54c1a09202] 470511ae78 25c3f7c61a 13fe56bbbb
 % [43fb6ffef7] a171314003 dd4c62eabe abe6a2e3d1 9225939528 d4c81be4a0
 % 38aa31554c 1d9511127c d227d22bd9 5cf789e554 d65e6a5017 24e81d7c5a
@@ -141,7 +141,7 @@ To compare the \Make based build to a \Rattle version, we built Node.js over a s
 
 
 
-% Comment from the Makefile 
+% Comment from the Makefile
 %# .buildstamp needs $(NODE_EXE) but cannot depend on it
 %# directly because it calls make recursively.  The parent make cannot know
 %# if the subprocess touched anything so it pessimistically assumes that
