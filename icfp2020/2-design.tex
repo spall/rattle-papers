@@ -46,35 +46,6 @@ To accomodate a dynamic list of commands, we adjust our model so that a build sc
 
 An important consequence of the control logic not being visible to the build system is that the build system has no prior knowledge of which commands are coming next, or if they have changed. As a result, even if you are using a simple static script such as from \S\ref{sec:introduction}, and then manually edit the script, the build will execute correctly. The build system is unaware if you edited the script, or if the commands were conditional on something that it cannot observe. Therefore, this model solves the problem of self-tracking from \citet{build_systems_a_la_carte} \S6.5.
 
-\subsection{Haskell embdding}
-\label{sec:haskell}
-
-For our evaluation testbed, \Rattle, we choose to use Haskell as the host language, meaning that the control logic is in Haskell, with a special \texttt{cmd} function for informing the build system part about commands. The complete \Rattle script that compiles all \texttt{.c} files as per \S\ref{sec:monadic} is given in Figure \ref{fig:monadic}.
-
-\begin{figure}
-\begin{verbatim}
--- key functions
-data Run a = ... deriving (Functor, Applicative, Monad, MonadIO)
-runRattle :: Run a -> IO a
-data CmdOption = Cwd FilePath | ...
-cmd :: CmdArguments args => args
-cmdReadFile :: FilePath -> Run String
-cmdWriteFile :: FilePath -> String -> Run ()
-
--- useful combinators
-forP :: [a] -> (a -> Run b) -> Run [b]
-memo :: (Eq a, Hashable a, MonadIO m) => (a -> m b) -> m (a -> m b)
-\end{verbatim}
-\caption{The \Rattle API}
-\label{fig:api}
-\end{figure}
-
-The most important functions in the \Rattle API are shown in Figure \ref{fig:api}. The main type is \texttt{Run} which serves as a monad wrapping \texttt{IO} with the necessary state required, which can be executed by \texttt{runRattle}. The function \texttt{cmd} is a variadic function \cite{variadic_functions} which takes a command as a series of \texttt{String} (a series of space-separated arguments), \texttt{[String]} (a list of arguments) and \texttt{CmdOption} (command execution modifiers, e.g. to change the current directory), returning a value of type \texttt{Run ()}. In general, our model assumes that nothing else is concurrently modifying files, so the special functions \texttt{cmdReadFile} and \texttt{cmdWriteFile} are required to declare such operations.
-
-\Rattle also ships with a series of useful combinators, e.g. an explicitly parallel mapping function (\texttt{forP}) and some memoisation operations (\texttt{memo}). However, these functions are merely useful helpers that are often required when writing build systems -- none of them interacts fundamentally with the build system.
-
-In addition, most \Rattle programs make use of standard libraries such as \texttt{System.FilePath} for path manipulation, and \texttt{System.FilePattern} for matching files. The control logic is free to use any Haskell functions, provided they do not read/write files.
-
 \subsection{Dependency tracing}
 \label{sec:assume_tracing}
 
