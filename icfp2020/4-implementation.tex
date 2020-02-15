@@ -1,6 +1,17 @@
 \section{Implementing \Rattle}
 \label{sec:implementation}
 
+The design of rattle assumes a stream of commands, as per \S\ref{sec:monadic}.
+
+\Rattle assumes that each command is atomic - it cannot be subdivided into smaller parts. If a command is secretly two independent commands then they should usually be expressed as such so they can be individually skipped.
+
+Compound commands: Sometimes a command will produce something that is user specific (not great for caching), but the next step will remove the user specificity (good for caching). To fix that we allow compound commands, by conjoining two commands with \texttt{\&\&}. Sometimes the sole purpose of the second command can be to strip machine-unique data from the first command.
+
+Rattle has forward build rules to add determinism. then if a user is temporarily disconnected from the cloud storage, and try and build something, then it will result in a different hash. If the user then reconnects to the cloud all actions depending on that non-deterministic build will fail to get a cache hit. There is one solution in \Rattle, where the hash of an output can be considered to be the hash of its inputs, but this setting is enabled on a per-file basis, and has all the problems of deep-constructive traces from \cite{build_systems_a_la_carte} \S?? and cannot benefit from unchanging outputs.
+
+
+As another example, the GHC package database has additional entries added every time a package is installed, making the output a consequence of the original file\footnote{As a consequence many build systems, including \Bazel and \Rattle, use multiple package databases with only one entry per database}.
+
 For our evaluation testbed, \Rattle, we choose to use Haskell as the host language, meaning that the control logic is in Haskell, with a special \texttt{cmd} function for informing the build system part about commands. The complete \Rattle script that compiles all \texttt{.c} files as per \S\ref{sec:monadic} is given in Figure \ref{fig:monadic}.
 
 \begin{figure}
