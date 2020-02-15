@@ -23,23 +23,6 @@ gcc -o main.exe ${FILES%.c}.o
 \end{verbatim}
 \vspace{3mm}
 
-\begin{figure}
-\begin{verbatim}
-import Development.Rattle
-import System.FilePath
-import System.FilePattern
-
-main = runRattle $ do
-    let toO x = takeBaseName x <.> "o"
-    cs <- liftIO $ getDirectoryFiles "." [root </> "*.c"]
-    forM_ cs $ \c ->
-        cmd "gcc -c" c
-    cmd "gcc -o main.exe" (map toO cs)
-\end{verbatim}
-\caption{A Haskell/\Rattle version of the script from \S\ref{sec:monadic}}
-\label{fig:monadic}
-\end{figure}
-
 This script now has a curious mixture of commands (\texttt{ls}, \texttt{gcc}), control logic (\texttt{for}) and simple manipulation (changing file extension). Importantly, there is \emph{no fixed list of commands} -- the future commands are determined based on the results of previous commands. Concretely, in this example, the result of \texttt{ls} changes which \texttt{gcc} commands are executed. The transition from a fixed list of commands to a dynamic list matches the \texttt{Applicative} vs \texttt{Monadic} destinction of \citet{build_systems_a_la_carte} \S3.5.
 
 To accomodate a dynamic list of commands, we adjust our model so that a build script is a series of commands, where future commands may depend on the results of previous commands in ways that are not visible to the build system. The commands are produced with ``cheap'' functions such as control logic and simple manipulations. We consider the cheap commands to be fixed overhead, run on every build, and not cached or parallelised in any way. If any of these cheap manipulations becomes expensive, they can be replaced by a command, which will then be handled properly. The simple list of commands from \S\ref{sec:executing_commands} is then a degenerate case of no interesting logic.
@@ -82,8 +65,6 @@ When skipping an execution \Rattle checks that all files accessed have the same 
 \paragraph{Compound commands} Sometimes a command will produce something that is user specific (not great for caching), but the next step will remove the user specificity (good for caching). To fix that we allow compound commands, by conjoining two commands with \texttt{\&\&}. Sometimes the sole purpose of the second command can be to strip machine-unique data from the first command.
 
 \paragraph{Non-deterministic builds} If a command has non-deterministic output then if a user is temporarily disconnected from the cloud storage, and try and build something, then it will result in a different hash. If the user then reconnects to the cloud all actions depending on that non-deterministic build will fail to get a cache hit. There is one solution in \Rattle, where the hash of an output can be considered to be the hash of its inputs, but this setting is enabled on a per-file basis, and has all the problems of deep-constructive traces from \cite{build_systems_a_la_carte} \S?? and cannot benefit from unchanging outputs.
-
-As a technical note, currently \Rattle uses a shared drive for sharing build artefacts, using tools such as NFS or Samba to provide the internet style ``cloud'' part.
 
 \subsection{Build consistency}
 \label{sec:hazards}

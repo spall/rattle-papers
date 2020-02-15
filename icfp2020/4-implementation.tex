@@ -5,6 +5,23 @@ For our evaluation testbed, \Rattle, we choose to use Haskell as the host langua
 
 \begin{figure}
 \begin{verbatim}
+import Development.Rattle
+import System.FilePath
+import System.FilePattern
+
+main = runRattle $ do
+    let toO x = takeBaseName x <.> "o"
+    cs <- liftIO $ getDirectoryFiles "." [root </> "*.c"]
+    forM_ cs $ \c ->
+        cmd "gcc -c" c
+    cmd "gcc -o main.exe" (map toO cs)
+\end{verbatim}
+\caption{A Haskell/\Rattle version of the script from \S\ref{sec:monadic}}
+\label{fig:monadic}
+\end{figure}
+
+\begin{figure}
+\begin{verbatim}
 -- key functions
 data Run a = ... deriving (Functor, Applicative, Monad, MonadIO)
 runRattle :: Run a -> IO a
@@ -23,9 +40,11 @@ memo :: (Eq a, Hashable a, MonadIO m) => (a -> m b) -> m (a -> m b)
 
 The most important functions in the \Rattle API are shown in Figure \ref{fig:api}. The main type is \texttt{Run} which serves as a monad wrapping \texttt{IO} with the necessary state required, which can be executed by \texttt{runRattle}. The function \texttt{cmd} is a variadic function \cite{variadic_functions} which takes a command as a series of \texttt{String} (a series of space-separated arguments), \texttt{[String]} (a list of arguments) and \texttt{CmdOption} (command execution modifiers, e.g. to change the current directory), returning a value of type \texttt{Run ()}. In general, our model assumes that nothing else is concurrently modifying files, so the special functions \texttt{cmdReadFile} and \texttt{cmdWriteFile} are required to declare such operations.
 
-\Rattle also ships with a series of useful combinators, e.g. an explicitly parallel mapping function (\texttt{forP}) and some memoisation operations (\texttt{memo}). However, these functions are merely useful helpers that are often required when writing build systems -- none of them interacts fundamentally with the build system.
+\Rattle also ships with a series of useful combinators, e.g. an explicitly parallel mapping function (\texttt{forP}) and some memoisation operations (\texttt{memo}). However, these functions are merely useful helpers that are often required when writing build systems -- none of them interacts fundamentally with the build system. In the Haskell API for \Rattle there is a parallel combinator \texttt{forP}. Replacing \texttt{forM} with \texttt{forP} in Figure \ref{fig:monadic} causes the commands to be given to \Rattle in parallel. As a consequence, they can be executed in parallel. The use of explicit parallelism is convenient when replacing a loop, but harder when expressing that three executables can be built in parallel, but that a single shared object common to all of them must complete before starting, so it is difficult to provide \emph{complete} parallelism annotations.
 
 In addition, most \Rattle programs make use of standard libraries such as \texttt{System.FilePath} for path manipulation, and \texttt{System.FilePattern} for matching files. The control logic is free to use any Haskell functions, provided they do not read/write files.
+
+As a technical note, currently \Rattle uses a shared drive for sharing build artefacts, using tools such as NFS or Samba to provide the internet style ``cloud'' part.
 
 
 \subsection{Tracing}
