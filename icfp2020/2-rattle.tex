@@ -6,12 +6,12 @@ Our goal is to design a build system where a build script is simply a list of co
 \subsection{Executing commands}
 \label{sec:executing_commands}
 
-Given a build script as a list of commands, like in \S\ref{sec:introduction}, the simplest execution model is to run each command sequentially in the order they were given. Importantly, we require that list of commands to be ordered, such that any dependencies are produced before they are used. We consider this sequential execution the reference semantics, and as we develop our design further, require that any any optimised/cached implementation to give the same results.
+Given a build script as a list of commands, like in \S\ref{sec:introduction}, the simplest execution model is to run each command sequentially in the order they were given. Importantly, we require that list of commands to be ordered, such that any dependencies are produced before they are used. We consider this sequential execution the reference semantics, and as we develop our design further, require that any optimised/cached implementation gives the same results.
 
 \subsection{Value-dependent commands}
 \label{sec:monadic}
 
-While a static list of commands is sufficient for simple programs, it is limited in its expressive power. Taking the build system from \S\ref{sec:introduction}, it would be better to compile and link \emph{all} \texttt{.c} files -- not just those explicitly listed by the script. A more realistic script might be\footnote{We take some liberties with how we replace the extensions, so as not to obscure the main focus.}:
+While a static list of commands is sufficient for simple builds, it is limited in its expressive power. Taking the build system from \S\ref{sec:introduction}, it would be better to compile and link \emph{all} \texttt{.c} files -- not just those explicitly listed by the script. A more realistic script might be\footnote{We take some liberties with shell scripts around how we replace the extensions, so as not to obscure the main focus.}:
 
 \vspace{3mm}
 \begin{verbatim}
@@ -40,9 +40,9 @@ main = runRattle $ do
 \label{fig:monadic}
 \end{figure}
 
-This script now has a curious mixture of commands (e.g. \texttt{ls}, \texttt{gcc}), control logic (e.g. \texttt{for}) and simple manipulation (e.g. changing file extension). Importantly, there is \emph{no fixed list of commands}, but the future commands themselves are influenced by the previous commands -- concretely, the result of \texttt{ls} changes which \texttt{gcc} commands are executed. The transition from a fixed list of commands to a dynamic list matches the \texttt{Applicative} vs \texttt{Monadic} destinction of \citet{build_systems_a_la_carte} \S3.5.
+This script now has a curious mixture of commands (\texttt{ls}, \texttt{gcc}), control logic (\texttt{for}) and simple manipulation (changing file extension). Importantly, there is \emph{no fixed list of commands} -- the future commands are determined based on the results of previous commands. Concretely, in this example, the result of \texttt{ls} changes which \texttt{gcc} commands are executed. The transition from a fixed list of commands to a dynamic list matches the \texttt{Applicative} vs \texttt{Monadic} destinction of \citet{build_systems_a_la_carte} \S3.5.
 
-Consequently, we adapt our model so that a build script is a series of commands, where future commands may depend on the results of previous commands in ways that are not visible to the build system. These commands are produced with ``cheap'' functions such as control logic and simple manipulations. We consider the cheap commands to be fixed overhead, run on every build, and not cached or parallelised in any way. If any of these cheap manipulations becomes expensive, they can be replaced by a command, which will then be handled properly. The simple list of commands from \S\ref{sec:executing_commands} is then a degenerate case of no meaningful logic.
+To accomodate a dynamic list of commands, we adjust our model so that a build script is a series of commands, where future commands may depend on the results of previous commands in ways that are not visible to the build system. The commands are produced with ``cheap'' functions such as control logic and simple manipulations. We consider the cheap commands to be fixed overhead, run on every build, and not cached or parallelised in any way. If any of these cheap manipulations becomes expensive, they can be replaced by a command, which will then be handled properly. The simple list of commands from \S\ref{sec:executing_commands} is then a degenerate case of no interesting logic.
 
 An important consequence of the control logic not being visible to the build system is that the build system has no prior knowledge of which commands are coming next, or if they have changed. As a result, even if you are using a simple static script such as from \S\ref{sec:introduction}, and then manually edit the script, the build will execute correctly. The build system is unaware if you edited the script, or if the commands were conditional on something that it cannot observe. Therefore, this model solves the problem of self-tracking from \citet{build_systems_a_la_carte} \S6.5.
 
