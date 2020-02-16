@@ -1,7 +1,7 @@
 \section{Conclusion and future work}
 \label{sec:conclusion}
 
-In this paper we present a system that can take a sequence of actions and treat them as a build script. From the user perspective, they get most of the benefits of a conventional build system (incrementality, parallelism) but with lower cost (less time thinking about dependencies, only supplying one valid ordering). We believe this approach is viable for small projects and could be adopted immediately. For larger projects, it is as yet unclear whether the build can be described compositionally or not. \Rattle also has no story for how services such as remotely executing commands might work.
+In this paper we present a build system that can take a sequence of actions and treat them as a build script. From the user perspective, they get most of the benefits of a conventional build system (incrementality, parallelism) but with lower cost (less time thinking about dependencies, only needing to supply a valid ordering). We believe this approach is viable for small projects and could be adopted immediately. For larger projects, it is as yet unclear whether the build can be described compositionally or not. \Rattle also has no story for how services such as remotely executing commands might work.
 
 Comparing \Rattle to other build systems, e.g. \Make, it is fair to say that \Rattle presents a simpler interface (no dependencies), but a more complex implementation model. In particular the overhead of tracing, the overhead of the parts that are always run and the potential for speculation to not work out can mean that \Rattle is slower.
 
