@@ -5,7 +5,7 @@ The design of \Rattle relies on taking a sequence of commands and instead of run
 
 \subsection{Hazards, formally}
 
-A hazard occurs when a Build command writes to a file that a previous command has already read from or written to.  Hazards can be classified as either: \emph{read-write hazards} or \emph{write-write hazards}.  In section \S\ref{sec:proof:classify_hazards} hazards are explained in greater detail.  For the following sections though it suffices to say that in a build being executed sequentially a
+A hazard occurs when a Build command writes to a file that a previous command has already read from or written to.  Hazards can be classified as either: \emph{read-write hazards} or \emph{write-write hazards}.  In section \S\ref{sec:proof:classify_hazard} hazards are explained in greater detail.  For the following sections though it suffices to say that in a build being executed sequentially a
 hazard occurs when a command read or writes a file and a later command writes to the same file.  In a build being executed in parallel with speculation, a hazard can occur when a command reads or writes a file and a later command writes to the same file, or if two commands running concurrently access the same file and are not both just reading the file.  Therefore, for a sequential \Rattle build to have no hazards means for every command $c$ in the build, if $c$ reads or writes a file, no later command will write to that file.  For a parallel \Rattle build to have no hazards means for every command $c$ in the build, if $c$ reads or writes a file, no later command will write to that file, and no command will concurrently read the file if it is being written, or write to the file if it is being read.
 
 % SS seems this section should just be a brief explanation of hazards so the following claims of ``no hazards'' makes sense.
@@ -95,13 +95,13 @@ Let $A$ have $n+1$ command.  From the inductive hypothesis we know the output of
 
 In section \S\ref{sec:speculation} we describe how \Rattle uses speculation to execute builds in parallel.  Sometimes when \Rattle speculates commands, hazards can occur that wouldn't have if the build script was executed sequentially.  In that section we mention when speculation can lead to hazards and what \Rattle can do to recover from them.  Here we offer a more precise classification of othose hazards and proofs that \Rattle's actions recovering from them does not change the outcome of the build.
 
-Hazards are first classified as either \emph{read-write} or \emph{write-write}.  Hazards can be further classified by how and if \Rattle can recover from the hazard.  
+Hazards are first classified as either \emph{read-write} or \emph{write-write}.  Hazards can be further classified by how and if \Rattle can recover from the hazard.
 
 \paragraph{Non Recoverable}
 A hazard is classified as \emph{non-recoverable} if it is triggered by a consistency violation in the build script.  A \emph{non-recoverable hazard} always results in the build terminating immediateley with an error.  For two examples of \emph{non-recoverable hazards} see section \ref{sec:hazards}.
 
 \paragraph{Recoverable}
-A hazard is classified as \emph{recoverable} if it is caused by \Rattle speculating a command which read a file concurrently or later written to by another command.  In this situation the speculated command likely read stale data and if re-executed would read up-to-date data.  Here is an example where \emph{cp foo.o baz.o} potentially copied the wrong version of \emph{foo.o} because it executed before \emph{gcc -c foo.c} completed.  If \emph{cp foo.o baz.o} re-executes it will read the new \emph{foo.o} produced by \emph{gcc -c foo.c}.  
+A hazard is classified as \emph{recoverable} if it is caused by \Rattle speculating a command which read a file concurrently or later written to by another command.  In this situation the speculated command likely read stale data and if re-executed would read up-to-date data.  Here is an example where \emph{cp foo.o baz.o} potentially copied the wrong version of \emph{foo.o} because it executed before \emph{gcc -c foo.c} completed.  If \emph{cp foo.o baz.o} re-executes it will read the new \emph{foo.o} produced by \emph{gcc -c foo.c}.
 
 \begin{verbatim}
 cp foo.o baz.o [speculate]
@@ -130,8 +130,8 @@ There are two possible outputs:
 \begin{description}
 \item [Non-recoverable hazard] Proof by contradiction.
   Let us assume \Rattle executes commands speculatively and a \emph{recoverable read-write hazard} occurs.  All \emph{read-write hazards} are made up of two commands, $c1$, the command which read the file, and $c2$, the command which wrote to the file. In this case we also know $c1$ was executed speculatively.
-  
-  
+
+
 \item [writes to set of files $F$]
 \end{description}
 
@@ -169,5 +169,3 @@ Maybe the build script originally included \emph{cp old-foo.c foo.c}, but it was
 potentially build the wrong \emph{foo.c}.  If \Rattle were to re-execute the build and not speculate \emph{cp old-foo.c foo.c} then \emph{gcc -c foo.c} would build the correct \emph{foo.c} during the next build.  % This is a bad example since Rattle would have corrupted foo.c with the bad copy.  Need a new example or address this
 
 %Proof that restartable hazard are handled
-
-
