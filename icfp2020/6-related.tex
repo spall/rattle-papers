@@ -19,7 +19,8 @@ The design space of backward build systems is discussed in \cite{build_systems_a
 
 Some existing backward build systems have notions for sandboxing to ensure all commands are present. e.g. \Bazel. That often results in a lot of work, and doesn't prevent the reverse problem of too many dependencies.
 
-Remote execution is a useful thing that we can't get.
+Remote execution is a useful thing that we can't get. Firstly, the command can execute remotely, or in a sandboxed manner - ensuring all writes do \emph{not} end up on the file system, but are recorded to the cloud cache. In such a mode we are filling up the coud cache speculative, with the hope that when the future command does arrive it can be satisfied from the cache. However, running remotely requires syncronising the files across, or using a sycronise on demand approach (CITE Microsoft Remote Execution talk). Running with a sandbox which intercepts writes is not an easily available cross-platform feature, so we have not explored it further.
+
 
 \subsection{Analysis of existing build systems}
 

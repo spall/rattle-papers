@@ -100,55 +100,48 @@ Here \texttt{sha1sum} takes the SHA1 hash of a file, firstly taking the SHA1 of 
 Writing to a file after it has already been either read or written is the only circumstance in which a build, where every individual command is well-formed (as per \S\ref{sec:skipping_unnecessary}), is incorrect. We define such a build as \emph{hazardous} using the following rules:
 
 \begin{description}
-\item[write after read] If one command reads from a file, and a subsequent command writes to that file, on a future build, the first command will have to be rerun because its input has changed. This behavior is defined as a \emph{read-write hazard}.
-\item[write after write] If two commands both write to the same file, on a future build, the first will be rerun (it's output has changed), which is likely to then cause the second to be rerun. This behavior is defined as a \emph{write-write hazard}.
+\item[Write after read] If one command reads from a file, and a subsequent command writes to that file, on a future build, the first command will have to be rerun because its input has changed. This behavior is defined as a \emph{read-write hazard}.
+\item[Write after write] If two commands both write to the same file, on a future build, the first will be rerun (it's output has changed), which is likely to then cause the second to be rerun. This behavior is defined as a \emph{write-write hazard}.
 \end{description}
 
-Using tracing we can detect hazards and raise errors if they occur, detecting that a build system is incorrect before unnecessary rebuilds occur. We prove that a build system with deterministic control logic and with no hazards always results in no rebuilds in \S\ref{sec:proof:no_rebuild}. In a build system without hazards there is at most one write to any file, which occurs before any reads of that file. We can therefore prove there are no rebuilds by showing the first command can't rebuild, and proceeding by induction. It is not the case that the presence of hazards guarantees subsequent executions will definitely rebuild, for example if the write doesn't actually change the value, but such a build system is dangerous -- if the write definitely can't change the output, the write should not be present.
+Using tracing we can detect hazards and raise errors if they occur, detecting that a build system is incorrect before unnecessary rebuilds occur. We prove that a build system with deterministic control logic and with no hazards always results in no rebuilds in \S\ref{sec:proof:no_rebuild}. In a build system without hazards there is at most one write to any file, which occurs before any reads of that file. We can therefore prove there are no rebuilds by showing the first command can't rebuild, and proceeding by induction. It is not the case that the presence of hazards guarantees subsequent executions will definitely rebuild, for example if the write doesn't actually change the value, but such a build system is malformed by our definition -- if the write definitely can't change the output, the write should not be present.
 
-\subsection{Parallelism}
+\subsection{Explicit Parallelism}
+\label{sec:explicit_parallelism}
 
-Given a script with no hazards when executed sequentially, we can show that any interleaving of those commands that also has no hazards will result in an equivalent output in \S\ref{sec:proof:reorder}. Moreover, any parallel or interleaved execution without hazards will also be equivalent, see \S\ref{sec:proof:parallel}. And even further, if \Rattle executes any additional commands that don't cause hazards, they can be shown not to change the results the normal build produced, see \S\ref{sec:proof:additional}.
-
-As a consequence of the above, we have quite a lot of freedom to schedule the commands, provided they do not cause hazards.  There are two ways \Rattle enables parallelism.
-
-\subsubsection{Explicit Parallelism}
-
-In the Haskell API for \Rattle there is a parallel combinator \texttt{forP}. Replacing \texttt{forM} with \texttt{forP} in Figure \ref{fig:monadic} causes the commands to be given to \Rattle in parallel. As a consequence, they can be executed in parallel. The use of explicit parallelism is convenient when replacing a loop, but harder when expressing that three executables can be built in parallel, but that a single shared object common to all of them must complete before starting, so it is difficult to provide \emph{complete} parallelism annotations.
+A build script can use explicit parallelism by giving further commands to the build system before previous commands have completed. For example, the script in \S\ref{sec:monadic} has a \texttt{for} loop where the inner commands are independent and could all be given to the build system simultaneously. Such a build system with explicit parallelism must still obey the invariant that the inputs of a command must have been generated before the command is given, requiring some kind of two-way feedback that an enqueued command has completed. The use of explicit parallelism is convenient when replacing a loop, but harder when expressing that three executables can be built in parallel, but that a single shared object common to all of them must complete before starting, so it is difficult to provide \emph{complete} parallelism annotations.
 
 Interestingly, given complete \emph{dependency} information (e.g. as available to \Make) it is possible to infer complete \emph{parallelism} information, but the difficulty of specifying complete dependnecy information is the attraction of a tracing based approach to build systems.
 
-\subsubsection{Implicit Parallelism}
+\subsubsection{Implicit Parallelism (Speculation)}
 \label{sec:speculation}
 
-The other source of parallelism is implicit, using speculation. If we can predict what commands are coming up next, and predict that their execution will not cause hazards, then we can speculatively execute them.  Such predictions can be made by simply recording the last known execution and using that information to predict the next execution.  If speculation suggests that running a command would be beneficial there are two possible approaches to take.
+While explicit parallelism is useful, it imposes a burden on the build script author. Alternatively we can use implicit parallelism, where useful commands are executed in advance, in the hope that they will be useful and cause a future required command to be skipped. Importantly, such speculation can be shown to be safe by tracking hazards. Given a script with no hazards when executed sequentially, we can show that any interleaving of those commands that also has no hazards will result in an equivalent output in \S\ref{sec:proof:reorder}. Moreover, any parallel or interleaved execution without hazards will also be equivalent, see \S\ref{sec:proof:parallel}. And further, if any additional commands are run that don't cause hazards, they can be shown to not change the results the normal build produced, see \S\ref{sec:proof:additional}.
 
-Firstly, the command can execute remotely, or in a sandboxed manner - ensuring all writes do \emph{not} end up on the file system, but are recorded to the cloud cache. In such a mode we are filling up the coud cache speculative, with the hope that when the future command does arrive it can be satisfied from the cache. However, running remotely requires syncronising the files across, or using a sycronise on demand approach (CITE Microsoft Remote Execution talk). Running with a sandbox which intercepts writes is not an easily available cross-platform feature, so we have not explored it further.
+If we can predict what commands are coming up next, and predict that their execution will not cause hazards, then we can speculatively execute them. If the build execution leads to a hazard, and commands were executed speculatively, then it is possible that the hazard is entirely an artefact of speculation. A simple approach to resolving speculative hazards is to re-run the build without speculation. Effective speculation requires us to predict two pieces of data:
 
-Alternatively, the command can execute locally, which is what \Rattle does. If the build execution lead to a hazard, and commands were executed speculatively, then it is possible that the hazard is entirely an artefact of speculation.  A simple approach to resolving this is to re-run the build without speculation.  A more nuanced approach is to use the hazard's classification, which can be categorised as per \S\ref{sec:proof:classify_hazard}, to decide whether to raise the error immediately (if the speculation was not at fault) or take alternative measures to resolve the hazard, such as selectively eliminating a subset of commands from speculation, or re-executing specific commands.
+\begin{description}
+\item[Future commands] The benefit of speculatively executing commands is that they will subsequently by skipped, which only happens if the speculative command indeed occurs later on. The simplest prediction of future commands is that they will be the same as they were last time. It is possible to predict in a more nuanced manner given more history of which commands run. Given more information about the build, e.g. all the control logic as per \S\ref{sec:monadic} choice 2, it would be possible to use static analysis to refine the prediction.
+\item[Absence of hazards] If a hazard occurs the build is no longer correct, and remediation must be taken (e.g. rerunning the build without speculation). Therefore, performance can be significantly reduced if a speculative command leads to a hazard. Given knowledge of the currently running commands, and the files all commands accessed in the last run, it is possible to predict whether a hazard will occur if the access patterns do not change. If tracing made it possible to abort runs that performed hazardous accesses then speculation could be unwound without restarting, but such implementations are more cumbersome (see \S\ref{sec:tracing}).
+\end{description}
 
+\subsection{Recovering from Speculative Hazards}
 
-% Rattle's requirements:
-% deterministic, if reading adn writing same file write does not rely on read; aka no appending,
+The simplest approach to recovering from speculation errors it to abort the build and rerun from scratch without speculation. However, there are other possible approaches.
 
-% So up above in the intro to this section we say that ``we have freedom to schedule commands provided they do not cause hazards''.  But there is the distinct possiblity that they WILL cause hazards,
-% so what does Rattle do in that situation?
+\begin{enumerate}
+\item If the hazard occurs due to two non-speculated commands, then the build is incorrect, and rerunning will report the hazard. That hazard can be raised immediately.
+\item If the hazard involves a speculated command, but that commands actions have no impact on the real build, then the build can continue as normal.
+\item If the hazard can be blamed to a specific speculated command, then the build can be rerun with speculation, omitting the one problematic command. The disadvantage of blacklisting a specific speculated command is that it might mean the build reruns many times with an increasingly large blacklist.
+\item Given a visible build script, e.g. \S\ref{sec:monadic} choice 2, it might be possible to rewind the build to a specific point and continue from there -- although that can get especially complicated in the presence of mutable state or explicit parallelism (see \S\ref{sec:explicit_parallelism}).
+\end{enumerate}
 
-% Rattle is executing a build and speculatively executing commands and has encountered a hazard, what does it do?
-% As we've mentioned previously usually when a hazard occurs Rattle terminates because the build violates Rattle's consistency requirements.  But, we've just added this new thing called ``speuculation''
-% which changes that a bit.  If we were speculating commands then it is possible that the build doesn't have a consistency violation and Rattle just made a mistake it needs to correct.
+A more nuanced approach is to use the hazard's classification, which can be categorised as per \S\ref{sec:proof:classify_hazard}, to decide whether to raise the error immediately (if the speculation was not at fault) or take alternative measures to resolve the hazard, such as selectively eliminating a subset of commands from speculation, or re-executing specific commands.
 
-% How does Rattle determine which of the two it is?  Consistency violation or artefact os speculation?
-% If both commands were executed from the build script, then its a consistency violation and Rattle should error and terminate
-% If at least one of the commands was speculated, then Rattle might be able to recover.
 
 % Ways to recover:  re-run certain commands;
 % have a read-write hazard:
 % speculatively write then require a read: Read read bad information.... we need to have to read read the correct file so we just restart.... same thing as above about dleeting speculative commands
-
-% require a read then speculatively write: need to undo-write some how.....
-
-% require a read then require a write; error obviously.
 
 % have a write-write hazard:
 % speculatively write then require a write: Since the write should not fundamentally be influenced by the read, then the required write should just overwrite whatever the speculative write did and

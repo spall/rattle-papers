@@ -16,6 +16,12 @@ We can write something that calls cmd on each element in a file. Or something th
 
 As another example, the GHC package database has additional entries added every time a package is installed, making the output a consequence of the original file\footnote{As a consequence many build systems, including \Bazel and \Rattle, use multiple package databases with only one entry per database}.
 
+In the Haskell API for \Rattle there is a parallel combinator \texttt{forP}. Replacing \texttt{forM} with \texttt{forP} in Figure \ref{fig:monadic} causes the commands to be given to \Rattle in parallel. As a consequence, they can be executed in parallel. The use of explicit parallelism is convenient when replacing a loop, but harder when expressing that three executables can be built in parallel, but that a single shared object common to all of them must complete before starting, so it is difficult to provide \emph{complete} parallelism annotations.
+
+Importantly \texttt{cmd} waits until the command has finished -- be that skipped, downloaded from the cloud or actually run -- before returning.
+
+All our predictions only look at the very last run. Simple, and seems to be sufficient.
+
 For our evaluation testbed, \Rattle, we choose to use Haskell as the host language, meaning that the control logic is in Haskell, with a special \texttt{cmd} function for informing the build system part about commands. The complete \Rattle script that compiles all \texttt{.c} files as per \S\ref{sec:monadic} is given in Figure \ref{fig:monadic}.
 
 \begin{figure}
