@@ -31,6 +31,17 @@ Both C files changed \\
 
 We see \Rattle has low overhead, in the millisecond range. We see three threads has no change over two threads, as this build contains no more parallelism opportunities.
 
+
+\subsection{Reimplementing Stack}
+
+\Rattle assumes that each command is atomic - it cannot be subdivided into smaller parts. If a command is secretly two independent commands then they should usually be expressed as such so they can be individually skipped.
+
+Compound commands: Sometimes a command will produce something that is user specific (not great for caching), but the next step will remove the user specificity (good for caching). To fix that we allow compound commands, by conjoining two commands with \texttt{\&\&}. Sometimes the sole purpose of the second command can be to strip machine-unique data from the first command.
+
+As another example, the GHC package database has additional entries added every time a package is installed, making the output a consequence of the original file\footnote{As a consequence many build systems, including \Bazel and \Rattle, use multiple package databases with only one entry per database}.
+
+and some memoisation operations (\texttt{memo})
+
 \subsection{Rest of the evaluation}
 
 Let's consider the VIM build system. It's wrong in lots of ways Sarah can describe. But these were expert software engineers - has anyone got it right? To a first approximation, no. Unless you go for something like Bazel, and then it's tedious but sandboxing makes you get it right.

@@ -1,28 +1,9 @@
 \section{Implementing \Rattle}
 \label{sec:implementation}
 
-The design of rattle assumes a stream of commands, as per \S\ref{sec:monadic}.
+We have implemented the design from \S\ref{sec:design} in a program called \Rattle. We use Haskell as the host language, meaning that the control logic is in Haskell.
 
-\Rattle assumes that each command is atomic - it cannot be subdivided into smaller parts. If a command is secretly two independent commands then they should usually be expressed as such so they can be individually skipped.
-
-Compound commands: Sometimes a command will produce something that is user specific (not great for caching), but the next step will remove the user specificity (good for caching). To fix that we allow compound commands, by conjoining two commands with \texttt{\&\&}. Sometimes the sole purpose of the second command can be to strip machine-unique data from the first command.
-
-\subsection{Forward rules}
-\label{sec:forward_hashes}
-
-Rattle has forward build rules to add determinism. then if a user is temporarily disconnected from the cloud storage, and try and build something, then it will result in a different hash. If the user then reconnects to the cloud all actions depending on that non-deterministic build will fail to get a cache hit. There is one solution in \Rattle, where the hash of an output can be considered to be the hash of its inputs, but this setting is enabled on a per-file basis, and has all the problems of deep-constructive traces from \cite{build_systems_a_la_carte} \S?? and cannot benefit from unchanging outputs.
-
-We can write something that calls cmd on each element in a file. Or something that takes a socket, allowing programs to be written in Python for instance.
-
-As another example, the GHC package database has additional entries added every time a package is installed, making the output a consequence of the original file\footnote{As a consequence many build systems, including \Bazel and \Rattle, use multiple package databases with only one entry per database}.
-
-In the Haskell API for \Rattle there is a parallel combinator \texttt{forP}. Replacing \texttt{forM} with \texttt{forP} in Figure \ref{fig:monadic} causes the commands to be given to \Rattle in parallel. As a consequence, they can be executed in parallel. The use of explicit parallelism is convenient when replacing a loop, but harder when expressing that three executables can be built in parallel, but that a single shared object common to all of them must complete before starting, so it is difficult to provide \emph{complete} parallelism annotations.
-
-Importantly \texttt{cmd} waits until the command has finished -- be that skipped, downloaded from the cloud or actually run -- before returning.
-
-All our predictions only look at the very last run. Simple, and seems to be sufficient.
-
-For our evaluation testbed, \Rattle, we choose to use Haskell as the host language, meaning that the control logic is in Haskell, with a special \texttt{cmd} function for informing the build system part about commands. The complete \Rattle script that compiles all \texttt{.c} files as per \S\ref{sec:monadic} is given in Figure \ref{fig:monadic}.
+\subsection{A \Rattle example}
 
 \begin{figure}
 \begin{verbatim}
@@ -30,52 +11,88 @@ import Development.Rattle
 import System.FilePath
 import System.FilePattern
 
-main = runRattle $ do
+main = rattle $ do
     let toO x = takeBaseName x <.> "o"
     cs <- liftIO $ getDirectoryFiles "." [root </> "*.c"]
-    forM_ cs $ \c ->
+    forP cs $ \c ->
         cmd "gcc -c" c
     cmd "gcc -o main.exe" (map toO cs)
 \end{verbatim}
 \caption{A Haskell/\Rattle version of the script from \S\ref{sec:monadic}}
-\label{fig:monadic}
+\label{fig:rattle_example}
 \end{figure}
 
 \begin{figure}
 \begin{verbatim}
--- key functions
+-- The Run monad
 data Run a = ... deriving (Functor, Applicative, Monad, MonadIO)
-runRattle :: Run a -> IO a
+rattle :: Run a -> IO a
+
+-- Running commands
 data CmdOption = Cwd FilePath | ...
 cmd :: CmdArguments args => args
+
+-- Reading/writing files
 cmdReadFile :: FilePath -> Run String
 cmdWriteFile :: FilePath -> String -> Run ()
 
--- useful combinators
+-- Parallelism
 forP :: [a] -> (a -> Run b) -> Run [b]
-memo :: (Eq a, Hashable a, MonadIO m) => (a -> m b) -> m (a -> m b)
 \end{verbatim}
 \caption{The \Rattle API}
 \label{fig:api}
 \end{figure}
 
-The most important functions in the \Rattle API are shown in Figure \ref{fig:api}. The main type is \texttt{Run} which serves as a monad wrapping \texttt{IO} with the necessary state required, which can be executed by \texttt{runRattle}. The function \texttt{cmd} is a variadic function \cite{variadic_functions} which takes a command as a series of \texttt{String} (a series of space-separated arguments), \texttt{[String]} (a list of arguments) and \texttt{CmdOption} (command execution modifiers, e.g. to change the current directory), returning a value of type \texttt{Run ()}. In general, our model assumes that nothing else is concurrently modifying files, so the special functions \texttt{cmdReadFile} and \texttt{cmdWriteFile} are required to declare such operations.
+A complete \Rattle script that compiles all \texttt{.c} files as per \S\ref{sec:monadic} is given in Figure \ref{fig:rattle_example}, with the key API functions in Figure \ref{fig:api}. Looking at the example, we see:
 
-\Rattle also ships with a series of useful combinators, e.g. an explicitly parallel mapping function (\texttt{forP}) and some memoisation operations (\texttt{memo}). However, these functions are merely useful helpers that are often required when writing build systems -- none of them interacts fundamentally with the build system. In the Haskell API for \Rattle there is a parallel combinator \texttt{forP}. Replacing \texttt{forM} with \texttt{forP} in Figure \ref{fig:monadic} causes the commands to be given to \Rattle in parallel. As a consequence, they can be executed in parallel. The use of explicit parallelism is convenient when replacing a loop, but harder when expressing that three executables can be built in parallel, but that a single shared object common to all of them must complete before starting, so it is difficult to provide \emph{complete} parallelism annotations.
+\begin{itemize}
+\item A \Rattle script is a Haskell program. It makes use of ordinary Haskell imports, and importantly includes \texttt{Development.Rattle} offering the API from Figure \ref{fig:api}.
+\item The \texttt{rattle} function takes a value the \texttt{Run} monad and executes it in \texttt{IO}. The \texttt{Run} type is the \texttt{IO} monad, enriched with a \texttt{ReaderT} containing a reference to shared mutable state (e.g. what commands are in flight, where to store metadata, location of shared storage).
+\item All the control logic is in Haskell and may make use of any external libraries -- e.g. \texttt{System.FilePath} for manipulating \texttt{FilePath} values and \texttt{System.FilePattern} for directory listing. Taking the example of replacing the extension from \texttt{.c} to \texttt{.o}, we are able to abstract out this pattern as \texttt{toO} and reuse it later. Abitrary Haskell IO can be embedded in the script using \texttt{liftIO}. All of the Haskell code is considered control logic and will be repeated in every execution.
+\item Commands are given to the build system part of rattle using the \texttt{cmd}. We have implemented \texttt{cmd} as a variadic function \cite{variadic_functions} which takes a command as a series of \texttt{String} (a series of space-separated arguments), \texttt{[String]} (a list of arguments) and \texttt{CmdOption} (command execution modifiers, e.g. to change the current directory), returning a value of type \texttt{Run ()}. The function \texttt{cmd} only returns once the command has finished executing (whether that is by actual execution, skipping, or fetching from external storage).
+\item We have used \texttt{forP} in the example, as opposed to \texttt{forM}, which causes the commands to be given to \Rattle in parallel. The use of explicit parallelism for distinct elements of a list is convenient.
+\end{itemize}
 
-In addition, most \Rattle programs make use of standard libraries such as \texttt{System.FilePath} for path manipulation, and \texttt{System.FilePattern} for matching files. The control logic is free to use any Haskell functions, provided they do not read/write files.
+Looking at the functions from Figure \ref{fig:api} there are two functions this example does not use. The \texttt{cmdWriteFile} and \texttt{cmdReadFile} are used to perform a read/write of the file system through Haskell code, causing hazards to arise if necessary. Apart from these functions, it is assumed that all Haskell control code only reads and writes files which are not involved in any commands.
 
-As a technical note, currently \Rattle uses a shared drive for sharing build artefacts, using tools such as NFS or Samba to provide the internet style ``cloud'' part.
+\subsection{Alternative \Rattle wrappers}
+
+Given the above API, combined with the choice to treat the control logic as opaque, it is possible to write wrappers that expose \Rattle in new ways. For example, to literally run a series of commands, it is possible to write use the \Rattle program:
+
+\vspace{3mm}
+\begin{verbatim}
+main = rattle $ do
+    [x] <- liftIO getArgs
+    src <- readFile x
+    forM_ (lines src) cmd
+\end{verbatim}
+\vspace{3mm}
+
+Here we get single command line argument, read it as a file, then run each command sequentially using \texttt{forM\_}. We use this script in our evaluation in \S\ref{sec:evaluation}.
+
+An alternative API could be provided by openning up a socket, and allowing a \Rattle server to take command invocations through that socket. Such an API would allow writting \Rattle scripts in other languages, making use of the existing \Rattle implementation. While such a design should be easy, we have not actually implemented it yet.
+
+\subsection{Hash forwarding}
+\label{sec:forward_hashes}
+
+To cope with the problem of non-deterministic build results reducing external cache hits, as described in \S\ref{sec:cloud_builds}, \Rattle uses hash forwarding. If the output of a command produces a file \texttt{foo}, and also a file \texttt{foo.forward}, then the hash of \texttt{foo.forward} is used instead of the hash of \texttt{foo}. Provided \texttt{foo.forward} includes all information that \texttt{foo} depends on (or a hash thereof), then the forwarding hash can be treated as a proxy for the non-deterministic file. Moreover, since the most common forwarding is to take the hash of all inputs to the command, that feature is available through the \texttt{CmdOption} named \texttt{Forward}.
+
+The disadvantage of hash forwarding (other than the complexity) is that if the resulting \texttt{foo} eliminates some information compared to the inputs, then there might be instances when two \texttt{foo} values would be equal despite their forwarding hashes being different, causing fewer cache hits. The use of hash forwarding is very similar to the idea of deep-constructive traces from \citet{build_systems_a_la_carte} \S4.2.4, including the inability to benefit from unchanging outputs.
+
+\subsection{Specific design choices}
+
+Relative to the reference design in \S\ref{sec:design} we have made a few specific design choices, mostly in the name of implementation simplicity:
+
+\begin{itemize}
+\item All our predictions (see \S\ref{sec:speculation}) only look at the very last run. This approach is simple, and in practice, seems to be sufficient -- most build scripts are run on very similar inputs most of the time.
+\item We currently use a shared drive for sharing build artefacts, allow the use of tools such as NFS or Samba to provide remote connectivity and thus full ``cloud builds''.
+\end{itemize}
 
 
-\subsection{Tracing}
+\subsection{Tracing approaches}
 \label{sec:tracing}
 
-In \S\ref{sec:assume_tracing} we assume the existence of \emph{dependency tracing} which can, after a command completes, tell us which files that command read and which files it wrote. Unfortunately, such an API is \emph{not} part of the POSIX standard, and is not easily available on any standard platform. We aim to make \Rattle work on Linux, Mac and Windows, which requires using a variety of approaches.
-
-\subsubsection{Tracing approaches}
-
-In this section we outline some of the approaches that can be used for tracing, their advantages and disadvantages:
+In \S\ref{sec:assume_tracing} we assume the existence of \emph{dependency tracing} which can, after a command completes, tell us which files that command read and which files it wrote. Unfortunately, such an API is \emph{not} part of the POSIX standard, and is not easily available on any standard platform. We aim to make \Rattle work on Linux, Mac and Windows, which requires using a variety of approaches. In this section we outline some of the approaches that can be used for tracing, their advantages and disadvantages:
 
 \begin{description}
 \item[Syscall tracing] On Linux you can trace every system call made, examine it's arguments, and thus record which files are accessed. Moreover, you can tell which have information about them queried (via the \texttt{stat} system call). The syscall tracking approach can be made complete, but because \emph{every} syscall must be hooked, can end up being a bit slow. This approach is used by \libbigbro \cite{libbigbro}.
@@ -95,7 +112,7 @@ In this section we outline some of the approaches that can be used for tracing, 
 
 However, in practice, none of the limitations have been overly problematic in the examples we have explored.
 
-\subsubsection{Possible tracing enhancements}
+\subsection{Possible Tracing Enhancements}
 
 Using the approaches listed above we are able to detect when files are opened for read or write access. After the command has finished, we then report which files were accessed and in what mode. That restricted interface has driven the design of \Rattle to ensure that it is possible to implement \Rattle robustly in realistic situations. However, there are places where a more refined interface would be useful.
 
@@ -113,6 +130,4 @@ It would be nice if the accesses could be intercepted and denied if there was a 
 
 Finally, it would be useful to know the purpose of a file system access, but that is generally not available to the tracing system. As an example, many programs create, use and then delete temporary files. If multiple programs are run in a single \Rattle build then it is not unreasonable (and in fact, somewhat common) to see them access the \emph{same} temporary file, but distinct instances of it, which should not be reported as a hazard despite multiple writes. We solve such issues by ignoring reads and writes to the temporary directory.
 
-\subsubsection{Tracing standardisation}
-
-The tracing pieces of \Rattle have been some of the most difficult engineering pieces to develop. We suggest that such features should be standardised and made available in a cross-platform way.
+Howver, most of all, standardisation would be fantastic. The tracing pieces of \Rattle have been some of the most difficult engineering pieces to develop. We suggest that such features should be standardised and made available in a cross-platform way.
