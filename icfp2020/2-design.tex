@@ -6,12 +6,12 @@ Our goal is to design a build system where a build script is simply a list of co
 \subsection{Executing commands}
 \label{sec:executing_commands}
 
-Given a build script as a list of commands, like in \S\ref{sec:introduction}, the simplest execution model is to run each command sequentially in the order they were given. Importantly, we require that list of commands to be ordered, such that any dependencies are produced before they are used. We consider this sequential execution the reference semantics, and as we develop our design further, require that any optimised/cached implementation gives the same results.
+Given a build script as a list of commands, like in \S\ref{sec:introduction}, the simplest execution model is to run each command sequentially in the order they were given. Importantly, we require the list of commands is ordered, such that any dependencies are produced before they are used. We consider this sequential execution the reference semantics, and as we develop our design further, require that any optimised/cached implementation gives the same results.
 
 \subsection{Value-dependent commands}
 \label{sec:monadic}
 
-While a static list of commands is sufficient for simple builds, it is limited in its expressive power. Taking the build system from \S\ref{sec:introduction}, it would be better to compile and link \emph{all} \texttt{.c} files -- not just those explicitly listed by the script. A more realistic script might be\footnote{We take some liberties with shell scripts around how we replace the extensions, so as not to obscure the main focus.}:
+While a static list of commands is sufficient for simple builds, it is limited in its expressive power. Taking the build system from \S\ref{sec:introduction}, it would be better to compile and link \emph{all} \texttt{.c} files -- not just those explicitly listed by the script. A more realistic script might be:
 
 \vspace{3mm}
 \begin{verbatim}
@@ -23,7 +23,7 @@ gcc -o main.exe ${FILES%.c}.o
 \end{verbatim}
 \vspace{3mm}
 
-This script now has a curious mixture of commands (\texttt{ls}, \texttt{gcc}), control logic (\texttt{for}) and simple manipulation (changing file extension). Importantly, there is \emph{no fixed list of commands} -- the future commands are determined based on the results of previous commands. Concretely, in this example, the result of \texttt{ls} changes which \texttt{gcc} commands are executed. The transition from a fixed list of commands to a dynamic list matches the \texttt{Applicative} vs \texttt{Monadic} destinction of \citet{build_systems_a_la_carte} \S3.5.
+This script now has a curious mixture of commands (\texttt{ls}, \texttt{gcc}), control logic (\texttt{for}) and simple manipulation (changing file extension\footnote{We take some liberties with shell scripts around replacing extensions, so as not to obscure the main focus.}). Importantly, there is \emph{no fixed list of commands} -- the future commands are determined based on the results of previous commands. Concretely, in this example, the result of \texttt{ls} changes which \texttt{gcc} commands are executed. The transition from a fixed list of commands to a dynamic list matches the \texttt{Applicative} vs \texttt{Monadic} destinction of \citet{build_systems_a_la_carte} \S3.5.
 
 There are three approaches to modelling a dynamic list of commands:
 
@@ -33,80 +33,78 @@ There are three approaches to modelling a dynamic list of commands:
 \item It would be possible to have a hybrid mode, where dependencies between commands were specified, but the computation was not. Such a hybrid approach still complicates specification (some kind of dependencies are required), but would allow some analysis to be performed.
 \end{enumerate}
 
-We have chosen the first option, modelling a build script as a series of commands given to the build system. Future commands may depend on the results of previous commands in ways that are not visible to the build system. The commands are produced with ``cheap'' functions such as control logic and simple manipulations. We consider the cheap commands to be fixed overhead, run on every build, and not cached or parallelised in any way. If any of these cheap manipulations becomes expensive, they can be replaced by a command, which will then be handled properly. The simple list of commands from \S\ref{sec:executing_commands} is then a degenerate case of no interesting logic.
+In order to retain the desired simplicity of build scripts, we have chosen the first option, modelling a build script as a series of commands given to the build system. Future commands may depend on the results of previous commands in ways that are not visible to the build system. The commands are produced with ``cheap'' functions such as control logic and simple manipulations. We consider the cheap commands to be fixed overhead, run on every build, and not cached or parallelised in any way. If any of these cheap manipulations becomes expensive, they can be replaced by a command, which will then be visible to the build system. The simple list of commands from \S\ref{sec:executing_commands} is a degenerate case of no interesting logic between commands.
 
-An important consequence of the control logic not being visible to the build system is that the build system has no prior knowledge of which commands are coming next, or if they have changed. As a result, even if you are using a simple static script such as from \S\ref{sec:introduction}, and then manually edit the script, the build will execute correctly. The build system is unaware if you edited the script, or if the commands were conditional on something that it cannot observe. Therefore, this model solves the problem of self-tracking from \citet{build_systems_a_la_carte} \S6.5.
+An important consequence of the control logic not being visible to the build system is that the build system has no prior knowledge of which commands are coming next, or if they have changed. As a result, even when using a simple static script such as from \S\ref{sec:introduction}, and then manually editing the script, the build will execute correctly. The build system is unaware if you edited the script, or if the commands were conditional on something that it cannot observe. Therefore, this model solves the problem of self-tracking from \citet{build_systems_a_la_carte} \S6.5.
 
 \subsection{Dependency tracing}
 \label{sec:assume_tracing}
 
-For the rest of this section we assume the existence of \emph{dependency tracing} which can, after a command completes, tell us which files that command read and which files it wrote -- we discuss the implementation and limitations of dependency tracing in \S\ref{sec:tracing}. Concretely, we can run a command in a special mode such that when the command completes (and not before) we can determine which files it read and which it wrote. We cannot determine at which point during the execution these files were accessed, or which order they were accessed in. We cannot prevent or otherwise redirect an in-progress access. These limitations are a (frustrating!) consequence of the tracing technology used.
+For the rest of this section we assume the existence of \emph{dependency tracing} which can tell us which files a command read and wrote -- we discuss the implementation and limitations of dependency tracing in \S\ref{sec:tracing}. Concretely, we can run a command in a special mode such that when the command completes (and not before) we can determine which files it read and which it wrote. We cannot determine at which point during the execution these files were accessed, nor which order they were accessed in. We cannot prevent or otherwise redirect an in-progress access. These limitations are a (frustrating!) consequence of the tracing technology available.
 
 \subsection{Skipping unnecessary commands}
 \label{sec:skipping_unnecessary}
 
-When running a command, we can use tracing to capture the files read and written, and then after the command completes, record the hashes of those files. If the same command is ever run again, and the inputs and outputs haven't changed (same hashes), it can be skipped. This approach is the key idea behind both \Memoize\cite{memoize} and \Fabricate\cite{fabricate}. However, this technique makes the assumption that commands are pure functions from their inputs to their outputs. There are a number of ways that assumption can be violated and approaches to overcome it.
+When running a command, we can use tracing to capture the files read and written, and then after the command completes, record the cryptographic hashes of the contents of those files. If the same command is ever run again, and the inputs and outputs haven't changed (same hashes), it can be skipped. This approach is the key idea behind both \Memoize\cite{memoize} and \Fabricate\cite{fabricate}. However, this technique makes the assumption that commands are pure functions from their inputs to their outputs. There are a number of ways that assumption can be violated and approaches to overcome it.
 
-\begin{itemize}
+\paragraph{Non-deterministic commands} Many commands are non-deterministic -- e.g. the output of \texttt{ghc} object files contains unpredictable values within it (a consequence of the technique described by \citet{lennart:unique_names}). We assume that where such non-determinism exists, any possible output is equally valid.
 
-\item Many commands are non-deterministic -- e.g. the output of \texttt{ghc} object files contains unpredictable values within it (a consequence of the technique described by \citet{lennart:unique_names}). We assume that where such non-determinism exists, any possible output is equally valid.
+\paragraph{Incorporating external information} Some commands incorporate system information such as the timestamp, so a cached value will represent the first time the command was run, not the current time. For compilations that embed the timestamp in metadata, the first timestamp is probably fine. For commands that really want the current time, that step can be lifted into the control logic (as per \S\ref{sec:monadic}) so it will run everytime the build runs. Similarly, commands that require unique information, e.g. a GUID or random number, can be moved into control logic and always run.
 
-\item Some commands incorporate untracked information such as the timestamp, so a cached value will represent the first time the command was run, not the current time. For compilations that embed the timestamp in metadata, the first timestamp is probably fine. For commands that really want the current time, that step can be lifted into the control logic (as per \S\ref{sec:monadic}) so it will run everytime the build runs. Similarly, commands that require unique information, e.g. a GUID or random number, can be moved into control logic and always run.
+\paragraph{Reading and writting the same file} If a command both reads and writes the same file, and the information written is fundamentally influenced by the file that was read, then the command never reaches a stable state. As an example, \verb"echo x >> foo.txt" will append the character \texttt{x} every time the command is run. Equally, there are also commands that read the existing file to avoid rewriting a file that hasn't changed (e.g. \texttt{ghc} generating a \texttt{.hi} file) and commands that can cheaply update an existing file in some circumstances (the Micrsoft C++ linker in incremental mode). We make the assumption that if a command both reads and writes to a file, that the read does not meaningfully influence the write, otherwise it is not really suitable as part of a build system and our reference semantics are violated.
 
-\item If a command both reads and writes the same file, and the information written is fundamentally influenced by the file that was read, then the command never reaches a stable state. As an example, \verb"echo x >> foo.txt" will append the character \texttt{x} every time the command is run. Equally, there are also commands that read the existing file to avoid rewriting a file that hasn't changed (e.g. \texttt{ghc} generating a \texttt{.hi} file) and commands that can cheaply update an existing file in some circumstances (the Micrsoft C++ linker). We make the assumption that if a command both reads and writes to a file, that the read does not meaningfully influence the write, or it is not really suitable as part of a build system.
+\paragraph{Simultaneous modification} If a command reads a file, but before the command completes something else modifies the file (e.g. a human or untracked control logic), then the final hash will not match what the command saw. It is possible to detect such problems with reads by ensuring that the modification time after computing the hash is before the command was started. For simultaneous writes the problem is much harder, so we require that all files produced by the build script are not simultaneously written to.
 
-\item If a command reads a file, but before the command completes something else modifies the file (e.g. a human or untracked control logic), then the final hash will not match what the command saw. It is possible to detect such problems by ensuring the modification time of all reads is before the command was started.
-\end{itemize}
-
-In general we assume individual commands are well behaved and meet the above assumptions, and if not, they can be lifted into the control logic.
+\postparagrahs In general we assume all commands given to the build system are well behaved and meet the above assumptions.
 
 \subsection{Cloud builds}
 \label{sec:cloud_builds}
 
-We can skip execution if all the files accessed have the same hashes as the last execution. However, if the files to be read all match a any previous execution, and the corresponding output files have been stored away, those output files can inserted as outputs \emph{without} rerunning the command. If that storage is in on a server, the result is cloud build functionality, where multiple users can share the results of one compilation. Importantly, whether a command is run or the results copied from a server should be unobservable, so we don't need to consider cloud builds for the rest of the system. While this approach works beautifully in theory, in practice there are two problems:
+We can skip execution of a command if all the files accessed have the same hashes as any previous execution (\S\ref{sec:skipping_unnecessary}). However, if \emph{the read files} match a previous execution, and the files that were written have been stored away, those stored files can be copied over as outputs \emph{without} rerunning the command. If that storage is on a server, multiple users can share the results of one compilation, resulting in cloud build functionality. While this approach works well in theory, there are some problems in practice.
 
-\paragraph{Relative build directories} Often the current directory, or users profile directory, will be accessed by commands. These directories change if a user has two working directories, or if they use different machines. We can solve this problem by having a substitution table, replacing values such as the users home directory with \texttt{\$HOME}.
+\paragraph{Machine-specific outputs} Sometimes a generated output will only be applicable to the machine on which it was generated -- for example if a compiler auto-detects the precise chipset (e.g. presence of AVX2 instructions) or hardcodes machine specific details (e.g. the username). Such information can often be lifted into the command line, e.g. by moving chipset detection into the control logic and passing it explicitly to the compiler. Alternatively, such commands can be explicitly tagged as not being suitable for cloud builds.
 
-\paragraph{Non-deterministic builds} If a command has non-deterministic output, then every time it runs it may generate a different result. Anything that transitively depends on that result is likely to also vary between runs. If the user temporarily disconnects from the shared storage, and runs a non-deterministic command, even if they subsequently reconnect, it is likely anything transitively depending on that command will never match again until after a clean rebuild.
+\paragraph{Relative build directories} Often the current directory, or users profile directory, will be accessed by commands. These directories change if a user has two working directories, or if they use different machines. We can solve this problem by having a substitution table, replacing values such as the users home directory with \texttt{\$HOME}. If not rectified, this issue reduces the reusability of cloud results, but is otherwise not harmful.
+
+\paragraph{Non-deterministic builds} If a command has non-deterministic output, then every time it runs it may generate a different result. Anything that transitively depends on that output is likely to also vary on each run. If the user temporarily disconnects from the shared storage, and runs a non-deterministic command, even if they subsequently reconnect, it is likely anything transitively depending on that command will never match again until after a clean rebuild. There are designs to solve this problem (see \S\ref{sec:forward_hashes}), but the issue only reduces the effectiveness of the cloud cache, and usually occurs with intermittent network access, so can often be ignored.
 
 \subsection{Build consistency}
 \label{sec:hazards}
 
-For a \Make build system to be stable, it must be the case that after a build, a rebuild will not execute any further commands. It's easy to construct examples of sequences of commands that violate this property, for example:
+As stated in \citet{build_systems_a_la_carte} \S3.6, a build is correct provided that:
 
-\begin{verbatim}
-echo x >> foo.txt
-\end{verbatim}
+\begin{quote}
+\emph{If we recompute the value of the key (...), we should get exactly the same value as we see in the final store.}
+\end{quote}
 
-% SS not very clear in skipping unnecessary that those things listed are ``Restrictions''
-% NM tried to make it more obvious. It's actually an example in restrictions
+Specified in terms more applicable to our design, it means that after a build completes, a subsequent rebuild should skip all commands, assuming the commands are given to the build system are the same. However, there are sequences of commands, where each command is fine in isolation (as per \S\ref{sec:skipping_unnecessary}), but the combination is problematic, for example:
 
-% SS changed resctrictions -> assumption since afaik rattle won't produce an error if someone puts that in their build.
-
-As discussed in \S\ref{sec:skipping_unnecessary}, this command does not meet our assumption that a command which both reads and writes a file should not be meaningfully influenced by the initial read. But we can find other sequences of commands, where each command is fine in isolation, but the conjunction is problematic, for example:
-
+\vspace{1mm}
 \begin{verbatim}
 echo 1 > foo.txt
 echo 2 > foo.txt
 \end{verbatim}
+\vspace{1mm}
 
-This program writes \texttt{1} to \texttt{foo.txt}, then writes \texttt{2}. If the commands are re-executed then the first command is invalid by virtue of its output changing, and after the first command has re-run, now the second command is invalid. More generally, if a build writes different values to the same file multiple times, it will not be consistent. But even without writing to the same file twice, it is possible to have an inconsistent build:
+This program writes \texttt{1} to \texttt{foo.txt}, then writes \texttt{2}. If the commands are re-executed then the first command reruns because its output changed, and after the first command reruns, now the second commands output has changed. More generally, if a build writes different values to the same file multiple times, it will not be consistent. But even without writing to the same file twice, it is possible to have an inconsistent build:
 
+\vspace{1mm}
 \begin{verbatim}
 sha1sum foo.txt > bar.txt
 sha1sum bar.txt > foo.txt
 \end{verbatim}
+\vspace{1mm}
 
-Here \texttt{sha1sum} takes the SHA1 hash of a file, firstly taking the SHA of \texttt{foo.txt} and storing it in \texttt{bar.txt}, then taking the SHA of \texttt{bar.txt} and storing it in \texttt{foo.txt}. The root of the problem is that the script first reads from \texttt{foo.txt} on the first line, then writes to \texttt{foo.txt} on the second line, meaning that when the script is rerun the read of foo.txt will have to be repeated as its value has changed.
+Here \texttt{sha1sum} takes the SHA1 hash of a file, firstly taking the SHA1 of \texttt{foo.txt} and storing it in \texttt{bar.txt}, then taking the SHA1 of \texttt{bar.txt} and storing it in \texttt{foo.txt}. The problem is that the script first reads from \texttt{foo.txt} on the first line, then writes to \texttt{foo.txt} on the second line, meaning that when the script is rerun the read of \texttt{foo.txt} will have to be repeated as its value has changed.
 
-It turns out writing to a file after it has already been either read or written is the only circumstance in which a build, where every individual command is well-formed (as per \S\ref{sec:skipping_unnecessary}), is inconsistent. We define such a build as \emph{hazardous} if it violates one of the following consistency rules:
+Writing to a file after it has already been either read or written is the only circumstance in which a build, where every individual command is well-formed (as per \S\ref{sec:skipping_unnecessary}), is incorrect. We define such a build as \emph{hazardous} using the following rules:
 
 \begin{description}
-\item[write after read] If one command reads from a file, and a subsequent command writes to that file, on a future build, the first command will have to be rerun because its input has changed.  This behavior causes a \emph{read-write hazard}.
-\item[write after write] If two commands both write to the same file, on a future build, the first will be rerun (it's output has changed), which is likely to then cause the second to be rerun.  This behavior causes a \emph{write-write hazard}.
+\item[write after read] If one command reads from a file, and a subsequent command writes to that file, on a future build, the first command will have to be rerun because its input has changed. This behavior is defined as a \emph{read-write hazard}.
+\item[write after write] If two commands both write to the same file, on a future build, the first will be rerun (it's output has changed), which is likely to then cause the second to be rerun. This behavior is defined as a \emph{write-write hazard}.
 \end{description}
 
-Using tracing \Rattle spots hazards and raises errors if they occur. We prove that a build system with deterministic control logic and with no hazards always results in no rebuilds in \S\ref{sec:proof:no_rebuild}. In a build system without hazards there is at most one write to any file, which occurs before any reads of that file. We can therefore prove there are no rebuilds by showing the first command can't rebuild, and proceeding by induction. It is not the case that the presence of hazards guarantees subsequent executions will definitely rebuild, for example if the write doesn't actually change the value, but such a build system is dangerous -- if the write definitely can't change the output, the write should not be present.
+Using tracing we can detect hazards and raise errors if they occur, detecting that a build system is incorrect before unnecessary rebuilds occur. We prove that a build system with deterministic control logic and with no hazards always results in no rebuilds in \S\ref{sec:proof:no_rebuild}. In a build system without hazards there is at most one write to any file, which occurs before any reads of that file. We can therefore prove there are no rebuilds by showing the first command can't rebuild, and proceeding by induction. It is not the case that the presence of hazards guarantees subsequent executions will definitely rebuild, for example if the write doesn't actually change the value, but such a build system is dangerous -- if the write definitely can't change the output, the write should not be present.
 
 \subsection{Parallelism}
 
