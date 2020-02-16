@@ -712,20 +712,22 @@
 \newif\if@undescribed@images
 \@undescribed@imagesfalse
 \newcommand\Description[2][]{\global\@Description@presenttrue\ignorespaces}
-\AtEndDocument{\if@undescribed@images
-  \ClassWarningNoLine{\@classname}{Some images may lack descriptions}\fi}
+% NEIL: Quiet useless warnings
+% \AtEndDocument{\if@undescribed@images
+%  \ClassWarningNoLine{\@classname}{Some images may lack descriptions}\fi}
 \AtBeginEnvironment{figure}{\@Description@presentfalse
   \let\@vspace\@vspace@orig
   \let\@vspacer\@vspacer@orig}
 \AtBeginEnvironment{figure*}{\@Description@presentfalse
   \let\@vspace\@vspace@orig
   \let\@vspacer\@vspacer@orig}
-\AtEndEnvironment{figure}{\if@Description@present\else
-  \global\@undescribed@imagestrue
-  \ClassWarning{\@classname}{A possible image without description}\fi}
-\AtEndEnvironment{figure*}{\if@Description@present\else
-  \global\@undescribed@imagestrue
-  \ClassWarning{\@classname}{A possible image without description}\fi}
+% NEIL: Quiet useless warnings
+% \AtEndEnvironment{figure}{\if@Description@present\else
+%   \global\@undescribed@imagestrue
+%  \ClassWarning{\@classname}{A possible image without description}\fi}
+% \AtEndEnvironment{figure*}{\if@Description@present\else
+%  \global\@undescribed@imagestrue
+%  \ClassWarning{\@classname}{A possible image without description}\fi}
 \AtBeginEnvironment{table}{\let\@vspace\@vspace@orig
   \let\@vspacer\@vspacer@orig}
 \AtBeginEnvironment{table*}{\let\@vspace\@vspace@orig
@@ -2881,12 +2883,13 @@
   \fi}
 \let\@vspace@orig=\@vspace
 \let\@vspacer@orig=\@vspacer
-\apptocmd{\@vspace}{\ClassWarning{\@classname}{\string\vspace\space should
-    only be used to provide space above/below surrounding
-    objects}}{}{}
-\apptocmd{\@vspacer}{\ClassWarning{\@classname}{\string\vspace\space should
-    only be used to provide space above/below surrounding
-    objects}}{}{}
+% NEIL: Quiet useless warnings
+% \apptocmd{\@vspace}{\ClassWarning{\@classname}{\string\vspace\space should
+%     only be used to provide space above/below surrounding
+%     objects}}{}{}
+% \apptocmd{\@vspacer}{\ClassWarning{\@classname}{\string\vspace\space should
+%    only be used to provide space above/below surrounding
+%     objects}}{}{}
 \let\ACM@origbaselinestretch\baselinestretch
 \AtEndDocument{\ifx\baselinestretch\ACM@origbaselinestretch\else
   \ClassError{\@classname}{An attempt to redefine
