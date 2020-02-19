@@ -13,40 +13,57 @@ hazard occurs when a command read or writes a file and a later command writes to
 \subsection{No rebuilds}
 \label{sec:proof:no_rebuild}
 
-We prove that a build system with deterministic control logic with no hazards always results in no rebuilds.
+We prove that a build system with deterministic control logic with no hazards always results in no rebuilds when nothing has changed.
+
+\begin{align} 
+  build :: \bar{command} \\
+  command :: (cmd, reads :: \bar{file}, writes:: \bar{file}) \\
+  file :: (name, content) \\
+  eq(f1 :: file, f2 :: file) = name(f1) = name(f2) \&\& content(f1) = content(f2) \\
+  hazard :: (file, command, command) \\
+  files(command) = reads(command) \cup writes(command)
+\end{align}
+
 In a build system without hazards there is at most one write to any file, which occurs before any reads of that file. We can therefore prove there are no rebuilds by showing the first command can't rebuild, and proceeding by induction.
 
-Let us have a build of \emph{n} commands that meets the above restrictions.
+Let $B :: build$ be a build with no hazards when executed sequentially.  Let $C$ be the set of files on the machine which changed since the last run.
 
-Base case: Command $1$ of $1$  will not be re-run because from the definition of the claim none of its inputs has changed, and the build system's control logic is deterministic.  Because, command $1$ is not re-running, it will not write to any files.
+\begin{description}
+\item[Base case: $|B| = 1$]
 
-Induction step:  Let us assume the above claim is true for a build with $n$ commands.  Let us show the claim is true for a build of $n+1$ commands.
-
-If the first $n$ commands of the build did not run and did not write to any files, then the dependencies of command $n+1$ could not have changed during the build, and from the claim above we know they did not change before the build, therefore, command $n+1$ will not run.
+  $\forall f \in reads(B[0]) \cup writes(B[0]), f \notin C$, therefore, $B[0]$ does not run, and $\forall f \in writes(B[0])$ do not change.
+  
+  % show that inputs of c = B[0] have not changed
+  % therefore, c[0] will not run
+  % therefore, the outputs of B, which are third(c[0]) will not have changed
+  
+\item[Induction step: $|B| = n+1$]
+  Let us assume the above claim is true for a build, $|B| = n$.  Also, Let $D$ be the set of files written to during the build.
+  It follows that, $\forall c \in B, \forall f \in writes(c), f \notin D$.
+  Therefore, if $B[n] = c1$, $\forall f \in reads(c1) \cup writes(c1), f \notin D, f \notin C$, therefore, $B[n]$ does not run and $\forall f \in writes(B[n]$ do not change.
+  
+\end{description}
 
 \subsection{Reordered builds}
 \label{sec:proof:reorder}
 
 Given a script with no hazards when executed sequentially, we can show that any interleaving of those commands that also has no hazards will result in an equivalent output.
 
-Proof by contradiction.
+Let us assume we have a build $A$, with no hazards, meaning $\forall c = A[i] \in A, \forall f \in files(c), f \notin \bigcup^{|A|}_{j=i+1} writes(A[j])$.
 
-Let us assume we have a build script $A$, with no hazards.  Let us also assume there exists a build script $B$, which is an alternative ordering of the build script $A$, which also has no hazards and produces an output different from the output produced by $A$.  Here, the output of a build script is the set of files written and their hashes.
+Let us assume there exists a build $B$, that also has no hazards, meaning $\forall c = B[i] \in B, \forall f \in files(c), f \notin \bigcup^{|B|}_{j=i+1} writes(B[j])$.
+Let us also assume that $|A|$ = $|B|$, and $\forall c \in A, \exists d \in B, s.t. cmd(c) = cmd(d)$.
 
-Therefore, $B$ produces a different set of file and hashes than $A$ does when running the same set of commands.
+Prove that $\forall c \in B, \exists d \in A, s.t. cmd(c) = cmd(d) \land reads(c) = reads(d) \implies writes(c) = writes(d) \implies \bigcup^{|B|}_{i=0} writes(B[i]) = \bigcup^{|A|}_{i=0} writes(A[i])$.
 
-\begin{description}
-\item [$B$ writes to a file $A$ does not write to. Or $A$ writes to a file $B$ does not write to]
-  There must exist a cmd $c$ which when run by $A$ and $B$ writes to a different set of files.  The set of files written to by $c$ is affected by the content of the cmd, and the set of input files.  Since, the content of the cmd is the same between $A$ and $B$, the input files must differ.
+$\forall c = B[i] \in B, \forall f \in files(c), f \nexists d = B[j] \in B, s.t. i < j$
 
-  By the definition of $A$ and $B$ having no hazards, any files read by $c$ must be written to by commands that precede $c$ in the build. And because $A$ and $B$ contain the same commands, $c$'s input files must be the same regardless of build.  Therefore, a contradiction.
+$\forall c \in B, \exists e = A[k] \in A, s.t. cmd(c) = cmd(e) \land \forall f \in files(c), \exists g \in files(e) \land \forall f \in files(e), \exists g \in files(c)$
 
-\item [$B$ writes to a file $f$ whose hash is $h$ and $A$ writes to the same file but its hash is $K$; $h \neq k$]
-  There must exist a cmd $c$ which when run by $A$ and $B$ writes to the file $f$ and produces the different hashes, $k$ and $h$ respectively.  The files written to by $c$ is affected by the content of the cmd and the set of input files. Since $c$ is the same between $A$ and $B$, the input files must differ.
+$\implies \forall c \in B, \exists d \in A, s.t. cmd(c) = cmd(d) \land reads(c) = reads(d) \implies writes(c) = writes(d)$
 
-  By the definition of $A$ and $B$ having no hazards, any files read by $c$ must be written to by commands that precede $c$ in the build.  And because $A$ and $B$ contain the same commands, $c$'s input files must be the same regardless of build.  Therefore, a contradiction.
-
-\end{description}
+$\implies \bigcup^{|B|}_{i=0} writes(B[i]) = \bigcup^{|A|}_{i=0} writes(A[i])$.
+Therefore, for any script with no hazards when executed sequentially, any interleaving of those commands that also has no hazards will result in an equivalent output.
 
 \subsection{Parallel commands}
 \label{sec:proof:parallel}
