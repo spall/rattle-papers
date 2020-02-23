@@ -17,12 +17,13 @@ There are two axes on which to measure ``just as good'' -- correctness and perfo
 
 \paragraph{Rebuilding too much} \Rattle never rebuilds too much, as if none of the inputs to a command have changed, then nothing rebuilds. As a matter of implementation, to implement cloud builders as per \ref{sec:cloud_builds}, \Rattle uses hashes of the file contents. In contrast, \Make uses the modification time, so if a file is resaved, but it's contents do not change, \Make will rebuild but \Rattle will not. It would be possible for \Make to use modification times, if it chose to store additional metadata not in the file system.
 
-\paragraph{Parallelism} The script from \S\ref{sec:introduction} has three commands, the first two of which can run in parallel, the the third of which must wait for the first two to finish. \Make is given all this information by dependencies, so will always acheive as much parallelism as is available. In constrast, \Rattle has no such knowledge, so has to recover the parallelism by speculation, as per \ref{sec:speculation}. During the first execution, \Rattle has no knowledge about even which commands are coming next (as described in \S\ref{sec:monadic}), so has no choice but to execute each command serially, with less parallelism than \Make. In subsequent executions \Rattle will use speculation to always speculate on the second command (as it never has a hazard with the first), but never speculate on the third until the first two have finished (as they are known to conflict). Interesting, sometimes \Rattle executes the third command (because it got to that point in the script), and sometimes it speculates it (because the previous two have finished) -- it is a race condition where both alternatives are equivalent. So \Rattle has less parallelism on the first execution, but using the cloud features, that can be reduced to the first execution \emph{ever}, rather than the first execution for a given user.
+\paragraph{Parallelism} The script from \S\ref{sec:introduction} has three commands, the first two of which can run in parallel, the the third of which must wait for the first two to finish. \Make is given all this information by dependencies, so will always acheive as much parallelism as is available. In constrast, \Rattle has no such knowledge, so has to recover the parallelism by speculation, as per \ref{sec:speculation}. During the first execution, \Rattle has no knowledge about even which commands are coming next (as described in \S\ref{sec:monadic}), so has no choice but to execute each command serially, with less parallelism than \Make. In subsequent executions \Rattle will use speculation to always speculate on the second command (as it never has a hazard with the first), but never speculate on the third until the first two have finished (as they are known to conflict). Interestingly, sometimes \Rattle executes the third command (because it got to that point in the script), and sometimes it speculates it (because the previous two have finished) -- it is a race condition where both alternatives are equivalent. So \Rattle has less parallelism on the first execution, but using the cloud features, that can be reduced to the first execution \emph{ever}, rather than the first execution for a given user.
 
-\paragraph{Overhead} The overhead inherent in \Rattle is greater than that of \Make as it hashes files, traces command execution, computes potential hazards to figure out speculation and writes to a shared cloud store. To measure the overhead we created a very simple pair of \texttt{main.c} and \texttt{util.c} files where \texttt{main.c} calls \texttt{printf} using a number computed by a function in \texttt{util.c}. We then measured the time to do an initial build, a rebuild when nothing had changed, a rebuild with whitespace changes to \texttt{main.c}, and a rebuild with changes to both C files. We did all the above both single threaded and with two and three threads. The numbers are:
+\paragraph{Overhead} The overhead inherent in \Rattle is greater than that of \Make as it hashes files, traces command execution, computes potential hazards to figure out speculation and writes to a shared cloud store. To measure the overhead we created a very simple pair of \texttt{main.c} and \texttt{util.c} files where \texttt{main.c} calls \texttt{printf} using a number computed by a function in \texttt{util.c}. We then measured the time to do an initial build, a rebuild when nothing had changed, a rebuild with whitespace changes to \texttt{main.c}, and a rebuild with changes to both C files. We did all the above with 1, 2 and 3 threads, on Linux. The numbers are:
 
-\begin{tabular}{|l|r|r|r|}
+\begin{tabular}{l|r|r|r}
 Number of threads & 1 & 2 & 3 \\
+\hline
 Initial build \\
 Nothing changed \\
 \texttt{main.c} changed \\
@@ -31,6 +32,55 @@ Both C files changed \\
 
 We see \Rattle has low overhead, in the millisecond range. We see three threads has no change over two threads, as this build contains no more parallelism opportunities.
 
+\subsection{Measuring overhead}
+
+In order to determine what overhead \Rattle and \Fsatrace introduce we took the latest version of \Fsatrace\footnote{Git commit 41fbba17da580f81ababb32ec7e6e5fd49f11473} and ran \texttt{make -j1}, capturing the commands that were executed, and reran those commands trying to isolate the overheads introduced by each part of \Rattle. The \Rattle command execution uses the command execution from \Shake \cite{shake} as a library, which in turn builds on the command execution from the Haskell \texttt{process} library. Therefore, we ran the commands in a clean build directory in 7 different ways:
+
+\begin{enumerate}
+\item Using \texttt{make -j1}
+\item Using \texttt{System.Process} from the Haskell \texttt{process} library.
+\item Using \texttt{cmd} from the Haskell \texttt{shake} library \cite{shake}, which builds on top of the \texttt{process} library.
+\item Using \texttt{cmd} from \texttt{shake}, but wrapping the command with \Fsatrace.
+\item Using \texttt{cmd} from \texttt{shake} with the \texttt{Traced} setting, which runs \Fsatrace and collects the result from a temporary directory.
+\item Using \Rattle with no speculation or parallelism, and not storing any results to shared storage.
+\item Using \Rattle with all features turned on, including shared storage.
+\end{enumerate}
+
+We ran all sets of commands five times, and took the average, on both Windows and Linux. On Windows \Fsatrace compiles in 25 commands (21 compiles, 4 links). On Linux \Fsatrace compiles in 9 commands (7 compiles, 2 links). On Linux the current build system produces write-write hazards, because it compiles some files (e.g. \texttt{shm.c}) twice, once with \texttt{-fPIC} (position independent code), and once without. However, both times it passes \texttt{-MMD} to cause \texttt{gcc} to produce \texttt{shm.d} which is used for dependencies -- we removed the \texttt{-MMD} flag as it doesn't impact the above benchmark.
+
+% RAW RESULTS
+%   WINDOWS
+%     make: 10.154s, 10.711, 10.130, 10.161, 10.334 = 10.30
+%     System.Process: 10.73s 10.77s 11.03s 11.47s 11.99s = 11.20s
+%     shake.cmd: 12.13s 12.84s 13.23s 13.47s 14.15s = 13.16s
+%     shake.cmd fsatrace: 16.66s 16.49s 16.74s 17.26s 17.54s = 16.94s
+%     shake.cmd traced: 17.78s 17.39s 19.12s 18.50s 18.35s = 18.23s
+%     rattle: 22.06s 22.12s 21.00s 21.15s 21.55s = 21.58s
+%     rattle share: 21.93s 22.05s 21.43s 21.31s 21.34s = 21.61s
+%   LINUX
+%     Make: 1.89, 1.90, 1.87, 1.87, 1.85 = 1.88s
+%     System.Process: 1.59s 1.85s 2.07s 1.78s 1.85s = 1.83s
+%     shake.cmd: 2.03s 1.76s 1.78s 1.81s 1.77s = 1.83s
+%     shake.cmd fsatrace: 1.85s 1.96s 1.94s 1.89s 1.91s = 1.91s
+%     shake.cmd traced: 2.02s 2.22s 2.22s 2.22s 2.21s = 2.18s
+%     rattle: 2.62s 2.32s 2.21s 2.14s 2.12s = 2.28s
+%     rattle share: 2.36s 2.28s 2.27s 2.19s 2.27s = 2.27s
+
+\vspace{3mm}
+\begin{tabular}{l|rrr|rrr}
+Commands & \multicolumn{3}{c|}{Windows} & \multicolumn{3}{c}{Linux} \\
+\hline
+Make & 10.3s & 100\% &  & 1.88s & 100\% & \\
+prcoess & 11.2s & 109\% & +9\% & 1.83s & 97\% & -3\% \\
+\Shake & 13.16s & 128\% & +19\% & 1.83s & 97\% & +0\% \\
+\Shake + \Fsatrace & 16.94s & 164\% & +37\% & 1.91s & 102\% & +4\% \\
+\Shake + \texttt{Traced} & 18.23s & 177\% & +13\% & 2.18s & 116\% & +14\% \\
+\Rattle & 21.58s & 210\% & +33\% & 2.28s & 121\% & +5\% \\
+\Rattle + everything & 21.61s & 210\% & +0\% & 2.27s & 121\% & -1\% \\
+\end{tabular}
+\vspace{3mm}
+
+Both Windows and Linux have three columns -- the time taken (average of five runs), that time as a percentage of the \Make run, and the delta from the row above. Looking at Windows, we see that the total overhead of \Rattle makes the execution more than twice as slow. Of the parts, 37\% of the slowdown is from \Fsatrace, with the next greatest overhead being from \Rattle -- profiling shows that normalising filepaths is the major contributor. In contrast, on Linux, the total overhead is only 21\%, of which the majority comes from the \texttt{Traced} feature of \Shake, this time testing for the existence of files. These results show that tracing has minor but not insignificant on Linux, whereas on Windows can be a substantial performance reduction.
 
 \subsection{Reimplementing Stack}
 
