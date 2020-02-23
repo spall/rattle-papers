@@ -131,3 +131,5 @@ It would be nice if the accesses could be intercepted and denied if there was a 
 Finally, it would be useful to know the purpose of a file system access, but that is generally not available to the tracing system. As an example, many programs create, use and then delete temporary files. If multiple programs are run in a single \Rattle build then it is not unreasonable (and in fact, somewhat common) to see them access the \emph{same} temporary file, but distinct instances of it, which should not be reported as a hazard despite multiple writes. We solve such issues by ignoring reads and writes to the temporary directory.
 
 Howver, most of all, standardisation would be fantastic. The tracing pieces of \Rattle have been some of the most difficult engineering pieces to develop. We suggest that such features should be standardised and made available in a cross-platform way.
+
+NOTE: There are lots of issues around things like deleting, renaming files and directories which don't track as well as they should.
