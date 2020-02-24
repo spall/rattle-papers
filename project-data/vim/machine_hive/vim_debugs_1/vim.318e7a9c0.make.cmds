@@ -1,0 +1,63 @@
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim
+-c if test ! -f src/auto/config.mk; then \
+	cp src/config.mk.dist src/auto/config.mk; \
+fi
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim
+-c echo "Starting make in the src directory."
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim
+-c echo "If there are problems, cd to the src directory and run make there"
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim
+-c cd src && make first
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src
+-c gcc -std=gnu99 -c -I. -Iproto -DHAVE_CONFIG_H -DFEAT_GUI_GTK  -pthread -I/usr/include/gtk-2.0 -I/usr/lib64/gtk-2.0/include -I/usr/include/atk-1.0 -I/usr/include/cairo -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/pango-1.0 -I/usr/include/fribidi -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/harfbuzz -I/usr/include/freetype2 -I/usr/include/libpng15 -I/usr/include/uuid -I/usr/include/pixman-1 -I/usr/include/libdrm     -O2 -fno-strength-reduce -Wall -D_REENTRANT   -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1        version.c -o objects/version.o
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src
+-c LINK="  gcc -std=gnu99   -L/usr/local/lib -Wl,--as-needed \
+	-o vim objects/arabic.o objects/arglist.o objects/autocmd.o objects/beval.o objects/buffer.o objects/change.o objects/blob.o objects/blowfish.o objects/cindent.o objects/cmdexpand.o objects/cmdhist.o objects/crypt.o objects/crypt_zip.o objects/debugger.o objects/dict.o objects/diff.o objects/digraph.o objects/drawline.o objects/drawscreen.o objects/edit.o objects/eval.o objects/evalbuffer.o objects/evalfunc.o objects/evalvars.o objects/evalwindow.o objects/ex_cmds.o objects/ex_cmds2.o objects/ex_docmd.o objects/ex_eval.o objects/ex_getln.o objects/fileio.o objects/filepath.o objects/findfile.o objects/fold.o objects/getchar.o objects/hardcopy.o objects/hashtab.o objects/highlight.o objects/if_cscope.o objects/if_xcmdsrv.o objects/indent.o objects/insexpand.o objects/list.o objects/map.o objects/mark.o objects/mbyte.o objects/memline.o objects/menu.o objects/misc1.o objects/misc2.o objects/mouse.o objects/move.o objects/normal.o objects/ops.o objects/option.o objects/optionstr.o objects/os_unix.o objects/pathdef.o objects/popupmenu.o objects/popupwin.o objects/profiler.o objects/pty.o objects/quickfix.o objects/regexp.o objects/register.o objects/screen.o objects/scriptfile.o objects/search.o objects/session.o objects/sha256.o objects/sign.o objects/sound.o objects/spell.o objects/spellfile.o objects/spellsuggest.o objects/syntax.o objects/tag.o objects/term.o objects/terminal.o objects/testing.o objects/textprop.o objects/ui.o objects/undo.o objects/usercmd.o objects/userfunc.o objects/version.o objects/vim9compile.o objects/vim9execute.o objects/vim9script.o objects/viminfo.o objects/window.o objects/bufwrite.o objects/gui.o objects/gui_gtk.o objects/gui_gtk_x11.o objects/gui_gtk_f.o objects/gui_beval.o objects/gui_gtk_gresources.o objects/vterm_encoding.o objects/vterm_keyboard.o objects/vterm_mouse.o objects/vterm_parser.o objects/vterm_pen.o objects/vterm_screen.o objects/vterm_state.o objects/vterm_unicode.o objects/vterm_vterm.o         objects/netbeans.o objects/channel.o objects/xdiffi.o objects/xemit.o objects/xprepare.o objects/xutils.o objects/xhistogram.o objects/xpatience.o  objects/charset.o objects/json.o objects/main.o objects/memfile.o objects/message.o   -lgtk-x11-2.0 -lgdk-x11-2.0 -latk-1.0 -lgio-2.0 -lpangoft2-1.0 -lpangocairo-1.0 -lgdk_pixbuf-2.0 -lcairo -lpango-1.0 -lfontconfig -lgobject-2.0 -lglib-2.0 -lfreetype   -lSM -lICE -lXpm -lXt -lX11 -lXdmcp -lSM -lICE  -lm -ltinfo -lelf -lnsl  -lselinux -lcanberra   -lacl -lattr -lgpm -ldl          " \
+	MAKE="make" LINK_AS_NEEDED=yes \
+	sh ./link.sh
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src
+-c if test -n "yes" -a -f po/Makefile; then \
+	cd po; \
+	  CC="gcc -std=gnu99" make prefix=/usr/local; \
+fi
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src/po
+-c OLD_PO_FILE_INPUT=yes msgfmt -v -o nb.mo nb.po
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src/po
+-c OLD_PO_FILE_INPUT=yes msgfmt -v -o cs.cp1250.mo cs.cp1250.po
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src/po
+-c OLD_PO_FILE_INPUT=yes msgfmt -v -o ja.euc-jp.mo ja.euc-jp.po
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src/po
+-c OLD_PO_FILE_INPUT=yes msgfmt -v -o pl.UTF-8.mo pl.UTF-8.po
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src/po
+-c OLD_PO_FILE_INPUT=yes msgfmt -v -o pl.cp1250.mo pl.cp1250.po
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src/po
+-c OLD_PO_FILE_INPUT=yes msgfmt -v -o ru.cp1251.mo ru.cp1251.po
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src/po
+-c OLD_PO_FILE_INPUT=yes msgfmt -v -o sk.cp1250.mo sk.cp1250.po
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src/po
+-c OLD_PO_FILE_INPUT=yes msgfmt -v -o uk.cp1251.mo uk.cp1251.po
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src/po
+-c echo af ca cs cs.cp1250 da de en_GB eo es fi fr ga it ja ja.euc-jp ja.sjis ko ko.UTF-8 lv nb nl no pl pl.UTF-8 pl.cp1250 pt_BR ru ru.cp1251 sk sk.cp1250 sr sv tr uk uk.cp1251 vi zh_CN zh_CN.UTF-8 zh_CN.cp936 zh_TW zh_TW.UTF-8  | tr " " "\n" |sed -e '/\./d' | sort > LINGUAS
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src/po
+-c msgfmt --desktop -d . --template gvim.desktop.in -o tmp_gvim.desktop
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src/po
+-c rm -f LINGUAS
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src/po
+-c if command -v desktop-file-validate; then desktop-file-validate tmp_gvim.desktop; fi
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src/po
+-c mv tmp_gvim.desktop gvim.desktop
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src/po
+-c echo af ca cs cs.cp1250 da de en_GB eo es fi fr ga it ja ja.euc-jp ja.sjis ko ko.UTF-8 lv nb nl no pl pl.UTF-8 pl.cp1250 pt_BR ru ru.cp1251 sk sk.cp1250 sr sv tr uk uk.cp1251 vi zh_CN zh_CN.UTF-8 zh_CN.cp936 zh_TW zh_TW.UTF-8  | tr " " "\n" |sed -e '/\./d' | sort > LINGUAS
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src/po
+-c msgfmt --desktop -d . --template vim.desktop.in -o tmp_vim.desktop
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src/po
+-c rm -f LINGUAS
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src/po
+-c if command -v desktop-file-validate; then desktop-file-validate tmp_vim.desktop; fi
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src/po
+-c mv tmp_vim.desktop vim.desktop
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/vim/src
+-c if test -n "yes" -a -f po/Makefile; then \
+	cd po; \
+	  CC="gcc -std=gnu99" make prefix=/usr/local converted; \
+fi
