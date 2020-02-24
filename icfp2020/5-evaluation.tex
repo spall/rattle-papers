@@ -118,6 +118,7 @@ Both Windows and Linux have three columns -- the time taken (average of five run
 These results show that tracing has minor but not insignificant on Linux, whereas on Windows can be a substantial performance reduction. As a consequence, we focus on the results under Linux.
 
 \subsection{Redis}
+% SS is subsection redis being here a typo?
 
 1 THREAD
 BUILDING WITH MAKE
@@ -298,9 +299,6 @@ To compare the \Make based build to a \Rattle version, we built Node.js over a s
 % 6. Run on tank? with various threads; ask sam
 
 
-
-
-
 % Comment from the Makefile
 %# .buildstamp needs $(NODE_EXE) but cannot depend on it
 %# directly because it calls make recursively.  The parent make cannot know
@@ -308,3 +306,49 @@ To compare the \Make based build to a \Rattle version, we built Node.js over a s
 %# .buildstamp is out of date and need a rebuild.
 %# Just goes to show that recursive make really is harmful...
 %# TODO(bnoordhuis) Force rebuild after gyp update.
+
+
+\subsection{tmux}
+
+Tmux is a terminal multiplexer whose sourcecode is available on  \href{``https://github.com/vim/vim''}{github}.  It can be built from source using \emph{autoconf}, \emph{automake}, \emph{pkg-config}, and \emph{make}.  To build Tmux from source grabbed from github one does the following:
+
+\begin{verbatim}
+sh autogen.sh
+./configure
+make
+\end{verbatim}
+
+To compare a \Rattle based Tmux build to the \Make based one, we first ran \emph{sh autogen.sh} and \emph{./configure}, and then used the resulting Makefile(s) to generate the Rattle build scripts.  A new Rattle build script was generated for any commit where the build appeared to have changed or a file was added or deleted from the repository.
+
+Tmux was built over a series of 40 commits with both \Make and \Rattle.  The commands run by each build system for each command were then compared.
+
+% For 1 thread
+
+% a new build script was generated for 47174f51, which meant I ran sh autogen.sh && ./configure again
+% before running the rattle build script in case important files needed to be generated
+% Looking at the diff for this commit between rattle and make, I see Make running what appear to be
+% automake etc commands, so I am inclined to ignore those commands.
+% I also see Rattle re-building tmux, which make does not appear to do; it did this becuase
+% tmux.o changed
+
+% not great for rattle
+
+% it seems this probably happened because a version number changed; the version number is a part
+% of the gcc commands run, which rattle saw as a new command, and so it ran the commands producing
+% new object files.... and therefore a new executable.
+
+
+
+
+
+
+% commits
+% ed16f51e 61b075a2 e9b12943 3e701309 8457f54e a01c9ffc cdf13837 74b42407 0eb7b547 f3ea318a 7cdf5ee9 ee3d3db3 685eb381 60ab7144 7eada28f 7f3feb18 8b22da69 bc36700d 32be954b 6f0241e6 19d5f4a0 43b36752 0bf153da 4822130b 47174f51 c915cfc7 54553903 400750bb 470cba35 a4d8437b 6c28d0dd 24cd726d 9900ccd0 c391d50c 0c6c8c4e fdbc1116 37919a6b 22e9cf04 ba542e42 4694afb
+
+
+
+
+
+\subsection{redis}
+
+\subsection{openssl}
