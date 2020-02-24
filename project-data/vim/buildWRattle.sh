@@ -4,6 +4,7 @@ proj=$1 #vim
 url=$2 #github url to vim
 j=$3 # number of threads to build with
 d=$4 # debug means do debugging; anything else means don't, but can't be empty
+test=$5
 
 # oldes to newest; first commit in list is build script
 commits1=(4b96df5a0)
@@ -26,40 +27,86 @@ rm -rf ${projdir}/${proj}
 mkdir -p ${projdir}
 mkdir ${projdir}/${proj}
 
-debug_dir=${here}/${proj}_debugs_${j}
+debug_dir=/nix/other_data/home.local/sjspall/icfp/rattle-papers/project-data/vim/${proj}_debugs_${j}
 mkdir -p ${debug_dir}
 
 cd ${projdir}/${proj}
 git clone ${url} .
 
+NANO=1000000000
+
 for c in "${commits1[@]}"
 do
     git reset --hard ${c}
-    time ${buildScript} ${scripts}/vim.4b96df5a0.cmds ${debug_dir}/${proj}.${c}.debug ${j} ${d} &> ${debug_dir}/${proj}.${c}.rattle.out
+    of=${debug_dir}/${proj}.${c}.rattle.out
+    s1=$(date +"%s%N")
+    ${buildScript} ${scripts}/vim.4b96df5a0.cmds ${debug_dir}/${proj}.${c} ${j} ${d} ${of}  +RTS -p -N &> ${of}
+    s2=$(date +"%s%N")
+    diff=$(( ${s2} - ${s1} ))
+    echo $(( ${diff} / ${NANO} ))
     # run tests
-#    make test &> ${debug_dir}/${proj}.${c}.test.out
+    if [ ${test} = yes ]
+    then 
+	cp ${scripts}/Makefile.4b9.top ${projdir}/${proj}/Makefile
+	cp ${scripts}/Makefile.4b9.src ${projdir}/${proj}/src/Makefile
+	make test &> ${debug_dir}/${proj}.${c}.test.out
+    fi
 done
 
 for c in "${commits2[@]}"
 do
     git reset --hard ${c}
-    time ${buildScript} ${scripts}/vim.318e7a9c0.cmds ${debug_dir}/${proj}.${c}.debug ${j} ${d} &> ${debug_dir}/${proj}.${c}.rattle.out
+    of=${debug_dir}/${proj}.${c}.rattle.out
+    s1=$(date +"%s%N")
+    ${buildScript} ${scripts}/vim.318e7a9c0.cmds ${debug_dir}/${proj}.${c} ${j} ${d} ${of} +RTS -N &> ${of}
+    s2=$(date +"%s%N")
+    diff=$(( ${s2} - ${s1} ))
+    echo $(( ${diff} / ${NANO} ))
     # run tests
- #   make test &> ${debug_dir}/${proj}.${c}.test.out
+    if [ ${test} = yes ]
+    then 
+	cp ${scripts}/Makefile.318.top ${projdir}/${proj}/Makefile
+	cp ${scripts}/Makefile.318.src ${projdir}/${proj}/src/Makefile
+	make test &> ${debug_dir}/${proj}.${c}.test.out
+    fi
 done
 
 for c in "${commits3[@]}"
 do
     git reset --hard ${c}
-    time ${buildScript} ${scripts}/vim.842931cd7.cmds ${debug_dir}/${proj}.${c}.debug ${j} ${d} &> ${debug_dir}/${proj}.${c}.rattle.out
+    of=${debug_dir}/${proj}.${c}.rattle.out
+    s1=$(date +"%s%N")
+    ${buildScript} ${scripts}/vim.842931cd7.cmds ${debug_dir}/${proj}.${c}.debug ${j} ${d} ${of} +RTS -N &> ${of}
+    s2=$(date +"%s%N")
+    diff=$(( ${s2} - ${s1} ))
+    echo $(( ${diff} / ${NANO} ))
     # run tests
-  #  make test &> ${debug_dir}/${proj}.${c}.test.out
+    if [ ${test} = yes ]
+    then 
+	cp ${scripts}/Makefile.842.top ${projdir}/${proj}/Makefile
+	cp ${scripts}/Makefile.842.src ${projdir}/${proj}/src/Makefile
+	make test &> ${debug_dir}/${proj}.${c}.test.out
+    fi
+    #  make test &> ${debug_dir}/${proj}.${c}.test.out
 done
 
 for c in "${commits4[@]}"
 do
     git reset --hard ${c}
-    time ${buildScript} ${scripts}/vim.b09920203.cmds ${debug_dir}/${proj}.${c}.debug ${j} ${d} &> ${debug_dir}/${proj}.${c}.rattle.out
+    of=${debug_dir}/${proj}.${c}.rattle.out
+    s1=$(date +"%s%N")
+    ${buildScript} ${scripts}/vim.b09920203.cmds ${debug_dir}/${proj}.${c}.debug ${j} ${d} ${of} +RTS -N &> ${of}
+    s2=$(date +"%s%N")
+    diff=$(( ${s2} - ${s1} ))
+    echo $(( ${diff} / ${NANO} ))
     # run tests
-   # make test &> ${debug_dir}/${proj}.${c}.test.out
+    if [ ${test} = yes ]
+    then 
+	cp ${scripts}/Makefile.b09.top ${projdir}/${proj}/Makefile
+	cp ${scripts}/Makefile.b09.src ${projdir}/${proj}/src/Makefile
+	make test &> ${debug_dir}/${proj}.${c}.test.out
+    fi
+    # make test &> ${debug_dir}/${proj}.${c}.test.out
 done
+
+echo ""
