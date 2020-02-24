@@ -169,8 +169,7 @@ We ran it for 100 commits, but hid any commands where all variants where < 0.02s
 \end{axis}
 \end{tikzpicture}
 
-We turn off sharing, because that makes us go faster. The Redis project is structured as recursive \Make, which is known to be problematic \cite{miller:recursive_make}.
-
+We turn off sharing, because that makes us go faster. The Redis project is structured as recursive \Make, which is known to be problematic \cite{miller:recursive_make} and how \Rattle is able to outperform \Make. Furthermore, the Redis build system is structured so as to write sentinel values to ignore some portions of the code unless they change, requiring users to manually clean when dependencies are upgraded. We avoid that entirely by running all the dependency commands every single time.
 
 \begin{comment}
 % I reimplemented Stack in Rattle. Not sure it's useful given how much other evaluation stuff we have.
