@@ -1,9 +1,10 @@
 \section{Evaluation}
 \label{sec:evaluation}
 
-In this section we evaluate the design from \S\ref{sec:design}, specifically our implemenation as per \S\ref{sec:implementation}.
+In this section we evaluate the design from \S\ref{sec:design}, specifically our implemenation as per \S\ref{sec:implementation}. We show how the implementation performs on the example from \S\ref{sec:introduction} in \S\ref{sec:eval:introduction}, on microbenchmarks in \S\ref{sec:eval:overhead}, and then on real projects that currently use \Make -- namely Redis (\S\ref{sec:eval:redis}), FSATrace (\S\ref{sec:eval:fsatrace}), Vim (\S\ref{sec:eval:vim}) and Node (\S\ref{sec:eval:node}). For larger projects we look at both whether the dependencies are correct and the performance of \Rattle -- is \Rattle a viable alternative to the existing \Make scripts.
 
 \subsection{Validating the claims from \S\ref{sec:introduction}}
+\label{sec:eval:introduction}
 
 In \S\ref{sec:introduction} we claimed that the following build script is ``just as good'' as a proper \Make script.
 
@@ -50,7 +51,7 @@ Both C files changed meaningfully & 3.28s & 3.29s & 2.22s & 2.20s & 2.19s & 2.20
 As expected, we see that in the initial build \Rattle doesn't exhibit parallelism, but \Make can. In constrast, \Rattle can benefit when a file changes in whitespace only and the resulting object file doesn't change, while \Make can't. We see 3 threads has no change over 2 threads, as this build contains no more parallelism opportunities. Comparing the non-sleep portion of the build, \Make and \Rattle are quite evenly matched, typically within a few milliseconds, showing low overheads -- we focus on the overheads in the next section.
 
 \subsection{Measuring overhead}
-\label{sec:overhead}
+\label{sec:eval:overhead}
 
 In order to determine what overhead \Rattle and \Fsatrace introduce we took the latest version of \Fsatrace\footnote{Git commit 41fbba17da580f81ababb32ec7e6e5fd49f11473} and ran \texttt{make -j1}, capturing the commands that were executed, and reran those commands trying to isolate the overheads introduced by each part of \Rattle. The \Rattle command execution uses the command execution from \Shake \cite{shake} as a library, which in turn builds on the command execution from the Haskell \texttt{process} library. Therefore, we ran the commands in a clean build directory in 7 different ways:
 
@@ -117,7 +118,38 @@ Both Windows and Linux have three columns -- the time taken (average of five run
 
 These results show that tracing has minor but not insignificant on Linux, whereas on Windows can be a substantial performance reduction. As a consequence, we focus on the results under Linux.
 
+\subsection{\Fsatrace}
+\label{sec:eval:fsatrace}
+
+To measure \Fsatrace between \Make and \Rattle we took the commands we extracted for \S\ref{sec:eval:overhead} and ran the build script at each successive step. The performance results at various levels of threading were:
+
+\begin{tikzpicture}
+\begin{axis}[
+  title=Compile time in seconds,
+  width=\textwidth,
+  height=7cm,
+  xlabel={Time at each successive commit},
+  ylabel={Seconds},
+  ymin=0,
+  xmin=0,
+]
+\addplot table [x expr=\coordindex, y=make1] {data/fsatrace.dat}; 	\addlegendentry{\Make -j1}
+\addplot table [x expr=\coordindex, y=make2] {data/fsatrace.dat}; 	\addlegendentry{\Make -j2}
+\addplot table [x expr=\coordindex, y=make3] {data/fsatrace.dat}; 	\addlegendentry{\Make -j3}
+\addplot table [x expr=\coordindex, y=make4] {data/fsatrace.dat}; 	\addlegendentry{\Make -j4}
+\addplot table [x expr=\coordindex, y=rattle1] {data/fsatrace.dat}; 	\addlegendentry{\Rattle -j1}
+\addplot table [x expr=\coordindex, y=rattle2] {data/fsatrace.dat}; 	\addlegendentry{\Rattle -j2}
+\addplot table [x expr=\coordindex, y=rattle3] {data/fsatrace.dat}; 	\addlegendentry{\Rattle -j3}
+\addplot table [x expr=\coordindex, y=rattle4] {data/fsatrace.dat}; 	\addlegendentry{\Rattle -j4}
+\end{axis}
+\end{tikzpicture}
+
+We ran it for 100 commits, but hid any commands where all variants where < 0.02s. As we can see, the first build is always > 1s for \Rattle, but \Make is able to optimise it as low as 0.33s with 4 threads. This is a consequence of \Rattle not knowing the parallelism from then on. Otherwise, \Rattle and \Make are competitive -- users would struggle to see the difference. The one commit that does show some variation is commit 2, where \Make at 1 thread matches all the \Rattle builds, but \Make at 2 threads or above goes slightly faster. The cause is a speculation leading to a write-write hazard. Concretely, the command for link \texttt{fsatrace.so} has changed to include a new file \texttt{proc.o}. \Rattle starts speculating on the old link, then gets the command for the new line -- they both write to \texttt{fsatrace.so}, leading to a hazard, and causing \Rattle to restart without speculation. Had the real linker arrived first then an unknown command would have been executing and we wouldn't have run it.
+
+% WriteWriteHazard /tmp/extra-dir-39079319872788/fsatrace.so Cmd [EchoStderr False] ["cc","-shared","src/unix/fsatraceso.os","src/emit.os","src/unix/shm.os","-o","fsatrace.so","-ldl","-lrt"] Cmd [EchoStderr False] ["cc","-shared","src/unix/fsatraceso.os","src/emit.os","src/unix/shm.os","src/unix/proc.os","-o","fsatrace.so","-ldl","-lrt"] Restartable
+
 \subsection{Redis}
+\label{sec:eval:redis}
 
 \begin{tikzpicture}
 \begin{axis}[
@@ -137,6 +169,9 @@ These results show that tracing has minor but not insignificant on Linux, wherea
 \end{axis}
 \end{tikzpicture}
 
+We turn off sharing, because that makes us go faster. The Redis project is structured as recursive \Make, which is known to be problematic \cite{miller:recursive_make}.
+
+
 \begin{comment}
 % I reimplemented Stack in Rattle. Not sure it's useful given how much other evaluation stuff we have.
 \subsection{Reimplementing Stack}
@@ -150,12 +185,8 @@ As another example, the GHC package database has additional entries added every 
 and some memoisation operations (\texttt{memo})
 \end{comment}
 
-\subsection{Rest of the evaluation}
-
-Let's consider the VIM build system. It's wrong in lots of ways Sarah can describe. But these were expert software engineers - has anyone got it right? To a first approximation, no. Unless you go for something like Bazel, and then it's tedious but sandboxing makes you get it right.
-
-
 \subsection{vim}
+\label{sec:eval:vim}
 
 Vim is a popular text editor whose source code can be found on \href{https://github.com/vim/vim}{github}.  The majority of the source code is Vim script and C, and it is built with Make.  To build Make on a Unix based system one can merely call \Make from the top-level project directory.  To compare the original \Make based build to a new \Rattle build, we generated Vim over a series of commits checked-out from github with both the original build system and the adapted \Rattle build.  The \Rattle build script was created by recording every command executed by the original build, except for those invoking \Make.  Additionally, some commands which may have been separate shell commands in the original build were combined to create one command if they caused either \emph{read-write} or \emph{write-write} hazards.  A \Rattle build script was generated for each commit where the orginal build system changed or files were added to or removed from the project.  This was necessary since the \Rattle build was created from a literal list of hard-coded shell commands rather than the ideal Haskell program with variables.
 
@@ -197,6 +228,7 @@ depend on \emph{src/proto/evalfunc.pro}.
 % SS todo add timing data
 
 \subsection{node}
+\label{sec:eval:node}
 
 % Brief into to the project
 Node.js is a JavaScript runtime built on Chrome's V8 Javascript engine and can be found on \href{``https://github.com/nodejs/node''}{github}.  The project is largely written in JavaScript, C++, Python, and C, and is built using Make and a meta-build tool called \emph{Generate Your Projects (GYP)}.  To build Node.js from source, a user first runs \emph{./configure} which runs a python script that configures the build and runs GYP.  GYP generates the majority of the Makefiles used to build the project.
