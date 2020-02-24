@@ -1,0 +1,38 @@
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/tmux
+-c CDPATH="${ZSH_VERSION+.}:" && cd . && /data/home.local/sjspall/icfp/rattle-papers/tools/cmd_shell.sh /data/home.local/sjspall/icfp/rattle-papers/tools/output/tmux/etc/missing aclocal-1.15 
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/tmux
+/data/home.local/sjspall/icfp/rattle-papers/tools/output/tmux/etc/missing aclocal-1.15
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/tmux
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/tmux
+-c for dep in configure.ac aclocal.m4; do \
+  case './configure.ac  ./aclocal.m4' in \
+    *$dep*) \
+      echo ' cd . && /data/home.local/sjspall/icfp/rattle-papers/tools/cmd_shell.sh /data/home.local/sjspall/icfp/rattle-papers/tools/output/tmux/etc/missing automake-1.15 --foreign'; \
+      CDPATH="${ZSH_VERSION+.}:" && cd . && /data/home.local/sjspall/icfp/rattle-papers/tools/cmd_shell.sh /data/home.local/sjspall/icfp/rattle-papers/tools/output/tmux/etc/missing automake-1.15 --foreign \
+	&& exit 0; \
+      exit 1;; \
+  esac; \
+done; \
+echo ' cd . && /data/home.local/sjspall/icfp/rattle-papers/tools/cmd_shell.sh /data/home.local/sjspall/icfp/rattle-papers/tools/output/tmux/etc/missing automake-1.15 --foreign Makefile'; \
+CDPATH="${ZSH_VERSION+.}:" && cd . && \
+  /data/home.local/sjspall/icfp/rattle-papers/tools/cmd_shell.sh /data/home.local/sjspall/icfp/rattle-papers/tools/output/tmux/etc/missing automake-1.15 --foreign Makefile
+-c CDPATH="${ZSH_VERSION+.}:" && cd . && /data/home.local/sjspall/icfp/rattle-papers/tools/cmd_shell.sh /data/home.local/sjspall/icfp/rattle-papers/tools/output/tmux/etc/missing autoconf
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/tmux
+/data/home.local/sjspall/icfp/rattle-papers/tools/output/tmux/etc/missing autoconf
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/tmux
+/data/home.local/sjspall/icfp/rattle-papers/tools/output/tmux/etc/missing automake-1.15 --foreign
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/tmux
+-c /data/home.local/sjspall/icfp/rattle-papers/tools/cmd_shell.sh ./config.status --recheck
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/tmux
+./config.status --recheck
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/tmux
+-c case 'Makefile.in config.status' in \
+  *config.status*) \
+    echo ' /data/home.local/sjspall/icfp/rattle-papers/tools/cmd_shell.sh ./config.status'; \
+    /data/home.local/sjspall/icfp/rattle-papers/tools/cmd_shell.sh ./config.status;; \
+  *) \
+    echo ' cd . && /data/home.local/sjspall/icfp/rattle-papers/tools/cmd_shell.sh ./config.status Makefile depfiles'; \
+    cd . && /data/home.local/sjspall/icfp/rattle-papers/tools/cmd_shell.sh ./config.status Makefile depfiles;; \
+esac;
+dir: /data/home.local/sjspall/icfp/rattle-papers/tools/output/tmux
+./config.status
