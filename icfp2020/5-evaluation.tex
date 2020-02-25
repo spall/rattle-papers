@@ -164,37 +164,7 @@ Vim is a popular text editor whose source code can be found on \href{https://git
 
 Comparing building Vim \cite{} with \Make and with \Rattle for commits \emph{21109272f} to \emph{7cc96923c}.  For two commits \Make and \Rattle did noticeably different work; note, both of these commits were build incrementally, \emph{21109272f} was built from scratch by both build systems and all subsequent commits were built incrementally.
 
-\begin{description}
-\item[\emph{e258368b4}]
-  Looking at the git commit, only two files changed: \emph{osdef.sh} and \emph{version.c}.  Rattle re-ran \emph{osdef.sh}, which generates \emph{osdef.h}.  Rattle also rebuilt \emph{version.o}, which depends on \emph{version.c}
-  The header file \emph{osdef.h} did not change when it was re-created, which \Rattle detected since it uses hashes to determine when files have changed.  \Make, which uses timestamps, did not detect this and built an additional 109 object files because they depend on \emph{osdef.h}
-
-  Rattle avoided rebuilding 109 object files by using a more accurate standard for detecting changes in dependencies.
-
-\item[\emph{a259d8d30}]
-  The files changed by the commit are: \emph{src/evalfunc.c}, \emph{src/proto/evalfunc.pro},
-  \emph{src/testdir/test\_vim9\_script.vim}, \emph{src/userfunc.c}, \emph{src/version.c}, and
-  \emph{src/vim9compile.c}.
-  \Rattle rebuilt the following object files, because \emph{evalfunc.pro} changed.
-  \begin{description}
-  \item[Object files rebuilt which did \emph{not change}.] \Rattle rebuilt 32 object files because \emph{evalfunc.pro} changed, but the object files did not change when rebuilt.
-    %arabic.o, blob.o, blowfish.o, crypto.o, dict.o, evalbuffer.o, evalwindow.o, ex\_cmds2.o, ex\_eval.o, hashtab.o, list.o, map.o, move.o, pathdef.o, popupmenu.o, session.o, sign.o, sound.o,
-    %undo.o, vim9execute.o, vim9script.o, bufwrite.o, gui\_beval.o, xdiffi.o, xemit.o, xprepare.o, xutils.o, xhistogram.o, xpatience.o, charset.o, json.o, memfile.o.
-  \item[Object files rebuilt which did \emph{change}.] \Rattle rebuilt an additional 78 object files because \emph{evalfunc.pro} changed, whose object files did change after being rebuilt.
-    4 of these object files corresponding c files had changed, also causing them to rebuild.
-
-  % arglist.o, autocmd.o, beval.o, buffer.o, change.o, cindent.o, cmdexpand.o, cmdhist.o, crypt_zip.o, debugger.o, diff.o, digraph.o, drawline.o, drawscreen.o, edit.o, eval.o
-  % evalfunc.o (evalfunc.c had also changed), evalvars.o, ex\_cmds.o, ex\_docmd.o, ex\_getln.o, fileio.o, filepath.o, findfile.o, fold.o, getchar.o, hardcopy.o, highlight.o, if\_cscope.o
-  % if\_xcmdsrv.o, indent.o, insexpand.o, mark.o, mbyte.o, memline.o, menu.o, misc1.o, misc2.o, mouse.o, normal.o, ops.o, option.o, optionstr.o, os\_unix.o, popupwin.o
-  % profiler.o, pty.o, quickfix.o, regexp.o, register.o, screen.o, scriptfile.o, search.o, sha256.o, spell.o, spellfile.o, spellsuggest.o, syntax.o, tag.o, term.o, terminal.o
-  % testing.o, textprop.o, ui.o, usercmd.o, userfunc.o (userfunc.c also changed), vim9compile.o (vim9compile.c alos changed) , viminfo.o, window.o, gui.o, gui\_gtk.o,
-    % gui\_gtk\_x11.o, gui\_gtk\_f.o, netbeans.o, channel.o, main.o, message.o version.o (version.c also changed)
-  \end{description}
-\end{description}
-
-\Make rebuilt 4 object files, the ones whose corresponding c files had changed.  It didn't rebuild the other object files rebuilt by \Rattle because the Makefile does not state that these object files
-depend on \emph{src/proto/evalfunc.pro}.
-
+% todo compare sequential 
 % SS todo add timing data
 
 \subsection{node}
@@ -279,34 +249,53 @@ make
 
 To compare a \Rattle based Tmux build to the \Make based one, we first ran \emph{sh autogen.sh} and \emph{./configure}, and then used the resulting Makefile(s) to generate the Rattle build scripts.  A new Rattle build script was generated for any commit where the build appeared to have changed or a file was added or deleted from the repository.
 
-Tmux was built over a series of 40 commits with both \Make and \Rattle.  The commands run by each build system for each command were then compared.
+Tmux was built over a series of 40 commits with both \Make and \Rattle.  The commands run by each build system for each command were then compared.  For single threaded \Rattle and \Make, for 33 out of 40 commits, \Rattle and \Make ran the same commands, for 4 commits, \Make ran 1 more non-trivial command than \Rattle, but for 3 commits \Rattle ran substantially more cmds than \Make did.
+
+These 3 commits were ones where new \Rattle build scripts were generated because something about the build or project had changed.  For two of these commits the version number of Tmux had changed which caused the textual contents of majority of the commands to change.  \Rattle viewed these as new commans and therefore ran them.  For the 3rd commit, \Rattle ran 125 commands more than \Make did because a command flag changed, which caused the textual contents of the majority of the commands to change, so \Rattle viewed them as new commands.
+
+% todo add details about parallel version and hazards
+% todo timing data
+
+
+
+% 47174f51
+% 150 cmds in file - 10 for make
+% 140 cmds run by rattle not run by make
+% how many did rattle run period?
+% there were 141 cmds in the script.
+% so what command did make run too?
+
+%4822130b was a new build script
+
+% 685eb381 also a new build script
+
+% I wonder if I don't do sh autogen and configure if that wouldn't happen?
+
+
 
 % For 1 thread
 
-% a new build script was generated for 47174f51, which meant I ran sh autogen.sh && ./configure again
-% before running the rattle build script in case important files needed to be generated
-% Looking at the diff for this commit between rattle and make, I see Make running what appear to be
-% automake etc commands, so I am inclined to ignore those commands.
-% I also see Rattle re-building tmux, which make does not appear to do; it did this becuase
-% tmux.o changed
+% commits where did same things: close enough; ignoring commands like rm tmux
 
-% not great for rattle
-
-% it seems this probably happened because a version number changed; the version number is a part
-% of the gcc commands run, which rattle saw as a new command, and so it ran the commands producing
-% new object files.... and therefore a new executable.
+% obf153da 0c6c8c4e 0eb7b547 19d5f4a0 22e9cf04 24cd726d 32be954b 37919a6b 3e701309
+% 400750bb 43b36752 4694afb  470cba35 54553903 60ab7144 61b075a2 6c28d0dd 6f0241e6
+% 74b42407 7cdf5ee9 7f3feb18 8457f54e 8b22da69 9900ccd0 a01c9ffc a4d8437b ba542e42
+% bc36700d c391d50c c915cfc7 cdf13837 e9b12943 fdbc1116
 
 
+% commits with differences
+% 47174f51 (commit where make did automake stuff and rattle re-ran everything because a version number changed)
+% 4822130b
+% 685eb381
 
-
+% 7eada28f: make did ./etc/ylwrap ....
+% ed16f51e: make did ./etc/ylwrap ...
+% ee3d3db3: make built tmux.o
+% f3ea318a: make did ./etc/ylwrap ...
 
 
 % commits
 % ed16f51e 61b075a2 e9b12943 3e701309 8457f54e a01c9ffc cdf13837 74b42407 0eb7b547 f3ea318a 7cdf5ee9 ee3d3db3 685eb381 60ab7144 7eada28f 7f3feb18 8b22da69 bc36700d 32be954b 6f0241e6 19d5f4a0 43b36752 0bf153da 4822130b 47174f51 c915cfc7 54553903 400750bb 470cba35 a4d8437b 6c28d0dd 24cd726d 9900ccd0 c391d50c 0c6c8c4e fdbc1116 37919a6b 22e9cf04 ba542e42 4694afb
-
-
-
-
 
 \subsection{redis}
 
