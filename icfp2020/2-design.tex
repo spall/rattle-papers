@@ -159,11 +159,11 @@ A more nuanced approach is to use the hazard's classification, which can be cate
 
 % todo: need to prove all of the above produce equivalent outputs...
 
-In the case that speculating caused a hazard, there are potential resolutions \Rattle can take that will still result in a correct build.  The following are situations in which \Rattle speculating command(s) could lead to a hazard.
+In the case that speculating caused a hazard, there are potential resolutions that can still result in a correct build.  The following are situations in which speculating command(s) could lead to a hazard.
 
 \begin{description}
 \item [Two speculated commands write to the same file]
-  Two commands in a build script writing to the same file violates \Rattle's consistency requirement and is a \emph{write-write hazard}.  But, if both commands are speculated and no commands in the build script read or write to this file then this should not affect the output of the build.  These two commands can be deleted from the list of speculative commands though in case the build needs to later be restarted.  In the following example, both speculated commands \emph{cp foo.o baz.o} and \emph{cp bar.o baz.o} write to \emph{baz.o}.  As long as no later command reads or writes to baz.o the outcome of the build will not change and so \Rattle does not need to take any action.
+  Two commands in a build script writing to the same file violates our consistency requirement and is a \emph{write-write hazard}.  But, if both commands are speculated and no commands in the build script read or write to this file then this should not affect the output of the build.  These two commands can be deleted from the list of speculative commands though in case the build needs to later be restarted.  In the following example, both speculated commands \emph{cp foo.o baz.o} and \emph{cp bar.o baz.o} write to \emph{baz.o}.  As long as no later command reads or writes to baz.o the outcome of the build will not change and so the build does not need to take any action.
 \begin{verbatim}
   cp foo.o baz.o [speculate]
   cp bar.o baz.o [speculate]
@@ -172,9 +172,9 @@ In the case that speculating caused a hazard, there are potential resolutions \R
 \end{verbatim}
 
 \item [A speculated command and a command in build script write to the same file]
-  If \Rattle speculated a command which writes to the same file as a command in the build script, then another \emph{write-write hazard} has occurred entirely due to speculation.  Normally a \emph{write-write hazard} indicates that the build script violates \Rattle's consistency requirement, but in this case the violation might not have occurred if \Rattle didn't speculation the offending command.  To recover from this \Rattle can re-execute the build script, and remove the offending command(s) from the speculation list.
+  If a speculated command writes to the same file as a command in the build script, then another \emph{write-write hazard} has occurred entirely due to speculation.  Normally a \emph{write-write hazard} indicates that the build script violates our consistency requirement, but in this case the violation might not have occurred if the offending command wasn't speculated.  To recover from this we can re-execute the build script, and remove the offending command(s) from the speculation list.
 
-  Continuing with the previous example, a \emph{write-write hazard} occurs between \emph{gcc -o baz.c} and both of the \emph{cp} commands.  Rattle can recover from this by re-executing the build and removing both offending \emph{cp} commands from the speculation list.
+  Continuing with the previous example, a \emph{write-write hazard} occurs between \emph{gcc -o baz.c} and both of the \emph{cp} commands.  The build can recover from this by re-executing and removing both offending \emph{cp} commands from the speculation list.
 
 \begin{verbatim}
   cp foo.o baz.o [speculate]
@@ -189,7 +189,7 @@ In the case that speculating caused a hazard, there are potential resolutions \R
 \end{verbatim}
 
 \item [A speculated command writes to a file that a command in build script reads from]
-  If \Rattle speculated a command which writes to the same file as a command in the build script reads from, then a \emph{read-write hazard} has occurred entirely due to speculation.  Normally a \emph{read-write hazard} indicated that the build script violates \Rattle's consistency requirement, but in this case the violation might not have occurred if \Rattle didn't speculate the offending command.  To recover from this, \Rattle can re-execute the build script, and remove the offending command from the speculation list.
+  If aspeculated command which writes to the same file as a command in the build script reads from, then a \emph{read-write hazard} has occurred entirely due to speculation.  Normally a \emph{read-write hazard} indicated that the build script violates our consistency requirement, but in this case the violation might not have occurred if the offending command wasn't speculated.  To recover from this, we can re-execute the build script, and remove the offending command from the speculation list.
 
 \begin{verbatim}
 gcc -c foo.c
@@ -207,7 +207,7 @@ gcc -o Main foo.o bar.o [re-execute]
 % that is actually not an example of this and I can't think of one.
 
 \item [Speculated command reads from a file that another command writes to]
-    A \emph{read-write hazard} will occur if a second command executes concurrently with or after the speculated command which read the file.  If these two commands were executed as part of the build script, the hazard would be \emph{non-recoverable} and \Rattle would error and terminate, but because one of them was executed speculatively it is possible there is no consistency violation in the build script.  Because the speculated read executed too soon, it potentially read incorrect data from the file.  To get the speculated read command to read the correct file however, \Rattle can just re-execute the command. For example:
+    A \emph{read-write hazard} will occur if a second command executes concurrently with or after the speculated command which read the file.  If these two commands were executed as part of the build script, the hazard would be \emph{non-recoverable}, but because one of them was executed speculatively it is possible there is no consistency violation in the build script.  Because the speculated read executed too soon, it potentially read incorrect data from the file.  To get the speculated read command to read the correct file however, the build can just re-execute the command. For example:
 
 \begin{verbatim}
   cp foo.o baz.o [speculate]
@@ -215,7 +215,7 @@ gcc -o Main foo.o bar.o [re-execute]
   cp foo.o baz.o [re-execute]
 \end{verbatim}
 
-In the above example, a \emph{read-write hazard} occurred when \emph{cp foo.o baz.o} ran and then \emph{gcc -c foo.c} ran.  \emph{cp foo.o baz.o} copied the wrong version of \emph{foo.o}, but if \Rattle
+In the above example, a \emph{read-write hazard} occurred when \emph{cp foo.o baz.o} ran and then \emph{gcc -c foo.c} ran.  \emph{cp foo.o baz.o} copied the wrong version of \emph{foo.o}, but if the build
 runs \emph{cp foo.o baz.o} again after \emph{gcc -c foo.c} has completed, \emph{cp foo.o baz.o} will copy the correct version of \emph{foo.o} and the build can just continue.
 \end{description}
 
