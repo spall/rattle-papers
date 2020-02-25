@@ -23,7 +23,7 @@ gcc -o main.exe ${FILES%.c}.o
 \end{verbatim}
 \vspace{3mm}
 
-This script now has a curious mixture of commands (\texttt{ls}, \texttt{gcc}), control logic (\texttt{for}) and simple manipulation (changing file extension\footnote{We take some liberties with shell scripts around replacing extensions, so as not to obscure the main focus.}). Importantly, there is \emph{no fixed list of commands} -- the future commands are determined based on the results of previous commands. Concretely, in this example, the result of \texttt{ls} changes which \texttt{gcc} commands are executed. The transition from a fixed list of commands to a dynamic list matches the \texttt{Applicative} vs \texttt{Monadic} destinction of \citet{build_systems_a_la_carte} \S3.5.
+This script now has a curious mixture of commands (\texttt{ls}, \texttt{gcc}), control logic (\texttt{for}) and simple manipulation (changing file extension\footnote{We take some liberties with shell scripts around replacing extensions, so as not to obscure the main focus.}). Importantly, there is \emph{no fixed list of commands} -- the future commands are determined based on the results of previous commands. Concretely, in this example, the result of \texttt{ls} changes which \texttt{gcc} commands are executed. The transition from a fixed list of commands to a dynamic list matches the \texttt{Applicative} vs \texttt{Monadic} destinction of \citet[\S3.5]{build_systems_a_la_carte}.
 
 There are three approaches to modelling a dynamic list of commands:
 
@@ -36,7 +36,7 @@ There are three approaches to modelling a dynamic list of commands:
 % SS build -> shell; I think this was what was meant but change back if I misunderstood.
 In order to retain the desired simplicity of shell scripts, we have chosen the first option, modelling a build script as a series of commands given to the build system. Future commands may depend on the results of previous commands in ways that are not visible to the build system. The commands are produced with ``cheap'' functions such as control logic and simple manipulations. We consider the cheap commands to be fixed overhead, run on every build, and not cached or parallelised in any way. If any of these cheap manipulations becomes expensive, they can be replaced by a command, which will then be visible to the build system. The simple list of commands from \S\ref{sec:executing_commands} is a degenerate case of no interesting logic between commands.
 
-An important consequence of the control logic not being visible to the build system is that the build system has no prior knowledge of which commands are coming next, or if they have changed. As a result, even when the build is a simple static script such as from \S\ref{sec:introduction}, when it is manually edited, the build will execute correctly. The build system is unaware if you edited the script, or if the commands were conditional on something that it cannot observe. Therefore, this model solves the problem of self-tracking from \citet{build_systems_a_la_carte} \S6.5.
+An important consequence of the control logic not being visible to the build system is that the build system has no prior knowledge of which commands are coming next, or if they have changed. As a result, even when the build is a simple static script such as from \S\ref{sec:introduction}, when it is manually edited, the build will execute correctly. The build system is unaware if you edited the script, or if the commands were conditional on something that it cannot observe. Therefore, this model solves the problem of self-tracking from \citet[\S6.5]{build_systems_a_la_carte}.
 
 \subsection{Dependency tracing}
 \label{sec:assume_tracing}
@@ -54,7 +54,7 @@ When running a command, we can use tracing to capture the files read and written
 
 \paragraph{Reading and writing the same file} If a command both reads and writes the same file, and the information written is fundamentally influenced by the file that was read, then the command never reaches a stable state. As an example, \verb"echo x >> foo.txt" will append the character \texttt{x} every time the command is run. Equally, there are also commands that read the existing file to avoid rewriting a file that hasn't changed (e.g. \texttt{ghc} generating a \texttt{.hi} file) and commands that can cheaply update an existing file in some circumstances (the Micrsoft C++ linker in incremental mode). We make the assumption that if a command both reads and writes to a file, that the read does not meaningfully influence the write, otherwise it is not really suitable as part of a build system and our assumptions are violated.
 % SS is it really the reference semantics that are violated? Reference semantics are just whatever
-% sequential version does right?  
+% sequential version does right?
 
 \paragraph{Simultaneous modification} If a command reads a file, but before the command completes something else modifies the file (e.g. a human or untracked control logic), then the final hash will not match what the command saw. It is possible to detect such problems with reads by ensuring that the modification time after computing the hash is before the command was started. For simultaneous writes the problem is much harder, so we require that all files produced by the build script are not simultaneously written to.
 
@@ -74,7 +74,7 @@ We can skip execution of a command if all the files accessed have the same hashe
 \subsection{Build consistency}
 \label{sec:hazards}
 
-As stated in \citet{build_systems_a_la_carte} \S3.6, a build is correct provided that:
+As stated in \citet[\S3.6]{build_systems_a_la_carte}, a build is correct provided that:
 
 \begin{quote}
 \emph{If we recompute the value of the key (...), we should get exactly the same value as we see in the final store.}

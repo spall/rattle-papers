@@ -9,6 +9,8 @@ The idea of treating a script as a build system, omitting execution of commands 
 
 These systems did not seem to have much adoption -- in both cases the original sources are no longer available, and knowledge of them survives on GitHub copies. \Rattle differs from an engineering perspective by the tracing mechanisms available (see \S\ref{sec:tracing}) and the use of cloud build (see \S\ref{sec:cloud_builds}) -- both of which are likely just a consequence of being developed a decade later. \Rattle extends these systems in a more fundamental way with the notion of hazards, which both allow the detection of bad build scripts, and allow for speculation -- overcoming the main disadvantage of earlier foward build systems. Stated alternatively, \Rattle takes the delightfully simple approach of these build systems, and tries a more sophisticated execution strategy.
 
+There are other modern forward build systems, notably \Shake has a foward mode with roughly the same evaluation strategy as \Memoize, that has been adopted in some static website generators. There is also Stroll and Bigbro which take a more relaxed approach to build commands, only requiring the commands to be given, not in any order, and then try executing them in any order. As a consequence these two systems sometimes retry commands more than once.
+
 \subsection{Comparison to backward build systems}
 
 The design space of backward build systems is discussed in \cite{build_systems_a_la_carte}. In that paper it is notable that \Fabricate does not naturally fit into the design space, lacking the features that a build system requires. We feel that points to an interesting gap in the landscape of build systems. We think that it is likely forward build systems could be characterised similarly, but that we have yet to develop the necessary variety of forward build systems to do so. There are two dimensions in the paper:
@@ -17,18 +19,16 @@ The design space of backward build systems is discussed in \cite{build_systems_a
 
 \paragraph{Rebuild} In this sense \Rattle looks a lot like the constructive trace model -- traces are made, stored in a cloud, and accessible for future use. The one wrinkle is that a trace may be later invalidated, if it turns out a hazard occurred. In particular, the correspondence to constructive traces illuminates the consequences of moving to a deep constructive trace model (see \S\ref{sec:cloud_builds}) -- it solves non-determinism at the cost of losing unchanging builds.
 
-Some existing backward build systems have notions for sandboxing to ensure all commands are present. e.g. \Bazel \cite{bazel}. That often results in a lot of work, and doesn't prevent the reverse problem of too many dependencies.
+Some existing backward build systems have notions for sandboxing to ensure all commands are present. e.g. \Bazel \cite{bazel}. That often results in a lot of work, and doesn't prevent the reverse problem of too many dependencies. The effort of getting \Bazel working is large projects can often be considerable, mainly because the sandboxing gives proper isolation, which is good, but at a great cost.
 
-Remote execution is a useful thing that we can't get. Firstly, the command can execute remotely, or in a sandboxed manner - ensuring all writes do \emph{not} end up on the file system, but are recorded to the cloud cache. In such a mode we are filling up the coud cache speculative, with the hope that when the future command does arrive it can be satisfied from the cache. However, running remotely requires syncronising the files across, or using a sycronise on demand approach (CITE Microsoft Remote Execution talk). Running with a sandbox which intercepts writes is not an easily available cross-platform feature, so we have not explored it further.
-
+Remote execution is when commands are run on a remote machine, usually with a much higher degree of parallelism than is available on the users machine. Remote execution would be great for \Rattle. Firstly, the command can execute remotely, or in a sandboxed manner - ensuring all writes do \emph{not} end up on the file system, but are recorded to the cloud cache. In such a mode we are filling up the coud cache speculative, with the hope that when the future command does arrive it can be satisfied from the cache. However, running remotely requires syncronising the files across, or using a sycronise on demand approach, such as that described by Microsoft \cite{}. Running with a sandbox which intercepts writes is not an easily available cross-platform feature, so we have not explored it further.
 
 \subsection{Analysis of existing build systems}
 
-We aren't the first to point out that existing build systems are wrong. See Detecting Incorrect Build Rules
-\cite{detecting_incorrect_build_rules}.
+We aren't the first to observe that existing build systems often have the wrong dependencies \cite{detecting_incorrect_build_rules}. We are also aware that build maintenance requires a lot of effort \cite{build_maintenance}. Our anecdotes from \S\ref{sec:evaluation} reinforce these messages.
 
-See An empirical study of build maintenance effort \cite{build_maintenance}
-
+\begin{comment}
 \subsection{Other related work}
 
 The notion of hazards is used extensively in processor design. This is standard terminology.
+\end{comment}

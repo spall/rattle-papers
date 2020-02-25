@@ -15,7 +15,7 @@ hazard occurs when a command read or writes a file and a later command writes to
 
 We prove that a build system with deterministic control logic and with no hazards always results in no rebuilds when no changes have occurred.
 
-\begin{align} 
+\begin{align}
   build :: \bar{command} \\
   command :: (cmd, reads :: \bar{file}, writes:: \bar{file}) \\
   file :: (name, content) \\
@@ -32,18 +32,18 @@ Let $B$ be a build with no hazards when executed sequentially.
 \item[Base case: $|B| = 1$]
 
   $\forall f \in reads(B[0]) \cup writes(B[0]), f \text{ has not changed}$, therefore, $B[0]$ does not run, and $\forall f \in writes(B[0])$ are not written to.
-  
+
   % show that inputs of c = B[0] have not changed
   % therefore, c[0] will not run
   % therefore, the outputs of B, which are third(c[0]) will not have changed
-  
+
 \item[Induction step: $|B| = n+1$]
   Let us assume the above claim is true for a build, $|B| = n$.  Also, Let $D$ be the set of files written to during the build.
   It follows that, $\forall c \in B, \forall f \in writes(c), f \notin D$.
-  Let us assume we have a build $A=B$, and $A$ has an extra command $A[n]=c1$.  
-  
+  Let us assume we have a build $A=B$, and $A$ has an extra command $A[n]=c1$.
+
   $\forall f \in files(c1), f \notin D, f \text{ has not changed}$, therefore, $A[n]$ does not run and $\forall f \in writes(A[n])$ are not written to.
-  
+
 \end{description}
 
 \subsection{Reordered builds}
@@ -78,18 +78,16 @@ Let us assume we have a build $A$, which has no hazards.  Let us also assume the
 Recall that for the builds to be equivalent, they write to the same set of files and a file will have the same hash regardless of the build that wrote it.
 Therefore, the parallel execution must write to a different set of files than $A$ or at least one of those files has a different hash.
 
-\begin{description}
-\item [parallel build writes to a file $A$ does not write to, or $A$ writes to a file the parallel build does not write to.]
+\paragraph{Parallel build writes to a file $A$ does not write to, or $A$ writes to a file the parallel build does not write to.}
   There must exist a cmd $c$ which when run in parallel with one or more other commands, writes to a different set of files than when run sequentially.  The set of files written to by $c$ is affected by the content of the cmd, and the files it reads.  Since, the content of the cmd is the same between the parallel and sequential builds, the input files must differ.
   By the defintion of the parallel build of $A$ having no hazards, any files read by $c$ must be written to by commands that precede $c$ in the build.  Therefore, the files written by $c$ in the parallel build will be the same as the files written by $c$ in the sequential build.  Therefore, a contradiction.
 
 
-\item [parallel build writes to a file $f$ whose hash is $h$ and $A$ writes to the same file but its hash is $k$; $h \neq k$]
+\paragraph{Parallel build writes to a file $f$ whose hash is $h$ and $A$ writes to the same file but its hash is $k$; $h \neq k$}
   There must exist a cmd $c$ which when run in parallel with one or more other commands, writes to the file $f$ and produces the hash $h$ and when run sequentially in build $A$ produces the hash $k$.
   The files written to by $c$, and their hashes, is affected by the content of the command and the files read by the command.  Since $c$ is unchanged between $A$ the sequential run of $A$ and the parallel run of $A$, the files and their hashes read by $c$ must differ.  By the definition of parallel $A$ having no hazards, any files read by $c$ must be written to by commands that precede $c$ in the build.  And because parallel $A$ and sequential $A$ contain the same commands, $c$'s input must be the same regardless of whether $A$ was run in parallel or sequentially.  Therefore, a contradiction.
 
   % clean up
-\end{description}
 
 \subsection{Additional commands have no effect}
 \label{sec:proof:additional}
