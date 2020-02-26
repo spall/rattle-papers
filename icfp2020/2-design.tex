@@ -58,7 +58,7 @@ When running a command, we can use tracing to capture the files read and written
 
 \paragraph{Simultaneous modification} If a command reads a file, but before the command completes something else modifies the file (e.g. a human or untracked control logic), then the final hash will not match what the command saw. It is possible to detect such problems with reads by ensuring that the modification time after computing the hash is before the command was started. For simultaneous writes the problem is much harder, so we require that all files produced by the build script are not simultaneously written to.
 
-\postparagrahs In general we assume all commands given to the build system are well behaved and meet the above assumptions.
+\postparagraphs In general we assume all commands given to the build system are well behaved and meet the above assumptions.
 
 \subsection{Cloud builds}
 \label{sec:cloud_builds}
