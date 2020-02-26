@@ -40,15 +40,15 @@ There are two axes on which to measure ``just as good'' -- correctness and perfo
 Number of threads & \multicolumn{2}{c||}1 & \multicolumn{2}{c||}2 & \multicolumn{2}{c}3 \\
 Tool & \Make & \Rattle & \Make & \Rattle & \Make & \Rattle \\
 \hline
-Initial build & 3.35s & 3.28s & 2.18s & 3.28s & 2.20s & 3.36s \\
-Nothing changed & 0.00s & 0.00s & 0.00s & 0.00s & 0.00s & 0.00s \\
-\texttt{main.c} changed whitespace & 2.19s & 1.12s & 2.19s & 1.12s & 2.19s & 1.10s \\
-\texttt{main.c} changed meaingfully & 2.19s & 2.16s & 2.23s & 2.21s & 2.19s & 2.22s \\
-Both C files changed meaningfully & 3.28s & 3.29s & 2.22s & 2.20s & 2.19s & 2.20s \\
+1) Initial build & 3.35s & 3.28s & 2.18s & 3.28s & 2.20s & 3.36s \\
+2) Nothing changed & 0.00s & 0.00s & 0.00s & 0.00s & 0.00s & 0.00s \\
+3) \texttt{main.c} changed whitespace & 2.19s & 1.12s & 2.19s & 1.12s & 2.19s & 1.10s \\
+4) \texttt{main.c} changed meaingfully & 2.19s & 2.16s & 2.23s & 2.21s & 2.19s & 2.22s \\
+5) Both C files changed meaningfully & 3.28s & 3.29s & 2.22s & 2.20s & 2.19s & 2.20s \\
 \end{tabular}
 \vspace{3mm}
 
-As expected, we see that in the initial build \Rattle doesn't exhibit parallelism, but \Make can. In constrast, \Rattle can benefit when a file changes in whitespace only and the resulting object file doesn't change, while \Make can't. We see 3 threads has no change over 2 threads, as this build contains no more parallelism opportunities. Comparing the non-sleep portion of the build, \Make and \Rattle are quite evenly matched, typically within a few milliseconds, showing low overheads -- we focus on the overheads in the next section.
+As expected, we see that in the initial build \Rattle doesn't exhibit parallelism, but \Make can (1). In constrast, \Rattle can benefit when a file changes in whitespace only and the resulting object file doesn't change, while \Make can't (3). We see 3 threads has no change over 2 threads, as this build contains no more parallelism opportunities. Comparing the non-sleep portion of the build, \Make and \Rattle are quite evenly matched, typically within a few milliseconds, showing low overheads -- we focus on the overheads in the next section.
 
 \subsection{Measuring overhead}
 \label{sec:eval:overhead}
