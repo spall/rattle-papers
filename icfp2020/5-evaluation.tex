@@ -187,6 +187,26 @@ and some memoisation operations (\texttt{memo})
 \subsection{vim}
 \label{sec:eval:vim}
 
+\begin{tikzpicture}
+\begin{axis}[
+  title=Compile time in seconds,
+  width=\textwidth,
+  height=7cm,
+  xlabel={Time at each successive commit},
+  ylabel={Seconds},
+  ymin=0,
+  xmin=0,
+]
+
+\addplot table [x expr=\coordindex, y=make1] {data/redis.dat}; 	\addlegendentry{\Make -j1}
+\addplot table [x expr=\coordindex, y=make4] {data/redis.dat}; 	\addlegendentry{\Make -j4}
+\addplot table [x expr=\coordindex, y=rattle1] {data/redis.dat}; 	\addlegendentry{\Rattle -j1}
+\addplot table [x expr=\coordindex, y=rattle4] {data/redis.dat}; 	\addlegendentry{\Rattle -j4}
+\addplot table [x expr=\coordindex, y=rattle4_noshared] {data/redis.dat}; 	\addlegendentry{\Rattle -j4 (no shared)}
+\end{axis}
+\end{tikzpicture}
+
+
 Vim is a popular text editor whose source code can be found on \href{https://github.com/vim/vim}{github}.  The majority of the source code is Vim script and C, and it is built with Make.  To build Make on a Unix based system one can merely call \Make from the top-level project directory.  To compare the original \Make based build to a new \Rattle build, we generated Vim over a series of commits checked-out from github with both the original build system and the adapted \Rattle build.  The \Rattle build script was created by recording every command executed by the original build, except for those invoking \Make.  Additionally, some commands which may have been separate shell commands in the original build were combined to create one command if they caused either \emph{read-write} or \emph{write-write} hazards.  A \Rattle build script was generated for each commit where the orginal build system changed or files were added to or removed from the project.  This was necessary since the \Rattle build was created from a literal list of hard-coded shell commands rather than the ideal Haskell program with variables.
 
 % SS todo add list of the commits
