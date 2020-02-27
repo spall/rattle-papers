@@ -1,7 +1,7 @@
 \section{Evaluation}
 \label{sec:evaluation}
 
-In this section we evaluate the design from \S\ref{sec:design}, specifically our implemenation as per \S\ref{sec:implementation}. We show how the implementation performs on the example from \S\ref{sec:introduction} in \S\ref{sec:eval:introduction}, on microbenchmarks in \S\ref{sec:eval:overhead}, and then on real projects that currently use \Make -- namely Redis (\S\ref{sec:eval:redis}), FSATrace (\S\ref{sec:eval:fsatrace}), Vim (\S\ref{sec:eval:vim}) and Node (\S\ref{sec:eval:node}). For larger projects we look at both whether the dependencies are correct and the performance of \Rattle -- is \Rattle a viable alternative to the existing \Make scripts.
+In this section we evaluate the design from \S\ref{sec:design}, specifically our implemenation as per \S\ref{sec:implementation}. We show how the implementation performs on the example from \S\ref{sec:introduction} in \S\ref{sec:eval:introduction}, on microbenchmarks in \S\ref{sec:eval:overhead}, and then on real projects that currently use \Make -- namely FSATrace (\S\ref{sec:eval:fsatrace}), Redis (\S\ref{sec:eval:redis}), Vim (\S\ref{sec:eval:vim}) and Node (\S\ref{sec:eval:node}). For larger projects we look at both whether the dependencies are correct and the performance of \Rattle -- is \Rattle a viable alternative to the existing \Make scripts.
 
 \subsection{Validating the claims from \S\ref{sec:introduction}}
 \label{sec:eval:introduction}
@@ -40,15 +40,15 @@ There are two axes on which to measure ``just as good'' -- correctness and perfo
 Number of threads & \multicolumn{2}{c||}1 & \multicolumn{2}{c||}2 & \multicolumn{2}{c}3 \\
 Tool & \Make & \Rattle & \Make & \Rattle & \Make & \Rattle \\
 \hline
-Initial build & 3.35s & 3.28s & 2.18s & 3.28s & 2.20s & 3.36s \\
-Nothing changed & 0.00s & 0.00s & 0.00s & 0.00s & 0.00s & 0.00s \\
-\texttt{main.c} changed whitespace & 2.19s & 1.12s & 2.19s & 1.12s & 2.19s & 1.10s \\
-\texttt{main.c} changed meaingfully & 2.19s & 2.16s & 2.23s & 2.21s & 2.19s & 2.22s \\
-Both C files changed meaningfully & 3.28s & 3.29s & 2.22s & 2.20s & 2.19s & 2.20s \\
+1) Initial build & 3.35s & 3.28s & 2.18s & 3.28s & 2.20s & 3.36s \\
+2) Nothing changed & 0.00s & 0.00s & 0.00s & 0.00s & 0.00s & 0.00s \\
+3) \texttt{main.c} changed whitespace & 2.19s & 1.12s & 2.19s & 1.12s & 2.19s & 1.10s \\
+4) \texttt{main.c} changed meaingfully & 2.19s & 2.16s & 2.23s & 2.21s & 2.19s & 2.22s \\
+5) Both C files changed meaningfully & 3.28s & 3.29s & 2.22s & 2.20s & 2.19s & 2.20s \\
 \end{tabular}
 \vspace{3mm}
 
-As expected, we see that in the initial build \Rattle doesn't exhibit parallelism, but \Make can. In constrast, \Rattle can benefit when a file changes in whitespace only and the resulting object file doesn't change, while \Make can't. We see 3 threads has no change over 2 threads, as this build contains no more parallelism opportunities. Comparing the non-sleep portion of the build, \Make and \Rattle are quite evenly matched, typically within a few milliseconds, showing low overheads -- we focus on the overheads in the next section.
+As expected, we see that in the initial build \Rattle doesn't exhibit parallelism, but \Make can (1). In constrast, \Rattle can benefit when a file changes in whitespace only and the resulting object file doesn't change, while \Make can't (3). We see 3 threads has no change over 2 threads, as this build contains no more parallelism opportunities. Comparing the non-sleep portion of the build, \Make and \Rattle are quite evenly matched, typically within a few milliseconds, showing low overheads -- we focus on the overheads in the next section.
 
 \subsection{Measuring overhead}
 \label{sec:eval:overhead}
@@ -114,7 +114,7 @@ Both Windows and Linux have three columns -- the time taken (average of five run
 
 \paragraph{Linux} In contrast, on Linux, the total overhead is only 7\%, of which nearly all (5\%) comes from the tracing.
 
-\postparagrahs
+\postparagraphs
 
 These results show that tracing has minor but not insignificant on Linux, whereas on Windows can be a substantial performance reduction. As a consequence, we focus on the results under Linux.
 
@@ -169,7 +169,7 @@ We ran it for 100 commits, but hid any commands where all variants where < 0.02s
 \end{axis}
 \end{tikzpicture}
 
-We turn off sharing, because that makes us go faster. The Redis project is structured as recursive \Make, which is known to be problematic \cite{miller:recursive_make} and how \Rattle is able to outperform \Make. Furthermore, the Redis build system is structured so as to write sentinel values to ignore some portions of the code unless they change, requiring users to manually clean when dependencies are upgraded. We avoid that entirely by running all the dependency commands every single time.
+In this graph the ``no shared'' variant is \Rattle with the cloud cache disabled. For local builds, the consequence is that if a file changes, then changes back, we will have to rebuild rather than get a cache hit -- something that never happens in this benchmark, making the copying of files to a shared cloud redundant work. The Redis project is structured as recursive \Make, which is known to be problematic \cite{miller:recursive_make} and how \Rattle is able to outperform \Make. Furthermore, the Redis build system is structured so as to write sentinel values to ignore some portions of the code unless they change, requiring users to manually clean when dependencies are upgraded. We avoid that entirely by running all the dependency commands every single time.
 
 \begin{comment}
 % I reimplemented Stack in Rattle. Not sure it's useful given how much other evaluation stuff we have.
@@ -213,7 +213,7 @@ Vim is a popular text editor whose source code can be found on \href{https://git
 
 Comparing building Vim \cite{} with \Make and with \Rattle for commits \emph{21109272f} to \emph{7cc96923c}.  For two commits \Make and \Rattle did noticeably different work; note, both of these commits were build incrementally, \emph{21109272f} was built from scratch by both build systems and all subsequent commits were built incrementally.
 
-% todo compare sequential 
+% todo compare sequential
 % SS todo add timing data
 
 \subsection{node}
@@ -347,6 +347,4 @@ These 3 commits were ones where new \Rattle build scripts were generated because
 % commits
 % ed16f51e 61b075a2 e9b12943 3e701309 8457f54e a01c9ffc cdf13837 74b42407 0eb7b547 f3ea318a 7cdf5ee9 ee3d3db3 685eb381 60ab7144 7eada28f 7f3feb18 8b22da69 bc36700d 32be954b 6f0241e6 19d5f4a0 43b36752 0bf153da 4822130b 47174f51 c915cfc7 54553903 400750bb 470cba35 a4d8437b 6c28d0dd 24cd726d 9900ccd0 c391d50c 0c6c8c4e fdbc1116 37919a6b 22e9cf04 ba542e42 4694afb
 
-\subsection{redis}
-
-\subsection{openssl}
+% \subsection{openssl}
