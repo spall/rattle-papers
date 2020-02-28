@@ -1,7 +1,7 @@
 \section{Implementing \Rattle}
 \label{sec:implementation}
 
-We have implemented the design from \S\ref{sec:design} in a program called \Rattle. We use Haskell as the host language, meaning that the control logic is in Haskell.
+We have implemented the design from \S\ref{sec:design} in a program called \Rattle. We use Haskell as the host language and to write the control logic. Copying the design for \Shake, a \Rattle build script is a Haskell program that uses the \Rattle library.
 
 \subsection{A \Rattle example}
 
@@ -48,16 +48,16 @@ A complete \Rattle script that compiles all \texttt{.c} files as per \S\ref{sec:
 \begin{itemize}
 \item A \Rattle script is a Haskell program. It makes use of ordinary Haskell imports, and importantly includes \texttt{Development.Rattle} offering the API from Figure \ref{fig:api}.
 \item The \texttt{rattle} function takes a value in the \texttt{Run} monad and executes it in \texttt{IO}. The \texttt{Run} type is the \texttt{IO} monad, enriched with a \texttt{ReaderT} containing a reference to shared mutable state (e.g. what commands are in flight, where to store metadata, location of shared storage).
-\item All the control logic is in Haskell and uses external libraries -- e.g. \texttt{System.FilePath} for manipulating \texttt{FilePath} values and \texttt{System.FilePattern} for directory listing. Taking the example of replacing the extension from \texttt{.c} to \texttt{.o}, we are able to abstract out this pattern as \texttt{toO} and reuse it later. Arbitrary Haskell IO can be embedded in the script using \texttt{liftIO}. All of the Haskell code is considered control logic and will be repeated in every execution.
+\item All the control logic is in Haskell and can use external libraries -- e.g. \texttt{System.FilePath} for manipulating \texttt{FilePath} values and \texttt{System.FilePattern} for directory listing. Taking the example of replacing the extension from \texttt{.c} to \texttt{.o}, we are able to abstract out this pattern as \texttt{toO} and reuse it later. Arbitrary Haskell IO can be embedded in the script using \texttt{liftIO}. All of the Haskell code is considered control logic and will be repeated in every execution.
 \item Commands are given to the build system part of \Rattle using \texttt{cmd}. We have implemented \texttt{cmd} as a variadic function \cite{variadic_functions} which takes a command as a series of \texttt{String} (a series of space-separated arguments), \texttt{[String]} (a list of arguments) and \texttt{CmdOption} (command execution modifiers, e.g. to change the current directory), returning a value of type \texttt{Run ()}. The function \texttt{cmd} only returns once the command has finished executing (whether that is by actual execution, skipping, or fetching from external storage).
 \item We have used \texttt{forP} in the example, as opposed to \texttt{forM}, which causes the commands to be given to \Rattle in parallel. The use of explicit parallelism for distinct elements of a list is convenient.
 \end{itemize}
 
-Looking at the functions from Figure \ref{fig:api} there are two functions this example does not use. The \texttt{cmdWriteFile} and \texttt{cmdReadFile} functions are used to perform a read/write of the file system through Haskell code, causing hazards to arise if necessary. Apart from these functions, it is assumed that all Haskell control code only reads and writes files which are not involved in any commands.
+Looking at the functions from Figure \ref{fig:api}, there are two functions this example does not use. The \texttt{cmdWriteFile} and \texttt{cmdReadFile} functions are used to perform a read/write of the file system through Haskell code, causing hazards to arise if necessary. Apart from these functions, it is assumed that all Haskell control code only reads and writes files which are written to by any commands.
 
 \subsection{Alternative \Rattle wrappers}
 
-Given the above API, combined with the choice to treat the control logic as opaque, it is possible to write wrappers that expose \Rattle in new ways. For example, to literally run a series of commands, it is possible to write the \Rattle program:
+Given the above API, combined with the choice to treat the control logic as opaque, it is possible to write wrappers that expose \Rattle in new ways. For example, to run a series of commands from a file, we can write:
 
 \vspace{3mm}
 \begin{verbatim}
@@ -68,17 +68,32 @@ main = rattle $ do
 \end{verbatim}
 \vspace{3mm}
 
-Here we get a single command line argument, read it as a file, then run each command sequentially using \texttt{forM\_}. We use this script in our evaluation in \S\ref{sec:evaluation}.
+Here we take a command line argument, read the file it points to, then run each command sequentially using \texttt{forM\_}. We use this script in our evaluation in \S\ref{sec:evaluation}.
 
-An alternative API could be provided by opening up a socket, and allowing a \Rattle server to take command invocations through that socket. Such an API would allow writing \Rattle scripts to be written in other languages, making use of the existing \Rattle implementation. While such a design should be easy, we have not yet implemented it.
+An alternative API could be provided by opening up a socket, and allowing a \Rattle server to take command invocations through that socket. Such an API would allow writing \Rattle scripts in other languages, making use of the existing \Rattle implementation. While such an implementation should be easy, we have not yet actually implemented it.
 
 \subsection{Hash forwarding}
 \label{sec:forward_hashes}
-% SS I understand hash forwarding but i found this section confusing
 
-To cope with the problem of non-deterministic build results reducing external cache hits, as described in \S\ref{sec:cloud_builds}, \Rattle uses hash forwarding. If the output of a command produces a file \texttt{foo}, and also a file \texttt{foo.forward}, then the hash of \texttt{foo.forward} is used instead of the hash of \texttt{foo}. Provided \texttt{foo.forward} includes all information that \texttt{foo} depends on (or a hash thereof), then the forwarding hash can be treated as a proxy for the non-deterministic file. Moreover, since the most common forwarding is to take the hash of all inputs to the command, that feature is available through the \texttt{CmdOption} named \texttt{Forward}.
+One of the problems of non-deterministic builds is that they reduce external cache hints, as described in \S\ref{sec:cloud_builds}. As a concrete example, assuming we have the build script:
 
-The disadvantage of hash forwarding (other than the complexity) is that if the resulting \texttt{foo} eliminates some information compared to the inputs, then there might be instances when two \texttt{foo} values would be equal despite their forwarding hashes being different, causing fewer cache hits. The use of hash forwarding is very similar to the idea of deep-constructive traces from \citet[\S4.2.4]{build_systems_a_la_carte}, including the inability to benefit from unchanging outputs.
+\begin{verbatim}
+gcc -c main.c
+gcc -o main.exe main.o
+\end{verbatim}
+
+Here we first compile \texttt{main.c} to produce \texttt{main.o}, then link \texttt{main.o} to produce \texttt{main.exe}. If we assume \texttt{gcc -c} is non-deterministic (e.g. embeds the current build time), and locally compile \texttt{gcc -c main.c}, then we will never get cache hits for the linking step. To avoid this problem, assuming all \texttt{main.o} values produced by the same \texttt{main.c} can be replaced for each other, we can use the hash of \texttt{main.c} to identify the output \texttt{main.o}, instead of its hash.
+
+\Rattle implements a more general version of this feature with the name of hash forwarding. If the output of a command produces both a file \texttt{foo}, and also a file \texttt{foo.forward}, then the hash of \texttt{foo.forward} is used to identify \texttt{foo} instead of the hash of \texttt{foo}. To modify the above example to take advantage of hash forwarding we can write:
+
+\begin{verbatim}
+gcc -c main.c && sha1sum main.c > main.o.forward
+gcc -o main.exe main.o
+\end{verbatim}
+
+It is important that if the ``important'' part of \texttt{main.o} changes then the file \texttt{main.o.forward} must also change. It would be equally possible to trim non-significant whitespace or comments from \texttt{main.c} to produce a more stable hash.
+
+The disadvantage of hash forwarding (other than the complexity) is that if the output file eliminates some information compared to the inputs, e.g. is simply the number of lines in the input, then there might be instances where two output values would be equal despite their forwarding hashes being different, causing fewer cache hits. The use of hash forwarding is very similar to the idea of deep-constructive traces from \citet[\S4.2.4]{build_systems_a_la_carte}, including the inability to benefit from unchanging outputs.
 
 \subsection{Specific design choices and consequences}
 \label{sec:choices}
@@ -90,10 +105,10 @@ Relative to the reference design in \S\ref{sec:design} we have made a few specif
 \item We always run a command speculatively if it hasn't been run so far this build, is on the list from the last run, and doesn't cause a hazard relative to both the completed commands and the last traced output of each running command. Importantly, if we are currently running a command we have never run before, we don't speculate anything -- the build system has changed in an unknown way so we take the cautious approach.
 \item We treat command lines as black boxes, never examining them to predict their outputs. For many programs a simple analysis (e.g. looking for \texttt{-o} flags) might give additional predictive power.
 \item We currently use a shared drive for sharing build artefacts, but allow the use of tools such as NFS or Samba to provide remote connectivity and thus full ``cloud builds''.
-\item \Rattle can go wrong if a speculated command writes to a source file. We haven't had that happen in practice, but dividing files into inputs and outputs would be perfectly reasonable -- typically the inputs are checked into version control so that information is trivially available.
+\item \Rattle can go wrong if a speculated command writes to a source file, as per \S\ref{sec:proof:additional}. This problem hasn't occured in practice, but dividing files into inputs and outputs would be perfectly reasonable -- typically the inputs are checked into version control so that information is easily available.
+\item It is important that traces (as stored for \S\ref{sec:skipping_unnecessary} are not recorded to disk as soon as they are produced, but only when we can be sure that there were no hazards while running that command. That requires waiting for all commands which started before the command in question finished to also finished, guaranteeing a hazard has not happened but not yet been detected due to tracing only reporting accessed files at the end.
 \end{itemize}
 
-It is also important to note that we don't store a trace as soon as it is produced, because a future hazard involving it might occur, since we only know if traces are valid at the end.
 
 \subsection{Tracing approaches}
 \label{sec:tracing}
@@ -106,8 +121,6 @@ In \S\ref{sec:assume_tracing} we assume the existence of \emph{dependency tracin
 
   As an example, the C compiler is typically installed as a system binary. It is possible to disable System Integrity Protection (but not recommended by Apple), to use non-system binaries (e.g. those supplied by \Nix \cite{nix} work well), or to copy the system binary to a temporary directory (which works provided the binary does not afterwards invoke another system binary to do its work). The library preload mechanism is implemented by \Fsatrace \cite{fsatrace} and the copying system binaries trick is implemented by \Shake \cite{shake}.
 \item[File system tracing] An alternative approach on Linux would be to implement a file system that reported which files were accessed. We are aware of one such implementation, \tracedfs \cite{tracedfs}, which is unfortunately not yet complete. Such an approach would track all accesses, but may require privileges to mount a file system.
-  % SS TODO add something about Facebook's Watchman file watching service
-  %  https://facebook.github.io/watchman/
 \item[Custom Mac tracing] \BuildXL \cite{buildxl}\footnote{\url{https://github.com/Microsoft/BuildXL/blob/master/Documentation/Specs/Sandboxing.md\#macos-sandboxing}} uses a Mac sandbox based on KAuth combined with TrustedBSD Mandatory Access Control (MAC) to both detect which files are accessed and also block access to specific files. The approach is based on internal Mac OS X detils which have been reversed engineered, some of which are deprecated and scheduled for removal.
 \item[Windows Kernel API hooking] On Windows it is possible to hook the Kernel API, which can be used to detect when files are accessed. Hooking the kernel detects everything, but is not trivial. In particular, 32bit v 64bit differences are problematic, as Windows trampolines between the two and the hooks must cope with the differences using assembly code. Furthermore, some antivirus products are more likely to (incorrectly) detect such programs as viruses. The Windows kernel hooking is available in both \Fsatrace and \Bigbro, although without the 32bit calling 64bit assembly code.
 \end{description}
