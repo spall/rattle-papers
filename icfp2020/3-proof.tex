@@ -1,14 +1,84 @@
-\section{Proofs}
+\newcommand{\claim}{\noindent Claim: }
+\renewcommand{\proof}{\vspace{1mm}\noindent Proof: }
+\newcommand{\refutation}{\vspace{1mm}\noindent Refutation: }
+
+\section{Correctness}
 \label{sec:proof}
 
-The design of \Rattle relies on taking a sequence of commands and instead of running them all sequentially, rather running them in different orders. In this section we prove that the manipulations we perform are safe with respect to the reference semantics.
+The design of \Rattle relies on taking a sequence of commands and instead of running them all sequentially, rather running them in different orders and with speculation. In this section we prove that the manipulations we perform are safe with respect to the reference semantics. Throughout these proofs we assume the commands themselves are pure functions from the inputs to their outputs (as reported by tracing).
 
 \subsection{Hazards, formally}
+\label{sec:hazards_formally}
 
-A hazard occurs when a Build command writes to a file that a previous command has already read from or written to.  Hazards can be classified as either: \emph{read-write hazards} or \emph{write-write hazards}.  In section \S\ref{sec:proof:classify_hazard} hazards are explained in greater detail, but for the following sections it suffices to say that in a build executed sequentially a
-hazard occurs when a command read or writes a file and a later command writes to the same file.  In a build executed in parallel with speculation, a hazard can occur when a command reads or writes a file and a later command writes to the same file, or if two commands running concurrently access the same file and are not both just reading the file.  Therefore, for a sequential \Rattle build to have no hazards means for every command $c$ in the build, if $c$ reads or writes a file, no later command in the build will write to that file.  For a parallel \Rattle build to have no hazards means for every command $c$ in the build, if $c$ reads or writes a file, no later command will write to that file, and no command will concurrently read the file if it is being written, or write to the file if it is being read.
+In section \S\ref{sec:proof:classify_hazard} we introduce the notion of hazards through intuition and how they are used. Here we give more precise definitions:
 
-% SS seems this section should just be a brief explanation of hazards so the following claims of ``no hazards'' makes sense.
+\begin{description}
+\item[Read-write hazard] A build has a \emph{read-write hazard} if one file is read after it is written. Given the limitations of tracing (see \S\ref{sec:tracing}) we require the stronger property that for all files which are both read and written in a single build, the command which did the write must have completed before any commands reading it start.
+\item[Write-write hazard] A build has a \emph{write-write hazard} if one file is written to after it is written. Stated equivalently, a build has a write-write hazard if more than one command in a build writes to it.
+\end{description}
+
+\subsection{Argument for correctness}
+\label{sec:argument}
+
+We define the following terms:
+
+\begin{description}
+\item[Command] A command $c$ reads a set of files ($c_r$), and writes a set of files ($c_w$). We assume the set of files are disjoint ($c_r \cap c_r \equiv \emptyset$), as per \S\ref{sec:skipping_unnecessary}.
+\item[Deterministic command] A command is deterministic if for any set of files it reads, it always writes the same set of files. We assume commands are deterministic for this proof.
+\item[Fixed point] A deterministic command will have no effect if none of the files it reads or writes have changed since the last time it has run. Since it is deterministic, and its reads/writes are disjoint, the same reads will take place, the same computation will follow, and then the original values will be rewritten as they were before. We describe such a command as having \emph{reached a fixed point}.
+\item[Correct builds] If a build containing a set of commands $C$ has reached a fixed point for every command $c$ within the set, then it is a correct build system as per the definition in \S\ref{sec:hazards}.
+\end{description}
+
+\claim If a set of commands $D$ is run, and no hazards arise, then every command within $D$ has reached a fixed point.
+
+\proof A command $c$ has reached a fixed point if none of the files have changed. Taking $c_r$ and $c_w$ separately:
+
+\begin{enumerate}
+\item None of the files $c_w$ have changed. Within a set of commands $D$, if any file was written to by more than one command it would result in a write-write hazard. Therefore, if a command wrote to a file, it must have been the \emph{only} command to write to that file.
+\item None of the files $c_r$ have changed. For a read file to have changed would require it to be written to afterwards. If a file is read from then written to it is a read-write hazard, so the files $c_r$ can't have changed.
+\end{enumerate}
+
+As a consequence, all commands within $D$ must have reached a fixed point.
+
+\subsection{No rebuilds}
+\label{sec:proof:no_rebuild}
+
+\claim A build with deterministic control logic that completes with no hazards has reached a fixed point.
+
+\proof The deterministic control logic means that the set of commands will not change unless the results of the commands do. The proof in \S\ref{sec:argument} means that the commands will not change the values of any files, therefore the set of commands won't change and the build is at a fixed point.
+
+\subsection{Reordered builds}
+\label{sec:proof:reorder}
+
+\claim Given a script with no hazards when executed sequentially, with the same initial file contents, any interleaving of those commands that also has no hazards will result in an equivalent output.
+
+\proof The proof from \S\ref{sec:argument} shows that any script with no hazards will result in a fixed point. To prove equivalency we defined the inputs as the set of files that commands read from, but no command writes to, namely:
+
+For any file states where the inputs are equivalent, there is only one fixed point. The commands only read and write from files that are in the inputs, or files that are written by another command. The first command that writes its output can only have been influenced inputs, since if it read any other writes, there would be a read-write hazard, so that first output must be a consequence of only inputs. The second command can only look at the inputs and the files written by the first command, all of which are determined by the inputs. By induction we can see that all outputs must be influenced only by the inputs.
+
+To complete the proof we require the inputs before are equivalent, which is part of the claim.
+
+\subsection{Parallel commands}
+\label{sec:proof:parallel}
+
+\claim Given a script with no hazards when executed sequentially, any parallel or interleaved execution without hazards will also be equivalent.
+
+\proof None of the claims in \S\ref{sec:proof:reorder} rely on commands being run not in parallel, so that proof still applies.
+
+\subsection{Additional commands have no effect}
+\label{sec:proof:additional}
+
+\claim Given a script with no hazards when executed sequentially, speculating unnecessary commands will not affect the build's output.
+
+\refutation This claim isn't actually true. As a counter example, \texttt{gcc -c main.c} gives one result, but running the additional command \texttt{echo 1 >> main.c} gives a different outcome. Therefore we strengthen the claim to:
+
+\claim The above claim is true when unnecessary commands do not write to any inputs.
+
+\proof Provided the inputs are unchanged, and there are no hazards, the proof from \S\ref{sec:proof:reorder} still applies.
+
+We discuss the consequences and possible remediations in \S\ref{sec:choices}.
+
+\begin{comment}
 
 \subsection{No rebuilds}
 \label{sec:proof:no_rebuild}
@@ -104,6 +174,7 @@ concurrently with $c$ as part of build $A$, will not affect the files written by
 Inductive case: Let us assume the above claim is true for a build with $n$ commands.  Let us show the claim is true for a build of $n+1$ commands.
 
 Let $A$ have $n+1$ command.  From the inductive hypothesis we know the output of the first $n$ commands is unchanged.  And, we know that $c$ does not write to any file read or written by command $n+1$.  And, because the build has no hazards, all files read by $n+1$ were written to before $n+1$ ran, so the output files of $n+1$ remain unchanged as well.  Therefore, the output of $A$ remained unaffected by $c$.
+\end{comment}
 
 \subsection{Classifying Hazards}
 \label{sec:proof:classify_hazard}

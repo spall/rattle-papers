@@ -90,6 +90,7 @@ Relative to the reference design in \S\ref{sec:design} we have made a few specif
 \item We always run a command speculatively if it hasn't been run so far this build, is on the list from the last run, and doesn't cause a hazard relative to both the completed commands and the last traced output of each running command. Importantly, if we are currently running a command we have never run before, we don't speculate anything -- the build system has changed in an unknown way so we take the cautious approach.
 \item We treat command lines as black boxes, never examining them to predict their outputs. For many programs a simple analysis (e.g. looking for \texttt{-o} flags) might give additional predictive power.
 \item We currently use a shared drive for sharing build artefacts, but allow the use of tools such as NFS or Samba to provide remote connectivity and thus full ``cloud builds''.
+\item \Rattle can go wrong if a speculated command writes to a source file. We haven't had that happen in practice, but dividing files into inputs and outputs would be perfectly reasonable -- typically the inputs are checked into version control so that information is trivially available.
 \end{itemize}
 
 It is also important to note that we don't store a trace as soon as it is produced, because a future hazard involving it might occur, since we only know if traces are valid at the end.

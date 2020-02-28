@@ -120,7 +120,7 @@ Interestingly, given complete \emph{dependency} information (e.g. as available t
 \subsection{Implicit Parallelism (Speculation)}
 \label{sec:speculation}
 
-While explicit parallelism is useful, it imposes a burden on the build script author. Alternatively we can use implicit parallelism, where useful commands are executed in advance, in the hope that they will be useful and cause a future required command to be skipped. Importantly, such speculation can be shown to be safe by tracking hazards. Given a script with no hazards when executed sequentially, we can show that any interleaving of those commands that also has no hazards will result in an equivalent output in \S\ref{sec:proof:reorder}. Moreover, any parallel or interleaved execution without hazards will also be equivalent, see \S\ref{sec:proof:parallel}. And further, if any additional commands are run that don't cause hazards, they can be shown to not change the results the normal build produces, see \S\ref{sec:proof:additional}.
+While explicit parallelism is useful, it imposes a burden on the build script author. Alternatively we can use implicit parallelism, where useful commands are executed in advance, in the hope that they will be useful and cause a future required command to be skipped. Importantly, such speculation can be shown to be safe by tracking hazards. Given a script with no hazards when executed sequentially, we can show that any interleaving of those commands that also has no hazards will result in an equivalent output in \S\ref{sec:proof:reorder}. Moreover, any parallel or interleaved execution without hazards will also be equivalent, see \S\ref{sec:proof:parallel}. And further, if any additional commands are run that don't cause hazards, they can be shown to not change the results the normal build produces, see \S\ref{sec:proof:additional} (which is true with certain reasonable caveats).
 
 As a consequence, if we can predict what commands are coming up next, and predict that their execution will not cause hazards, it may be worth speculatively executing them. Effective speculation requires us to predict two pieces of data.
 
@@ -150,10 +150,10 @@ The following are all potential ways a speculated command can cause a hazard and
 
 \item [A speculated command and a build script command write to the same file]
   In this situation a \emph{write-write hazard} has occured, but it might be entirely due to speculation, meaning if the build re-executes and does not speculate the offending command, then the hazard might not re-occur.
-  
+
 \item [A speculated command writes to a file a build script command reads from]
   In this situation a \emph{read-write hazard} has occurred, and like the previous case might be caused entirely by speculation.  Therefore, the build can re-execute without speculating the offending command.
-  
+
 \item [Speculated command reads from a file that another command writes to]
   In this situation a \emph{read-write hazard} has occurred, which is entirely caused by speculation.  Unlike the previous cases, where to recover the build must restart from the beginning, in this case the build can just re-execute the speculative command and the same hazard will not re-occur.  It is safe for the build to do this because the speculated command merely executed a file read too soon.  Now that the command which wrote to the file has executed the speculated command can execute again and read the correct file.  A proof of this claim is provided in section \S\ref{sec:proof:classify_hazard}.
 
