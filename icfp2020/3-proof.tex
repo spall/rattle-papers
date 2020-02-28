@@ -5,7 +5,8 @@
 \section{Correctness}
 \label{sec:proof}
 
-The design of \Rattle relies on taking a sequence of commands and instead of running them all sequentially, rather running them in different orders and with speculation. In this section we prove that the manipulations we perform are safe with respect to the reference semantics. Throughout these proofs we assume the commands themselves are pure functions from the inputs to their outputs (as reported by tracing).
+% SS I think I edited this sentence to be like this, but I still dont like how it sounds
+The design of \Rattle relies on taking a sequence of commands and rathern than running them all sequentially, instead running them in different orders and with speculation. In this section we prove that the manipulations we perform are safe with respect to the reference semantics. Throughout these proofs we assume the commands themselves are pure functions from the inputs to their outputs (as reported by tracing).
 
 \subsection{Hazards, formally}
 \label{sec:hazards_formally}
@@ -13,8 +14,8 @@ The design of \Rattle relies on taking a sequence of commands and instead of run
 In section \S\ref{sec:proof:classify_hazard} we introduce the notion of hazards through intuition and how they are used. Here we give more precise definitions:
 
 \begin{description}
-\item[Read-write hazard] A build has a \emph{read-write hazard} if one file is read after it is written. Given the limitations of tracing (see \S\ref{sec:tracing}) we require the stronger property that for all files which are both read and written in a single build, the command which did the write must have completed before any commands reading it start.
-\item[Write-write hazard] A build has a \emph{write-write hazard} if one file is written to after it is written. Stated equivalently, a build has a write-write hazard if more than one command in a build writes to it.
+\item[Read-write hazard] A build has a \emph{read-write hazard} if a file is written to after it has been read. Given the limitations of tracing (see \S\ref{sec:tracing}) we require the stronger property that for all files which are both read and written in a single build, the command which did the write must have completed before any commands reading it start.
+\item[Write-write hazard] A build has a \emph{write-write hazard} if a file is written to after it has already been written. Stated equivalently, a build has a write-write hazard if more than one command in a build writes to the same file.
 \end{description}
 
 \subsection{Argument for correctness}
@@ -31,35 +32,44 @@ We define the following terms:
 
 \claim If a set of commands $D$ is run, and no hazards arise, then every command within $D$ has reached a fixed point.
 
-\proof A command $c$ has reached a fixed point if none of the files have changed. Taking $c_r$ and $c_w$ separately:
+\proof A command $c$ has reached a fixed point if none of the files in $c_r$ and $c_w$ have changed. Taking $c_r$ and $c_w$ separately:
 
 \begin{enumerate}
-\item None of the files $c_w$ have changed. Within a set of commands $D$, if any file was written to by more than one command it would result in a write-write hazard. Therefore, if a command wrote to a file, it must have been the \emph{only} command to write to that file.
+\item None of the files in $c_w$ have changed. Within a set of commands $D$, if any file was written to by more than one command it would result in a write-write hazard. Therefore, if a command wrote to a file, it must have been the \emph{only} command to write to that file.
 \item None of the files $c_r$ have changed. For a read file to have changed would require it to be written to afterwards. If a file is read from then written to it is a read-write hazard, so the files $c_r$ can't have changed.
 \end{enumerate}
 
 As a consequence, all commands within $D$ must have reached a fixed point.
 
-\subsection{No rebuilds}
+\subsection{Unchanging builds}
 \label{sec:proof:no_rebuild}
 
-\claim A build with deterministic control logic that completes with no hazards has reached a fixed point.
+\claim A build with deterministic control logic that completes with no hazards has reached a fixed point.  % meaning if re-run, nothing would change
 
-\proof The deterministic control logic means that the set of commands will not change unless the results of the commands do. The proof in \S\ref{sec:argument} means that the commands will not change the values of any files, therefore the set of commands won't change and the build is at a fixed point.
+
+% ok so the difference between this proof and the previous one is that we need to prove that
+% for a set of commands that are not unrelated; meaning a previous command can influence a future command, the commands are unchanged
+% hopefully this does that
+
+\proof The build's deterministic control logic means that beginning with the first command in the build, which is unchanged, given the same set of input files, the command will write to the same set of output files and produce the same results.  It follows that the subsequent command in the build will be unchanged as well since the results of the previous command did not change.  It follows by induction that each of the following commands in the build will remain unchanged.
+Because the commands in the build will have not changed, it follows from the proof in \S\ref{sec:argument} that the commands will not changes the values of any files, therefore, the build is at a fixed point.
 
 \subsection{Reordered builds}
 \label{sec:proof:reorder}
 
 \claim Given a script with no hazards when executed sequentially, with the same initial file contents, any interleaving of those commands that also has no hazards will result in an equivalent output.
 
-\proof The proof from \S\ref{sec:argument} shows that any script with no hazards will result in a fixed point. To prove equivalency we defined the inputs as the set of files that commands read from, but no command writes to, namely:
+\proof The proof from \S\ref{sec:argument} shows that any script with no hazards will result in a fixed point. To prove equivalency we define the inputs as the set of files that commands read from, but no command writes to, namely:
 
 \[
   \bigcup_{c \in D} c_r \setminus \bigcup_{c \in D} c_w
 \]
 
-For any file states where the inputs are equivalent, there is only one fixed point. The commands only read and write from files that are in the inputs, or files that are written by another command. The first command that writes its output can only have been influenced inputs, since if it read any other writes, there would be a read-write hazard, so that first output must be a consequence of only inputs. The second command can only look at the inputs and the files written by the first command, all of which are determined by the inputs. By induction we can see that all outputs must be influenced only by the inputs.
-
+% is this supposed to say something instead of ``file states''? 
+For any file states where the inputs are equivalent, there is only one fixed point. The commands only read from files that are in the inputs, or files that are written by another command. % mean first command in build right; not just first command for any output
+The outputs of the first command in the build can only have been influenced by the inputs, since if it read any other writes, there would be a read-write hazard
+, so that first output must be a consequence of only inputs. The second command can only look at the inputs and the files written by the first command, all of which are determined by the inputs. By induction we can see that all outputs must be influenced only by the inputs.
+ 
 To complete the proof we require the inputs before are equivalent, which is part of the claim.
 
 \subsection{Parallel commands}
