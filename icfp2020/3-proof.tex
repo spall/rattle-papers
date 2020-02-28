@@ -110,9 +110,9 @@ Let $A$ have $n+1$ command.  From the inductive hypothesis we know the output of
 
 % SS An explanation of the classification of hazards and a proof of the claims in 2.7
 
-In section \S\ref{sec:speculation} we describe how speculation can be used to execute builds in parallel.  Sometimes when commands are speculated, hazards can occur that wouldn't have if the build script was executed sequentially.  In that section we describe when speculation can lead to hazards and how they can be recovered from.  Here we offer a more precise classification of those hazards and proofs related to them.
+In section \S\ref{sec:speculation} we describe how speculation can be used to execute builds in parallel.  Speculation can lead to hazards that wouldn't have occurred if the build script was executed sequentially. Here we offer a more precise classification of hazards.
 
-Hazards are first classified as either \emph{read-write} or \emph{write-write}.  Hazards can be further classified by how the hazard occurred.
+Aas per section \S\ref{ref:hazard}, hazards are first classified as either \emph{read-write} or \emph{write-write}.  A Hazard can be further classified by if and how a build can recover from it.
 
 \paragraph{Non Recoverable}
 A hazard is classified as \emph{non-recoverable} if it is triggered by a consistency violation in the build script.  A \emph{non-recoverable hazard} always results in the build terminating immediately with an error.  For two examples of \emph{non-recoverable hazards} see section \ref{sec:hazards}.
@@ -126,26 +126,17 @@ gcc -c foo.c
 cp foo.o baz.o [re-execute]
 \end{verbatim}
 
-Proof that if the read command of a \emph{recoverable} hazard is re-executed the same hazard will not re-occur.
+\paragraph{Proof that if the speculative read command of a \emph{recoverable} hazard is re-executed the same hazard will not re-occur.}
 
-% SS todo above proof
+Let us assume there is a command $c$ which reads a file with the name $f$.  Let us assume there
+is another command $d$ which writes to the file $f$.  It follows that if $d$ executes concurrently with or after $c$ that a \emph{read-write hazard}, $h$, involving the file $f$ would occur.
+
+If $c$ were to execute again after $d$ terminated, by definition, the hazard $h$ cannot re-occur because the read of $f$ will have happened after the write of $f$.
 
 \paragraph{Restartable} % when speculation causes a consistency violation. or a command to read incorrect data.
-If a speculatively executed command wrote to a file that was later written to or read by another command, then incorrectness was potentially introduced into the build.  In the following example \emph{cp foo.o baz.o} was speculated, and wrote to \emph{baz.o}, then \emph{gcc -c baz.c} was executed and also wrote to \emph{baz.o}.  Normally a build script that executed these two commands would violate \Rattle's consistency properties, but in this case the consistency violation might have been avoided if \emph{cp foo.o baz.o} were not executed by the build.  Therefore, if the build script was re-executed and did not speculate \emph{cp foo.o baz.o} then the consistency violation might not occur.
+If a speculatively executed command wrote to a file that was later written to or read by another command, then incorrectness was potentiallly introduced to the build.  In a sequential build, it is a
+consistency violation for any command to write to a file after a previous command has written to it, but it is ok for a command to read from a file that has previously been written to.  It isn't safe in this case, because if the speculated command wasn't supposed to run, it might have changed the contents of the file read by the later command.
+The hazard might not have occurred in the speculated command wasn't run.  Therefore, if the build script was re-executed without the speculated command, the hazard might not re-occur.
 
-\begin{verbatim}
-cp foo.o baz.o [speculate]
-gcc -c baz.c
-\end{verbatim}
-
-Another possible situation is \Rattle executing something like the following:
-
-\begin{verbatim}
-cp old-foo.c foo.c [speculate]
-gcc -c foo.c
-\end{verbatim}
-
-Maybe the build script originally included \emph{cp old-foo.c foo.c}, but it was removed in the most recent version of the build.  By speculating this old command the build caused \emph{gcc -c foo.c} to
-potentially build the wrong \emph{foo.c}.  If the build  were to re-execute and not speculate \emph{cp old-foo.c foo.c} then \emph{gcc -c foo.c} would build the correct \emph{foo.c} during the next build.  % This is a bad example since Rattle would have corrupted foo.c with the bad copy.  Need a new example or address this
 
 %Proof that restartable hazard are handled
