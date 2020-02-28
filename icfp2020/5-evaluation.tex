@@ -289,19 +289,18 @@ To compare the \Make based build to a \Rattle version, we built Node.js over a s
 
 \begin{tikzpicture}
 \begin{axis}[
-  title=Compile time in seconds,
+  title=Compile time at each successive commit,
   width=\textwidth,
-  height=7cm,
-  xlabel={Time at each successive commit},
+  height=5cm,
   ylabel={Seconds},
   ymin=0,
   xmin=0,
 ]
 
-\addplot table [x expr=\coordindex, y=make1] {data/tmux.dat}; 	\addlegendentry{\Make -j1}
-\addplot table [x expr=\coordindex, y=make4] {data/tmux.dat}; 	\addlegendentry{\Make -j4}
-\addplot table [x expr=\coordindex, y=rattle1] {data/tmux.dat}; 	\addlegendentry{\Rattle -j1}
-\addplot table [x expr=\coordindex, y=rattle4_noshared] {data/tmux.dat}; 	\addlegendentry{\Rattle -j4 (no shared)}
+\addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/tmux.dat}; 	\addlegendentry{\Make -j1}
+\addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/tmux.dat}; 	\addlegendentry{\Make -j4}
+\addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1] {data/tmux.dat}; 	\addlegendentry{\Rattle -j1}
+\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4_noshared] {data/tmux.dat}; 	\addlegendentry{\Rattle -j4}
 \end{axis}
 \end{tikzpicture}
 
