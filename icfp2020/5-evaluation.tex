@@ -55,7 +55,7 @@ As expected, we see that in the initial build \Rattle doesn't exhibit parallelis
 \subsection{Measuring overhead}
 \label{sec:eval:overhead}
 
-In order to determine what overhead \Rattle introduces, we ran a fixed set of commands with increasingly more parts of \Rattle enabled. The \Rattle command execution builds on the command execution from \Shake \cite{shake}, which in turn uses \Fsatrace for tracing and the Haskell \texttt{process} library for command execution. Therefore, we ran the commands in a clean build directory in 7 different ways:
+In order to determine what overhead \Rattle introduces, we ran a fixed set of commands with increasingly more parts of \Rattle enabled. \Rattle command execution builds on the command execution from \Shake \cite{shake}, which in turn uses \Fsatrace for tracing and the Haskell \texttt{process} library for command execution. Therefore, we ran the commands in a clean build directory in 7 different ways:
 
 \begin{enumerate}
 \item Using \texttt{make -j1}, as a baseline.
@@ -67,7 +67,7 @@ In order to determine what overhead \Rattle introduces, we ran a fixed set of co
 \item Using \Rattle with all features turned on, including shared storage.
 \end{enumerate}
 
-To obtain a set of commands typical of building, we took the latest version of \Fsatrace\footnote{Git commit 41fbba17da580f81ababb32ec7e6e5fd49f11473} and ran \texttt{make -j1}, capturing the commands that were executed. On Windows \Fsatrace runs 25 commands (21 compiles, 4 links). On Linux \Fsatrace runs 9 commands (7 compiles, 2 links). On Linux the current build system produces write-write hazards, because it compiles some files (e.g. \texttt{shm.c}) twice, once with \texttt{-fPIC} (position independent code), and once without. However, both times it passes \texttt{-MMD} to cause \texttt{gcc} to produce \texttt{shm.d} which is used for dependencies -- we removed the \texttt{-MMD} flag as it doesn't impact the above benchmark. We ran all sets of commands five times, and took the average of the three fastest, on both Windows and Linux.
+To obtain a set of commands typical of building, we took the latest version of \Fsatrace\footnote{\url{https://github.com/jacereda/fsatrace/commit/41fbba17da580f81ababb32ec7e6e5fd49f11473}} and ran \texttt{make -j1}, capturing the commands that were executed. On Windows \Fsatrace runs 25 commands (21 compiles, 4 links). On Linux \Fsatrace runs 9 commands (7 compiles, 2 links). On Linux the list of commands produces write-write hazards, because it compiles some files (e.g. \texttt{shm.c}) twice, once with \texttt{-fPIC} (position independent code), and once without. However, both times it passes \texttt{-MMD} to cause \texttt{gcc} to produce \texttt{shm.d} which is used for dependencies -- we removed the \texttt{-MMD} flag as it doesn't impact the benchmark. We ran all sets of commands five times, and took the average of the three fastest, on both Windows and Linux.
 
 % RAW RESULTS (final number is avg of fastest 3, to ignore swapping etc)
 % $ rattle-benchmark micro
@@ -100,19 +100,21 @@ To obtain a set of commands typical of building, we took the latest version of \
 \begin{tabular}{l|rrr|rrr}
 Commands & \multicolumn{3}{c|}{Windows} & \multicolumn{3}{c}{Linux} \\
 \hline
-Make & 9.96s & 100\% &  & 1.19s & 100\% & \\
-process & 10.26s & 103\% & +3\% & 1.18s & 99\% & -1\% \\
-\Shake & 10.58s & 106\% & +3\% & 1.17s & 98\% & -1\% \\
-\Shake + \Fsatrace & 12.66s & 127\% & +21\% & 1.23s & 103\% & +5\% \\
-\Shake + \texttt{Traced} & 13.06s & 131\% & +4\% & 1.23s & 103\% & +0\% \\
-\Rattle & 14.43s & 145\% & +14\% & 1.25s & 105\% & +2\% \\
-\Rattle + everything & 14.53s & 146\% & +1\% & 1.27s & 107\% & +2\% \\
+1) Make                      &  9.96s & 100\% &       &    1.19s & 100\% & \\
+2) process                   & 10.26s & 103\% &  +3\% &    1.18s &  99\% & -1\% \\
+3) \Shake                    & 10.58s & 106\% &  +3\% &    1.17s &  98\% & -1\% \\
+4) \Shake + \Fsatrace        & 12.66s & 127\% & +21\% &    1.23s & 103\% & +5\% \\
+5) \Shake + \texttt{Traced}  & 13.06s & 131\% &  +4\% &    1.23s & 103\% & +0\% \\
+6) \Rattle                   & 14.43s & 145\% & +14\% &    1.25s & 105\% & +2\% \\
+7) \Rattle + everything      & 14.53s & 146\% &  +1\% &    1.27s & 107\% & +2\% \\
 \end{tabular}
 \vspace{3mm}
 
 Both Windows and Linux have three columns -- the time taken (average of five runs), that time as a percentage of the \Make run, and the delta from the row above. The results are significantly different between platforms:
 
-\paragraph{Windows} On Windows, we see that the total overhead of \Rattle makes the execution 46\% slower. Of the parts, 21\% of the slowdown is from \Fsatrace, with the next greatest overhead being from \Rattle. Of the \Rattle overhead, one of the things that is necessarily slower on Windows is canonicalising filepaths. Using the default NTFS file system, Windows considers paths to be case insensitive. As a result, we observe paths like \verb"C:\windows\system32\KERNELBASE.dll", which in actual fact are on disk called \verb"C:\Windows\System32\KernelBase.dll", but can also be accessed by names such as \verb"C:\Windows\System32\KERNEL~1.DLL". Unfortunately, Windows also supports case sensitive disks, so it's also not sufficient to just lowercase them. Furthermore, disabling the anti-virus (Windows Defeneder) has a significant impact on the result -- these results are with the anti-virus disabled.
+\paragraph{Windows} On Windows, we see that the total overhead of \Rattle makes the execution 46\% slower. Of the parts, 21\% of the slowdown is from \Fsatrace (due to hooking Windows kernel API), with the next greatest overhead being from \Rattle itself. Of the \Rattle overhead, the greatest slowdown is caused by canonicalising filepaths. Using the default NTFS file system, Windows considers paths to be case insensitive. As a result, we observe paths like \verb"C:\windows\system32\KERNELBASE.dll", which on disk are called \verb"C:\Windows\System32\KernelBase.dll", but can also be accessed by names such as \verb"C:\Windows\System32\KERNEL~1.DLL". Unfortunately, Windows also supports case sensitive file systems, so simply using case-insensitive equality is insufficient.
+
+On Windows, enabling the anti-virus (Windows Defender) has a significant impact on the result, increasing the \Make baseline by 11\% and the final time by 29\%. These results were collected with the anti-virus disabled.
 
 \paragraph{Linux} In contrast, on Linux, the total overhead is only 7\%, of which nearly all (5\%) comes from the tracing.
 
@@ -123,30 +125,26 @@ These results show that tracing has minor but not insignificant on Linux, wherea
 \subsection{\Fsatrace}
 \label{sec:eval:fsatrace}
 
-To measure \Fsatrace between \Make and \Rattle we took the commands we extracted for \S\ref{sec:eval:overhead} and ran the build script at each successive step. The performance results at various levels of threading were:
+To compare \Make and \Rattle on \Fsatrace we took the commands we extracted for \S\ref{sec:eval:overhead} and ran the build script for the 100 previous commits in turn, starting with a clean build then performing incremental builds. To make the results readable, we hid any commands where all versions were < 0.02s, resulting in 26 interesting commits. We ran with 1 to 4 threads, but omit the 2 and 3 thread case as they typically fall either on or just above the 4 thread case.
 
 \begin{tikzpicture}
 \begin{axis}[
-  title=Compile time in seconds,
+  title={Compile time at each successive commit},
   width=\textwidth,
-  height=7cm,
-  xlabel={Time at each successive commit},
+  height=5cm,
   ylabel={Seconds},
   ymin=0,
   xmin=0,
+  xmax=15,
 ]
-\addplot table [x expr=\coordindex, y=make1] {data/fsatrace.dat}; 	\addlegendentry{\Make -j1}
-\addplot table [x expr=\coordindex, y=make2] {data/fsatrace.dat}; 	\addlegendentry{\Make -j2}
-\addplot table [x expr=\coordindex, y=make3] {data/fsatrace.dat}; 	\addlegendentry{\Make -j3}
-\addplot table [x expr=\coordindex, y=make4] {data/fsatrace.dat}; 	\addlegendentry{\Make -j4}
-\addplot table [x expr=\coordindex, y=rattle1] {data/fsatrace.dat}; 	\addlegendentry{\Rattle -j1}
-\addplot table [x expr=\coordindex, y=rattle2] {data/fsatrace.dat}; 	\addlegendentry{\Rattle -j2}
-\addplot table [x expr=\coordindex, y=rattle3] {data/fsatrace.dat}; 	\addlegendentry{\Rattle -j3}
-\addplot table [x expr=\coordindex, y=rattle4] {data/fsatrace.dat}; 	\addlegendentry{\Rattle -j4}
+\addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/fsatrace.dat};    \addlegendentry{\Make -j1}
+\addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/fsatrace.dat};    \addlegendentry{\Make -j4}
+\addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1] {data/fsatrace.dat};  \addlegendentry{\Rattle -j1}
+\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4] {data/fsatrace.dat};  \addlegendentry{\Rattle -j4}
 \end{axis}
 \end{tikzpicture}
 
-We ran it for 100 commits, but hid any commands where all variants where < 0.02s. As we can see, the first build is always > 1s for \Rattle, but \Make is able to optimise it as low as 0.33s with 4 threads. This is a consequence of \Rattle not knowing the parallelism from then on. Otherwise, \Rattle and \Make are competitive -- users would struggle to see the difference. The one commit that does show some variation is commit 2, where \Make at 1 thread matches all the \Rattle builds, but \Make at 2 threads or above goes slightly faster. The cause is a speculation leading to a write-write hazard. Concretely, the command for link \texttt{fsatrace.so} has changed to include a new file \texttt{proc.o}. \Rattle starts speculating on the old link, then gets the command for the new line -- they both write to \texttt{fsatrace.so}, leading to a hazard, and causing \Rattle to restart without speculation. Had the real linker arrived first then an unknown command would have been executing and we wouldn't have run it.
+As we can see, the first build is always > 1s for \Rattle, but \Make is able to optimise it as low as 0.33s with 4 threads. Otherwise, \Rattle and \Make are competitive -- users would struggle to see the difference. The one commit that does show some variation is commit 2, where \Make at 1 thread matches all the \Rattle builds, but \Make at more than 1 thread goes slightly faster. The cause is a speculation leading to a write-write hazard. Concretely, the command for linking \texttt{fsatrace.so} changed to include a new file \texttt{proc.o}. \Rattle starts speculating on the old link, then gets the command for the new link -- they both write to \texttt{fsatrace.so}, leading to a hazard, and causing \Rattle to restart without speculation.
 
 % WriteWriteHazard /tmp/extra-dir-39079319872788/fsatrace.so Cmd [EchoStderr False] ["cc","-shared","src/unix/fsatraceso.os","src/emit.os","src/unix/shm.os","-o","fsatrace.so","-ldl","-lrt"] Cmd [EchoStderr False] ["cc","-shared","src/unix/fsatraceso.os","src/emit.os","src/unix/shm.os","src/unix/proc.os","-o","fsatrace.so","-ldl","-lrt"] Restartable
 
@@ -155,19 +153,19 @@ We ran it for 100 commits, but hid any commands where all variants where < 0.02s
 
 \begin{tikzpicture}
 \begin{axis}[
-  title=Compile time in seconds,
+  title={Compile time at each successive commit},
   width=\textwidth,
-  height=7cm,
-  xlabel={Time at each successive commit},
+  height=5cm,
   ylabel={Seconds},
   ymin=0,
   xmin=0,
+  xmax=30,
 ]
-\addplot table [x expr=\coordindex, y=make1] {data/redis.dat}; 	\addlegendentry{\Make -j1}
-\addplot table [x expr=\coordindex, y=make4] {data/redis.dat}; 	\addlegendentry{\Make -j4}
-\addplot table [x expr=\coordindex, y=rattle1] {data/redis.dat}; 	\addlegendentry{\Rattle -j1}
-\addplot table [x expr=\coordindex, y=rattle4] {data/redis.dat}; 	\addlegendentry{\Rattle -j4}
-\addplot table [x expr=\coordindex, y=rattle4_noshared] {data/redis.dat}; 	\addlegendentry{\Rattle -j4 (no shared)}
+\addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/redis.dat}; 	\addlegendentry{\Make -j1}
+\addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/redis.dat}; 	\addlegendentry{\Make -j4}
+\addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1] {data/redis.dat}; 	\addlegendentry{\Rattle -j1}
+% \addplot table [x expr=\coordindex, y=rattle4] {data/redis.dat}; 	\addlegendentry{\Rattle -j4}
+\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4_noshared] {data/redis.dat}; 	\addlegendentry{\Rattle -j4}
 \end{axis}
 \end{tikzpicture}
 
@@ -191,19 +189,19 @@ and some memoisation operations (\texttt{memo})
 
 \begin{tikzpicture}
 \begin{axis}[
-  title=Compile time in seconds,
+  title={Compile time at each successive commit},
   width=\textwidth,
-  height=7cm,
-  xlabel={Time at each successive commit},
+  height=5cm,
   ylabel={Seconds},
   ymin=0,
   xmin=0,
+  xmax=39,
 ]
 
-\addplot table [x expr=\coordindex, y=make1] {data/vim.dat}; 	\addlegendentry{\Make -j1}
-\addplot table [x expr=\coordindex, y=make4] {data/vim.dat}; 	\addlegendentry{\Make -j4}
-\addplot table [x expr=\coordindex, y=rattle1] {data/vim.dat}; 	\addlegendentry{\Rattle -j1}
-\addplot table [x expr=\coordindex, y=rattle4] {data/vim.dat}; 	\addlegendentry{\Rattle -j4}
+\addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/vim.dat}; 	\addlegendentry{\Make -j1}
+\addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/vim.dat}; 	\addlegendentry{\Make -j4}
+\addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1] {data/vim.dat}; 	\addlegendentry{\Rattle -j1}
+\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4] {data/vim.dat}; 	\addlegendentry{\Rattle -j4}
 \end{axis}
 \end{tikzpicture}
 
