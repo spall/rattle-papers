@@ -112,7 +112,7 @@ Let $A$ have $n+1$ command.  From the inductive hypothesis we know the output of
 
 In section \S\ref{sec:speculation} we describe how speculation can be used to execute builds in parallel.  Speculation can lead to hazards that wouldn't have occurred if the build script was executed sequentially. Here we offer a more precise classification of hazards.
 
-Aas per section \S\ref{ref:hazard}, hazards are first classified as either \emph{read-write} or \emph{write-write}.  A Hazard can be further classified by if and how a build can recover from it.
+Aas per section \S\ref{sec:hazards}, hazards are first classified as either \emph{read-write} or \emph{write-write}.  A Hazard can be further classified by if and how a build can recover from it.
 
 \paragraph{Non Recoverable}
 A hazard is classified as \emph{non-recoverable} if it is triggered by a consistency violation in the build script.  A \emph{non-recoverable hazard} always results in the build terminating immediately with an error.  For two examples of \emph{non-recoverable hazards} see section \ref{sec:hazards}.
