@@ -137,6 +137,8 @@ These results show that tracing has minor but not insignificant on Linux, wherea
 
 To compare \Make and \Rattle on \Fsatrace we took the commands we extracted for \S\ref{sec:eval:overhead} and ran the build script for the 100 previous commits in turn, starting with a clean build then performing incremental builds. To make the results readable, we hid any commands where all versions were < 0.02s, resulting in 26 interesting commits. We ran with 1 to 4 threads, but omit the 2 and 3 thread case as they typically fall either on or just above the 4 thread case.
 
+\vspace{3mm}
+
 \begin{tikzpicture}
 \begin{axis}[
   title={Compile time at each successive commit},
@@ -161,6 +163,7 @@ As we can see, the first build is always > 1s for \Rattle, but \Make is able to 
 \subsection{Redis}
 \label{sec:eval:redis}
 
+\vspace{2mm}
 \begin{tikzpicture}
 \begin{axis}[
   title={Compile time at each successive commit},
