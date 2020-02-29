@@ -120,7 +120,7 @@ Interestingly, given complete \emph{dependency} information (e.g. as available t
 \subsection{Implicit Parallelism (Speculation)}
 \label{sec:speculation}
 
-While explicit parallelism is useful, it imposes a burden on the build script author. Alternatively we can use implicit parallelism, where useful commands are executed in advance, in the hope that they will be useful and cause a future required command to be skipped. Importantly, such speculation can be shown to be safe by tracking hazards. Given a script with no hazards when executed sequentially, we can show that any ordering of those commands that also has no hazards will result in an equivalent output in \S\ref{sec:proof:reorder}. Moreover, any parallel or interleaved execution without hazards will also be equivalent, see \S\ref{sec:proof:parallel}. And further, if any additional commands are run that don't cause hazards, they can be shown to not change the results the normal build produces, see \S\ref{sec:proof:additional} (which is true with certain reasonable caveats).
+While explicit parallelism is useful, it imposes a burden on the build script author. Alternatively we can use implicit parallelism, where some commands are executed speculatively, before they are required, in the hope that they will be required in the future and thus skipped. Importantly, such speculation can be shown to be safe by tracking hazards, provided we introduce a new hazard \emph{speculative-write-read} corresponding to a speculative write being read by a non-speculative read. Given a script with no hazards when executed sequentially, we can show that any ordering of those commands that also has no hazards will result in an equivalent output in \S\ref{sec:proof:reorder}. Moreover, any parallel or interleaved execution without hazards will also be equivalent, see \S\ref{sec:proof:parallel}. And further, if any additional commands are run that don't cause hazards, they can be shown to not change the results the normal build produces, see \S\ref{sec:proof:additional}. Finally, we also prove that if a series of commands contains hazards, so will any execution that includes those required commandsin the same order, see \S\ref{sec:proof:keep_hazards}.
 
 As a consequence, if we can predict what commands are coming up next, and predict that their execution will not cause hazards, it may be worth speculatively executing them. Effective speculation requires us to predict two pieces of data.
 
@@ -131,34 +131,14 @@ As a consequence, if we can predict what commands are coming up next, and predic
 \subsection{Recovering from Speculative Hazards}
 \label{sec:recovering}
 
-If a build using speculative execution causes a hazard, it is possible that the hazard is entirely an artefact of speculation. The simplest approach to resolving speculative hazards is to abort the build and re-run it without speculation. However, there are other possible approaches.
-
-\begin{enumerate}
-\item If the hazard occurs due to two non-speculated commands run in the order they were requested, then the build is incorrect, and rerunning will cause the hazard. That hazard can be raised immediately.
-\item If the hazard involves a speculated command, but that commands actions have no impact on the real build, then the build can continue as normal.
-\item If the hazard can be attributed to a specific speculated command, then the build can be rerun with speculation, omitting the one problematic command. The disadvantage of blacklisting a specific speculated command is that it might mean the build reruns many times with an increasingly large blacklist.
-\item Given a visible build script, e.g. \S\ref{sec:monadic} choice 2, it might be possible to rewind the build to a specific point and continue from there -- although that can get especially complicated in the presence of mutable state or explicit parallelism (see \S\ref{sec:explicit_parallelism}).
-\end{enumerate}
-
-A more nuanced approach is to use the hazard's classification, which can be categorised as per \S\ref{sec:proof:classify_hazard}, to decide whether to raise the error immediately (if the speculation was not at fault) or take alternative measures to resolve the hazard, such as selectively eliminating a subset of commands from speculation, or re-executing specific commands.
-
-The following are all potential ways a speculated command can cause a hazard and how a build can recover.
+If a build using speculative execution causes a hazard, it is possible that the hazard is entirely an artefact of speculation. However, there are other possible approaches.
 
 \begin{description}
-\item [Two speculated commands write to the same file]
-  Two commands in a build script writing to the same file violates the consistency requirement from section \S\ref{sec:hazards} and causes a \emph{write-write hazard}.  If both commands were speculated and no commands in the build script read or write to that file, then inconsistency should not affect the output of the normal build.
-
-\item [A speculated command and a build script command write to the same file]
-  In this situation a \emph{write-write hazard} has occured, but it might be entirely due to speculation, meaning if the build re-executes and does not speculate the offending command, then the hazard might not re-occur.
-
-\item [A speculated command writes to a file a build script command reads from]
-  In this situation a \emph{read-write hazard} has occurred, and like the previous case might be caused entirely by speculation.  Therefore, the build can re-execute without speculating the offending command.
-
-\item [Speculated command reads from a file that another command writes to]
-  In this situation a \emph{read-write hazard} has occurred, which is entirely caused by speculation.  Unlike the previous cases, where to recover the build must restart from the beginning, in this case the build can just re-execute the speculative command and the same hazard will not re-occur.  It is safe for the build to do this because the speculated command merely executed a file read too soon.  Now that the command which wrote to the file has executed the speculated command can execute again and read the correct file.  A proof of this claim is provided in section \S\ref{sec:proof:classify_hazard}.
-
+\item[Restart without speculation] If a hazard occurs, and speculation was involved, we can can abort the build retry without speculation.
+\item[Raise a hazard] If the hazard occurs due to two non-speculated commands run in the order they were requested, then the build is incorrect, and rerunning will cause the hazard. That hazard can be raised immediately.
+\item[Continue] If the hazard involves a speculated command, but that commands actions have no impact on the real build, then the build can continue as normal.
+\item[Restart with less speculation] If the hazard can be attributed to a specific speculated command, then the build can be rerun with speculation, omitting the one problematic command. The disadvantage of blacklisting a specific speculated command is that it might mean the build reruns many times with an increasingly large blacklist.
+\item[Rewind] Given a visible build script, e.g. \S\ref{sec:monadic} choice 2, it might be possible to rewind the build to a specific point and continue from there -- although that can get especially complicated in the presence of mutable state or explicit parallelism (see \S\ref{sec:explicit_parallelism}).
 \end{description}
 
-  A more detailed explanation of hazards follows in section \S\ref{sec:proof:classify_hazard}.
-
-% NM TODO: Write a lot about selectively eliminate a subset of commands from speculation (if speculation was at fault).
+Given our model of treating the user script as a black box, rewinding is not an option. The remaining approaches are, but we discuss the precise circumstances in each is safe in \S\ref{sec:proof:classify_hazard}.
