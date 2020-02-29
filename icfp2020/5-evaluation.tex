@@ -175,7 +175,7 @@ As we can see, the first build is always > 1s for \Rattle, but \Make is able to 
 \addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/redis.dat}; 	\addlegendentry{\Make -j4}
 \addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1] {data/redis.dat}; 	\addlegendentry{\Rattle -j1}
 % \addplot table [x expr=\coordindex, y=rattle4] {data/redis.dat}; 	\addlegendentry{\Rattle -j4}
-\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4_noshared] {data/redis.dat}; 	\addlegendentry{\Rattle -j4}
+\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4] {data/redis.dat}; 	\addlegendentry{\Rattle -j4}
 \end{axis}
 \end{tikzpicture}
 
