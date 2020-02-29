@@ -24,7 +24,17 @@ There are two axes on which to measure ``just as good'' -- correctness and perfo
 
 \paragraph{Parallelism} The script from \S\ref{sec:introduction} has three commands, the first two of which can run in parallel, the the third must wait for the first two to finish. \Make is given all this information by dependencies, and will always acheive as much parallelism as possible. In constrast, \Rattle has no such knowledge, so has to recover the parallelism by speculation, as per \ref{sec:speculation}. During the first execution, \Rattle has no knowledge about even which commands are coming next (as described in \S\ref{sec:monadic}), so has no choice but to execute each command serially, with less parallelism than \Make. In subsequent executions \Rattle uses speculation to always speculate on the second command (as it never has a hazard with the first), but never speculate on the third until the first two have finished (as they are known to conflict). Interestingly, sometimes \Rattle executes the third command (because it got to that point in the script), and sometimes it speculates it (because the previous two have finished) -- it is a race condition where both alternatives are equivalent. While \Rattle has less parallelism on the first execution, using shared storage for speculation traces, that can be reduced to the first execution \emph{ever}, rather than the first execution for a given user.
 
-\paragraph{Overhead} The overhead inherent in \Rattle is greater than that of \Make as it hashes files, traces command execution, computes potential hazards to figure out speculation and writes to a shared cloud store. To measure the overhead, and prove the other claims in this section, we created a very simple pair of \texttt{main.c} and \texttt{util.c} files where \texttt{main.c} calls \texttt{printf} using a string computed by a function in \texttt{util.c}. We then measured the time to do 1) an initial build; 2) a rebuild when nothing had changed; 3) a rebuild with whitespace changes to \texttt{main.c}; 4) a rebuild with meaningful changes to \texttt{main.c}; 5) a rebuild with meaningful changes to both C files. We did all the above with 1, 2 and 3 threads, on Linux. To check speculation was happening, we modified \texttt{gcc} to sleep for 1 second before starting. The numbers are:
+\paragraph{Overhead} The overhead inherent in \Rattle is greater than that of \Make as it hashes files, traces command execution, computes potential hazards to figure out speculation and writes to a shared cloud store. To measure the overhead, and prove the other claims in this section, we created a very simple pair of \texttt{main.c} and \texttt{util.c} files where \texttt{main.c} calls \texttt{printf} using a string computed by a function in \texttt{util.c}. We then measured the time to do:
+
+\begin{enumerate}
+\item An initial build from a clean checkout.
+\item A rebuild when nothing had changed.
+\item A rebuild with whitespace changes to \texttt{main.c}, which result in the same \texttt{main.o} file being produced.
+\item A rebuild with meaningful changes to \texttt{main.c}, resulting in a different \texttt{main.o} file.
+\item A rebuild with meaningful changes to both C files.
+\end{enumerate}
+
+We performed the above steps with 1, 2 and 3 threads, on Linux. To make the speculation obvious, we modified \texttt{gcc} to sleep for 1 second before starting. The numbers are:
 
 % RAW RESULTS
 % $ rattle-benchmark intro
