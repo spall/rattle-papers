@@ -203,33 +203,36 @@ If a build involving speculation reaches a hazard there are several remedies tha
 \subsubsection{Restart with no speculation}
 \label{sec:proof:restart_no_speculation}
 
-Restarting the entire build, with no speculation, is safe and gives an equivalent result provided the inputs to the build have not changed \S\ref{sec:proof:reorder}. Unfortunately, while writing to an input is guaranteed to give a hazard, restarting does not change the input back. As a concrete example, consider the build script with the single command \texttt{gcc -c main.c}. If we speculate the command \texttt{echo 1 >> main.c} first, it will raise a speculative-write-read hazard, but restarting will still give the same result. We discuss the consequences and possible remediations in \S\ref{sec:choices}. For all other recovery actions, we assume that restarting with no speculation is the baseline state, and consider them safe if it is equivalent to restarting with no speculation.
-
-\subsubsection{Raise a hazard}
-
-If two required commands cause a write-write hazard, and there have been no speculative-write-read hazards, then the write-write hazard will be reraised if the command restarts. This inevitability is a consequence of \S\ref{sec:proof:reorder}, as the same writes will occur.
-
-If two required commands cause a read-write hazard,
-
-
-
-
- we can record the order in which commands were required (in fact, we do so for future speculation, see \S\ref{sec:choices}). If a build raises a hazard, we can reduce it to only those commands which were speculated
-
-It is safe to raise a hazard if,
-
-
-\subsubsection{Continue}
-
-
-If a speculative command
+Restarting the entire build that happened with speculation, with no speculation, is safe and gives an equivalent result provided the inputs to the build have not changed \S\ref{sec:proof:reorder}. Unfortunately, while writing to an input is guaranteed to give a hazard, restarting does not change the input back. As a concrete example, consider the build script with the single command \texttt{gcc -c main.c}. If we speculate the command \texttt{echo 1 >> main.c} first, it will raise a speculative-write-read hazard, but restarting will still give the same result. We discuss the consequences and possible remediations in \S\ref{sec:choices}. For all other recovery actions, we assume that restarting with no speculation is the baseline state, and consider them safe if it is equivalent to restarting with no speculation.
 
 \subsubsection{Restart with less speculation}
 
-\refutation This claim isn't actually true. As a counter example, \texttt{gcc -c main.c} gives one result, but running the additional command \texttt{echo 1 >> main.c} gives a different outcome. Therefore we strengthen the claim to:
+Given the proofs in this section, running again with speculation is still safe. However, running with speculation might repeatedly cause the same speculation hazard, in which case the build would never terminate. Therefore, it is safe to restart with speculation provided there is strictly less speculation, so that (in the worst case) eventually there will be a run with no speculation.
+
+As a practical matter, if a command is part of the commands that cause a hazard, it is a good candidate for not repeating.
+
+\subsubsection{Raise a hazard}
+
+Importantly, if there is no speculation (including reordering and parallelism), and the build raises a hazard, the hazard can be raised immediately. This property is essential as a base-case for restarting with no speculation.
+
+If two required commands cause a write-write hazard, and there have been no speculative-write-read hazards, then the same hazard will be reraised if the command restarts. For write-write, this inevitability is a consequence of \S\ref{sec:proof:reorder}, as the same writes will occur.
+
+If two required commands cause a read-write hazard, and the relative order they were run in matches their required ordering, then the same hazard will be reraised if the command restarts because the ordering will remain the same. However, if the commands weren't in an order matching their required ordering, it is possible the write will come first avoiding the hazard.
+
+\subsubsection{Continue}
+
+If the only effects of a hazard are on speculated commands, and those commands have no subsequent effect on the required commands, it is possible to continue the build. However, it is important that the commands have no subsequent effect, even on required commands that have not yet been executed, or even revealed to the build system, so continuing may still fail in the future, even if it is permissible now. To determine whether a build can continue, it is important to note where the effects of a hazard lie:
+
+\begin{enumerate}
+\item A write-write hazard has an effect on both commands that wrote to the file in question.
+\item A read-write hazard has an effect on the command that read, but not on that which wrote.
+\item A speculative-write-read hazard has an effect on the reader, but not the writer. However, for this hazard, the reader is always a required command, so this hazard can never be continued.
+\end{enumerate}
+
+We say that any command directly effected by any hazard is poisoned. Furthermore, any command which reads any files written by a poisoned command is also poisoned. If any required file is poisoned the build cannot continue.
 
 
-
+\begin{comment}
 The following are all potential ways a speculated command can cause a hazard and how a build can recover.
 
 \begin{description}
@@ -282,3 +285,4 @@ The hazard might not have occurred in the speculated command wasn't run.  Theref
 
 
 %Proof that restartable hazard are handled
+\end{comment}

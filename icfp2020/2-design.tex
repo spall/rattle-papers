@@ -135,9 +135,9 @@ If a build using speculative execution causes a hazard, it is possible that the 
 
 \begin{description}
 \item[Restart without speculation] If a hazard occurs, and speculation was involved, we can can abort the build retry without speculation.
+\item[Restart with less speculation] If the hazard can be attributed to a specific speculated command, then the build can be rerun with speculation, omitting the one problematic command. The disadvantage of blacklisting a specific speculated command is that it might mean the build reruns many times with an increasingly large blacklist.
 \item[Raise a hazard] If the hazard occurs due to two non-speculated commands run in the order they were requested, then the build is incorrect, and rerunning will cause the hazard. That hazard can be raised immediately.
 \item[Continue] If the hazard involves a speculated command, but that commands actions have no impact on the real build, then the build can continue as normal.
-\item[Restart with less speculation] If the hazard can be attributed to a specific speculated command, then the build can be rerun with speculation, omitting the one problematic command. The disadvantage of blacklisting a specific speculated command is that it might mean the build reruns many times with an increasingly large blacklist.
 \item[Rewind] Given a visible build script, e.g. \S\ref{sec:monadic} choice 2, it might be possible to rewind the build to a specific point and continue from there -- although that can get especially complicated in the presence of mutable state or explicit parallelism (see \S\ref{sec:explicit_parallelism}).
 \end{description}
 
