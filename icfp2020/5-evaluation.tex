@@ -174,12 +174,11 @@ As we can see, the first build is always > 1s for \Rattle, but \Make is able to 
 \addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/redis.dat}; 	\addlegendentry{\Make -j1}
 \addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/redis.dat}; 	\addlegendentry{\Make -j4}
 \addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1] {data/redis.dat}; 	\addlegendentry{\Rattle -j1}
-% \addplot table [x expr=\coordindex, y=rattle4] {data/redis.dat}; 	\addlegendentry{\Rattle -j4}
 \addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4] {data/redis.dat}; 	\addlegendentry{\Rattle -j4}
 \end{axis}
 \end{tikzpicture}
 
-Redis is an in-memory NoSQL database written in C, developed over the last 10 years. Redis is built using recursive \Make \cite{miller:recursive_make}, where the dependencies of Redis (e.g. Lua and Linenoise) have their own \Make scripts which are called by the main Redis \Make script. When benchmarking \Rattle vs \Make we found that \Rattle was approximately 10\% slower due to copying files to the cloud cache, something \Make does not do. Therefore, for a fairer comparison, we disabled the cloud cache. For local builds, the consequence of disabling the cloud cache is that if a file changes, then changes back to a previous state, we will have to rebuild rather than get a cache hit -- something that never happens in this benchmark. With those changes \Rattle is able to marginally outperform \Make as a consequence of avoiding the overhead of separate \Make builds wired together in a complex way.
+Redis is an in-memory NoSQL database written in C, developed over the last 10 years. Redis is built using recursive \Make \cite{miller:recursive_make}, where the dependencies of Redis (e.g. Lua and Linenoise) have their own \Make scripts which are called by the main Redis \Make script. Using stamp files, on successive builds, the dependencies are not checked -- meaning that users must clean their build when dependencies change. When benchmarking \Rattle vs \Make we found that \Rattle was approximately 10\% slower due to copying files to the cloud cache, something \Make does not do. Therefore, for a fairer comparison, we disabled the cloud cache. For local builds, the consequence of disabling the cloud cache is that if a file changes, then changes back to a previous state, we will have to rebuild rather than get a cache hit -- something that never happens in this benchmark. With those changes \Rattle is able to perform very similarly to \Make, even though it properly checks the dependencies, in all cases apart from the initial build.
 
 \begin{comment}
 % I reimplemented Stack in Rattle. Not sure it's useful given how much other evaluation stuff we have.
