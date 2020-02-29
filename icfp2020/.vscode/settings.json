@@ -13,6 +13,7 @@
         "command": "texify",
         "args": [
           "--pdf",
+          "--batch",
           "%DOC%.tex"
         ]
       }
