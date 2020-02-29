@@ -5,8 +5,7 @@
 \section{Correctness}
 \label{sec:proof}
 
-% SS I think I edited this sentence to be like this, but I still dont like how it sounds
-The design of \Rattle relies on taking a sequence of commands and rathern than running them all sequentially, instead running them in different orders and with speculation. In this section we prove that the manipulations we perform are safe with respect to the reference semantics. Throughout these proofs we assume the commands themselves are pure functions from the inputs to their outputs (as reported by tracing).
+The design of \Rattle relies on taking a sequence of commands which can be run sequentially, and instead running some commands speculatively. In this section we prove that the manipulations we perform are safe with respect to the reference semantics. Throughout these proofs we assume the commands themselves are pure functions from the inputs to their outputs (as reported by tracing).
 
 \subsection{Hazards, formally}
 \label{sec:hazards_formally}
@@ -26,7 +25,7 @@ We define the following terms:
 \begin{description}
 \item[Command] A command $c$ reads a set of files ($c_r$), and writes a set of files ($c_w$). We assume the set of files are disjoint ($c_r \cap c_r \equiv \emptyset$), as per \S\ref{sec:skipping_unnecessary}.
 \item[Deterministic command] A command is deterministic if for any set of files it reads, it always writes the same set of files. We assume commands are deterministic for this proof.
-\item[Fixed point] A deterministic command will have no effect if none of the files it reads or writes have changed since the last time it has run. Since it is deterministic, and its reads/writes are disjoint, the same reads will take place, the same computation will follow, and then the original values will be rewritten as they were before. We describe such a command as having \emph{reached a fixed point}.
+\item[Fixed point] A deterministic command will have no effect if none of the files it reads or writes have changed since the last time it was run. Since the command is deterministic, and its reads/writes are disjoint, the same reads will take place, the same computation will follow, and then the original values will be rewritten as they were before. We describe such a command as having \emph{reached a fixed point}.
 \item[Correct builds] If a build containing a set of commands $C$ has reached a fixed point for every command $c$ within the set, then it is a correct build system as per the definition in \S\ref{sec:hazards}.
 \end{description}
 
@@ -52,25 +51,27 @@ As a consequence, all commands within $D$ must have reached a fixed point.
 % hopefully this does that
 
 \proof The build's deterministic control logic means that beginning with the first command in the build, which is unchanged, given the same set of input files, the command will write to the same set of output files and produce the same results.  It follows that the subsequent command in the build will be unchanged as well since the results of the previous command did not change.  It follows by induction that each of the following commands in the build will remain unchanged.
-Because the commands in the build will have not changed, it follows from the proof in \S\ref{sec:argument} that the commands will not changes the values of any files, therefore, the build is at a fixed point.
+Because the commands in the build will have not changed, it follows from the proof in \S\ref{sec:argument} that the commands will not change the values of any files, therefore, the build is at a fixed point.
 
 \subsection{Reordered builds}
 \label{sec:proof:reorder}
 
-\claim Given a script with no hazards when executed sequentially, with the same initial file contents, any interleaving of those commands that also has no hazards will result in an equivalent output.
+\claim Given a script with no hazards when executed sequentially, with the same initial file contents, any ordering of those commands that also has no hazards will result in the same terminal file contents.
 
-\proof The proof from \S\ref{sec:argument} shows that any script with no hazards will result in a fixed point. To prove equivalency we define the inputs as the set of files that commands read from, but no command writes to, namely:
+\proof The proof from \S\ref{sec:argument} shows that any script with no hazards will result in a fixed point. To prove any fixed point is identical, we define the inputs as the set of files that commands read from, but no command writes to, namely:
 
 \[
   \bigcup_{c \in D} c_r \setminus \bigcup_{c \in D} c_w
 \]
 
-% is this supposed to say something instead of ``file states''? 
-For any file states where the inputs are equivalent, there is only one fixed point. The commands only read from files that are in the inputs, or files that are written by another command. % mean first command in build right; not just first command for any output
-The outputs of the first command in the build can only have been influenced by the inputs, since if it read any other writes, there would be a read-write hazard
-, so that first output must be a consequence of only inputs. The second command can only look at the inputs and the files written by the first command, all of which are determined by the inputs. By induction we can see that all outputs must be influenced only by the inputs.
- 
-To complete the proof we require the inputs before are equivalent, which is part of the claim.
+We can prove the stronger claim, that for any filesystem state where all inputs have identical contents, there is only one fixed point. For each command, it can only read from files that are in the inputs or files that are the outputs of other commands. Taking these two cases separately:
+
+\begin{enumerate}
+\item For read files that are in the inputs, they aren't written to by the build system (or they wouldn't be in the inputs), and they must be the same in both cases (because the filesystem state must be the same for inputs). Therefore, changes to the inputs cannot effect the command.
+\item For read files that are the outputs of other commands, they must have been written to \emph{before} this command, or a read-write hazard would be raised.
+\end{enumerate}
+
+Therefore, the first command that performs writes cannot access any writes from other commands, and so (assuming determinism) its writes must be a consequence of only inputs. Similarly, the second command can only have accessed inputs and writes produced by the first command, which themselves were consequences of inputs, so that commands writes are also consequences of the input. By induction, we can show that all writes are consequences of the inputs, so identical inputs results in indentical writes.
 
 \subsection{Parallel commands}
 \label{sec:proof:parallel}
