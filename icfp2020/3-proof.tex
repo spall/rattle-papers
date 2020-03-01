@@ -74,7 +74,7 @@ Because the commands in the build will have not changed, it follows from the pro
 \item For read files that are the outputs of other commands, they must have been written to \emph{before} this command, or a read-write hazard would be raised.
 \end{enumerate}
 
-Therefore, the first command that performs writes cannot access any writes from other commands, and so (assuming determinism) its writes must be a consequence of only inputs. Similarly, the second command can only have accessed inputs and writes produced by the first command, which themselves were consequences of inputs, so that commands writes are also consequences of the input. By induction, we can show that all writes are consequences of the inputs, so identical inputs results in indentical writes.
+Therefore, the first command that performs writes cannot access any writes from other commands, and so (assuming determinism) its writes must be a consequence of only inputs. Similarly, the second command can only have accessed inputs and writes produced by the first command, which themselves were consequences of inputs, so that commands writes are also consequences of the input. By induction, we can show that all writes are consequences of the inputs, so identical inputs results in identical writes.
 
 \subsection{Parallel commands}
 \label{sec:proof:parallel}
@@ -169,7 +169,7 @@ Therefore, the parallel execution must write to a different set of files than $A
 
 \paragraph{Parallel build writes to a file $A$ does not write to, or $A$ writes to a file the parallel build does not write to.}
   There must exist a cmd $c$ which when run in parallel with one or more other commands, writes to a different set of files than when run sequentially.  The set of files written to by $c$ is affected by the content of the cmd, and the files it reads.  Since, the content of the cmd is the same between the parallel and sequential builds, the input files must differ.
-  By the defintion of the parallel build of $A$ having no hazards, any files read by $c$ must be written to by commands that precede $c$ in the build.  Therefore, the files written by $c$ in the parallel build will be the same as the files written by $c$ in the sequential build.  Therefore, a contradiction.
+  By the definition of the parallel build of $A$ having no hazards, any files read by $c$ must be written to by commands that precede $c$ in the build.  Therefore, the files written by $c$ in the parallel build will be the same as the files written by $c$ in the sequential build.  Therefore, a contradiction.
 
 
 \paragraph{Parallel build writes to a file $f$ whose hash is $h$ and $A$ writes to the same file but its hash is $k$; $h \neq k$}
@@ -241,7 +241,7 @@ The following are all potential ways a speculated command can cause a hazard and
   Two commands in a build script writing to the same file violates the consistency requirement from section \S\ref{sec:hazards} and causes a \emph{write-write hazard}.  If both commands were speculated and no commands in the build script read or write to that file, then inconsistency should not affect the output of the normal build.
 
 \item [A speculated command and a build script command write to the same file]
-  In this situation a \emph{write-write hazard} has occured, but it might be entirely due to speculation, meaning if the build re-executes and does not speculate the offending command, then the hazard might not re-occur.
+  In this situation a \emph{write-write hazard} has occurred, but it might be entirely due to speculation, meaning if the build re-executes and does not speculate the offending command, then the hazard might not re-occur.
 
 \item [A speculated command writes to a file a build script command reads from]
   In this situation a \emph{read-write hazard} has occurred, and like the previous case might be caused entirely by speculation.  Therefore, the build can re-execute without speculating the offending command.
@@ -258,7 +258,7 @@ The following are all potential ways a speculated command can cause a hazard and
 
 In section \S\ref{sec:speculation} we describe how speculation can be used to execute builds in parallel.  Speculation can lead to hazards that wouldn't have occurred if the build script was executed sequentially. Here we offer a more precise classification of hazards.
 
-Aas per section \S\ref{sec:hazards}, hazards are first classified as either \emph{read-write} or \emph{write-write}.  A Hazard can be further classified by if and how a build can recover from it.
+As per section \S\ref{sec:hazards}, hazards are first classified as either \emph{read-write} or \emph{write-write}.  A Hazard can be further classified by if and how a build can recover from it.
 
 \paragraph{Non Recoverable}
 A hazard is classified as \emph{non-recoverable} if it is triggered by a consistency violation in the build script.  A \emph{non-recoverable hazard} always results in the build terminating immediately with an error.  For two examples of \emph{non-recoverable hazards} see section \ref{sec:hazards}.
@@ -280,7 +280,7 @@ is another command $d$ which writes to the file $f$.  It follows that if $d$ exe
 If $c$ were to execute again after $d$ terminated, by definition, the hazard $h$ cannot re-occur because the read of $f$ will have happened after the write of $f$.
 
 \paragraph{Restartable} % when speculation causes a consistency violation. or a command to read incorrect data.
-If a speculatively executed command wrote to a file that was later written to or read by another command, then incorrectness was potentiallly introduced to the build.  In a sequential build, it is a
+If a speculatively executed command wrote to a file that was later written to or read by another command, then incorrectness was potentially introduced to the build.  In a sequential build, it is a
 consistency violation for any command to write to a file after a previous command has written to it, but it is ok for a command to read from a file that has previously been written to.  It isn't safe in this case, because if the speculated command wasn't supposed to run, it might have changed the contents of the file read by the later command.
 The hazard might not have occurred in the speculated command wasn't run.  Therefore, if the build script was re-executed without the speculated command, the hazard might not re-occur.
 
