@@ -212,22 +212,26 @@ and some memoisation operations (\texttt{memo})
 
 \addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/vim.dat}; 	\addlegendentry{\Make -j1}
 \addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/vim.dat}; 	\addlegendentry{\Make -j4}
-\addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1] {data/vim.dat}; 	\addlegendentry{\Rattle -j1}
-\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4] {data/vim.dat}; 	\addlegendentry{\Rattle -j4}
+\addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1_noshared] {data/vim.dat}; 	\addlegendentry{\Rattle -j1}
+\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4_noshared] {data/vim.dat}; 	\addlegendentry{\Rattle -j4}
 \end{axis}
 \end{tikzpicture}
 
-Vim is a popular text editor whose source code can be found on \href{https://github.com/vim/vim}{github}.  The majority of the source code is Vim script and C, and it is built with Make.  To build Make on a Unix based system one can merely call \Make from the top-level project directory.  To compare the original \Make based build to a new \Rattle build, we generated Vim over a series of commits checked-out from github with both the original build system and the adapted \Rattle build.  The \Rattle build script was created by recording every command executed by the original build, except for those invoking \Make.  Additionally, some commands which may have been separate shell commands in the original build were combined to create one command if they caused either \emph{read-write} or \emph{write-write} hazards.  A \Rattle build script was generated for each commit where the orginal build system changed or files were added to or removed from the project.  This was necessary since the \Rattle build was created from a literal list of hard-coded shell commands rather than the ideal Haskell program with variables.
+Vim is a popular text editor whose source code can be found on \href{https://github.com/vim/vim}{github}.  The majority of the source code is Vim script and C, and it is built with Make.  To build Make on a Unix based system one can merely call \Make from the top-level project directory.  To compare the original \Make based build to a new \Rattle build, we generated Vim over a series of commits checked-out from github with both the original build system and the adapted \Rattle build.  The \Rattle build scripts were created by recording every command executed by the original build.
+A new \Rattle build script was generated for each commit where the orginal build system changed or files were added to or removed from the project.  This was necessary since the \Rattle build was created from a literal list of hard-coded shell commands rather than the ideal Haskell program with variables.
 
-% SS todo add list of the commits
+The benchmarks for Vim show that \Make and \Rattle had similar performance for almost every commit built except for the 20th commit and the 29th commit.  For the 20th commit \Make did much more work than \Rattle did and for the 29th commit \Rattle did much more work than \Make.
+On the 20th commit the script which generates the \emph{osdef.h} header file was changed in a way that did not change the content of \emph{osdef.h} on this machine.  \Make rebuilt all of the object files which depend on the header file, while \Rattle did not because the file contents had not changed.  Of course, \Make could have avoided the rebuild as well if it used file hashes instead of timestamps.  On the 29th commit a prototype file changed which is included by proxy by all object files.  This prototype file is not listed as a dependency of the object files so \Make does not rebuild them, but \Rattle does because they are included by all of the c files.
 
-Comparing building Vim \cite{} with \Make and with \Rattle for commits \emph{21109272f} to \emph{7cc96923c}.  For two commits \Make and \Rattle did noticeably different work; note, both of these commits were build incrementally, \emph{21109272f} was built from scratch by both build systems and all subsequent commits were built incrementally.
+% 21 is e258368; version.c and osdef.sh changed
+% osdef.h is rebuilt; make says all object files depend on this so theyre all rebuilt, which rattle list says they do so; why did it not rebuild them? confusing debug code says osdef.h changed; but that doesn't seem to be the case since the object files that depend on it didnt say it had changed... i'll verify this
 
-% todo compare sequential
-% SS todo add timing data
+% 30 is a259d8d; 
 
 \subsection{node}
 \label{sec:eval:node}
+
+% some data but not all; will put in tomorrow
 
 % Brief into to the project
 Node.js is a JavaScript runtime built on Chrome's V8 Javascript engine and can be found on \href{``https://github.com/nodejs/node''}{github}.  The project is largely written in JavaScript, C++, Python, and C, and is built using Make and a meta-build tool called \emph{Generate Your Projects (GYP)}.  To build Node.js from source, a user first runs \emph{./configure} which runs a python script that configures the build and runs GYP.  GYP generates the majority of the Makefiles used to build the project.
@@ -311,7 +315,7 @@ To compare the \Make based build to a \Rattle version, we built Node.js over a s
 
 \addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/tmux.dat}; 	\addlegendentry{\Make -j1}
 \addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/tmux.dat}; 	\addlegendentry{\Make -j4}
-\addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1] {data/tmux.dat}; 	\addlegendentry{\Rattle -j1}
+\addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1_noshared] {data/tmux.dat}; 	\addlegendentry{\Rattle -j1}
 \addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4_noshared] {data/tmux.dat}; 	\addlegendentry{\Rattle -j4}
 \end{axis}
 \end{tikzpicture}
@@ -327,13 +331,7 @@ make
 
 To compare a \Rattle based Tmux build to the \Make based one, we first ran \emph{sh autogen.sh} and \emph{./configure}, and then used the resulting Makefile(s) to generate the Rattle build scripts.  A new Rattle build script was generated for any commit where the build appeared to have changed or a file was added or deleted from the repository.
 
-Tmux was built over a series of 40 commits with both \Make and \Rattle.  The commands run by each build system for each command were then compared.  For single threaded \Rattle and \Make, for 33 out of 40 commits, \Rattle and \Make ran the same commands, for 4 commits, \Make ran 1 more non-trivial command than \Rattle, but for 3 commits \Rattle ran substantially more cmds than \Make did.
-
-These 3 commits were ones where new \Rattle build scripts were generated because something about the build or project had changed.  For two of these commits the version number of Tmux had changed which caused the textual contents of majority of the commands to change.  \Rattle viewed these as new commans and therefore ran them.  For the 3rd commit, \Rattle ran 125 commands more than \Make did because a command flag changed, which caused the textual contents of the majority of the commands to change, so \Rattle viewed them as new commands.
-
-% todo add details about parallel version and hazards
-% todo timing data
-
+Tmux was built over a series of 40 commits with both \Make and \Rattle.  The commands run by each build system for each command were then compared.  For the 11th, 22nd and 23rd commits \Rattle and \Make took noticeably different amounts of time.  This is because for each of these commits the build script changed, so \Rattle had to run the changed commands because it had no prior information about them.
 
 
 % 47174f51
@@ -346,8 +344,6 @@ These 3 commits were ones where new \Rattle build scripts were generated because
 %4822130b was a new build script
 
 % 685eb381 also a new build script
-
-% I wonder if I don't do sh autogen and configure if that wouldn't happen?
 
 
 
