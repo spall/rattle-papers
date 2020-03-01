@@ -41,12 +41,12 @@ An important consequence of the control logic not being visible to the build sys
 \subsection{Dependency tracing}
 \label{sec:assume_tracing}
 
-For the rest of this section we assume the existence of \emph{dependency tracing} which can tell us which files a command read and wrote -- we discuss the implementation and limitations of dependency tracing in \S\ref{sec:tracing}. Concretely, we can run a command in a special mode such that when the command completes (and not before) we can determine which files it read and which it wrote. We cannot determine at which point during the execution these files were accessed, nor which order they were accessed in. We cannot prevent or otherwise redirect an in-progress access. These limitations are a (frustrating!) consequence of the tracing technology available.
+For the rest of this section we assume the existence of \emph{dependency tracing} which can tell us which files a command reads and writes -- we discuss the implementation and reasons behind limitations of dependency tracing in \S\ref{sec:tracing}. Concretely, we can run a command in a special mode such that when the command completes (and not before) we can determine which files it read and wrote. We cannot determine at which point during the execution these files were accessed, nor which order they were accessed in. We cannot prevent or otherwise redirect an in-progress access. These limitations are a (frustrating!) consequence of the tracing technology available.
 
 \subsection{Skipping unnecessary commands}
 \label{sec:skipping_unnecessary}
 
-When running a command, we can use tracing to capture the files read and written, and then after the command completes, record the cryptographic hashes of the contents of those files. If the same command is ever run again, and the inputs and outputs haven't changed (same hashes), it can be skipped. This approach is the key idea behind both \Memoize\cite{memoize} and \Fabricate\cite{fabricate}. However, this technique makes the assumption that commands are pure functions from their inputs to their outputs. Below are four ways that assumption can be violated, along with ways to work around it.
+When running a command, we can use tracing to capture the files that command reads and writes, and then after the command completes, record the cryptographic hashes of the contents of those files. If the same command is ever run again, and the inputs and outputs haven't changed (same hashes), it can be skipped. This approach is the key idea behind both \Memoize\cite{memoize} and \Fabricate\cite{fabricate}. However, this technique makes the assumption that commands are pure functions from their inputs to their outputs. Below are four ways that assumption can be violated, along with ways to work around it.
 
 \paragraph{Non-deterministic commands} Many commands are non-deterministic -- e.g. the output of \texttt{ghc} object files contains unpredictable values within it (a consequence of the technique described by \citet{lennart:unique_names}). We assume that where such non-determinism exists, any possible output is equally valid.
 
@@ -63,7 +63,7 @@ When running a command, we can use tracing to capture the files read and written
 \subsection{Cloud builds}
 \label{sec:cloud_builds}
 
-We can skip execution of a command if all the files accessed have the same hashes as any previous execution (\S\ref{sec:skipping_unnecessary}). However, if \emph{the read files} match a previous execution, and the files that were written have been stored away, those stored files can be copied over as outputs \emph{without} rerunning the command. If that storage is on a server, multiple users can share the results of one compilation, resulting in cloud build functionality. While this approach works well in theory, there are some problems in practice.
+We can skip execution of a command if all the files accessed have the same hashes as any previous execution (\S\ref{sec:skipping_unnecessary}). However, if \emph{only the files read} match a previous execution, and the files that were written have been stored away, those stored files can be copied over as outputs \emph{without} rerunning the command. If that storage is on a server, multiple users can share the results of one compilation, resulting in cloud build functionality. While this approach works well in theory, there are some problems in practice.
 
 \paragraph{Machine-specific outputs} Sometimes a generated output will only be applicable to the machine on which it was generated -- for example if a compiler auto-detects the precise chipset (e.g. presence of AVX2 instructions) or hardcodes machine specific details (e.g. the username). Such information can often be lifted into the command line, e.g. by moving chipset detection into the control logic and passing it explicitly to the compiler. Alternatively, such commands can be explicitly tagged as not being suitable for cloud builds.
 
@@ -81,7 +81,7 @@ As stated in \citet[\S3.6]{build_systems_a_la_carte}, a build is correct provide
 \end{quote}
 
 % SS just trying to make it clear nothign has changed between builds; although maybe that goes without saying?
-Specified in terms more applicable to our design, it means that after a build completes, an immediate subsequent rebuild should skip all commands, assuming the commands given to the build system are the same. However, there are sequences of commands, where each command is fine in isolation (as per \S\ref{sec:skipping_unnecessary}), but the combination is problematic, for example:
+Specified in terms more applicable to our design, it means that after a build completes, an immediate subsequent rebuild should have no effect because all commands are skipped (assuming the commands given to the build system are the same). However, there are sequences of commands, where each command is fine in isolation (as per \S\ref{sec:skipping_unnecessary}), but the combination is problematic, for example:
 
 \vspace{1mm}
 \begin{verbatim}
@@ -108,7 +108,7 @@ Writing to a file after it has already been either read or written is the only c
 \item[Write then write] If two commands both write to the same file, on a future build, the first will be rerun (it's output has changed), which is likely to then cause the second to be rerun. This behavior is defined as a \emph{write-write hazard}.
 \end{description}
 
-Using tracing we can detect hazards and raise errors if they occur, detecting that a build system is incorrect before unnecessary rebuilds occur. We prove that a build system with deterministic control logic and with no hazards always results in no rebuilds in \S\ref{sec:proof:no_rebuild}. In a build system without hazards there is at most one write to any file, which occurs before any reads of that file. We can therefore prove there are no rebuilds by showing the first command can't rebuild, and proceeding by induction. It is not the case that the presence of hazards guarantees subsequent executions will definitely rebuild, for example if the write doesn't actually change the value, but such a build system is malformed by our definition -- if the write definitely can't change the output, the write should not be present.
+Using tracing we can detect hazards and raise errors if they occur, detecting that a build system is incorrect before unnecessary rebuilds occur. We prove that a build system with deterministic control logic and with no hazards always results in no rebuilds in \S\ref{sec:proof:no_rebuild}. It is not the case that the presence of hazards guarantees subsequent executions will definitely rebuild, for example if the write doesn't actually change the value, but such a build system is malformed by our definition -- if the write definitely can't change the output, the write should not be present.
 
 \subsection{Explicit Parallelism}
 \label{sec:explicit_parallelism}
@@ -120,7 +120,7 @@ Interestingly, given complete \emph{dependency} information (e.g. as available t
 \subsection{Implicit Parallelism (Speculation)}
 \label{sec:speculation}
 
-While explicit parallelism is useful, it imposes a burden on the build script author. Alternatively we can use implicit parallelism, where some commands are executed speculatively, before they are required, in the hope that they will be required in the future and thus skipped. Importantly, such speculation can be shown to be safe by tracking hazards, provided we introduce a new hazard \emph{speculative-write-read} corresponding to a speculative write being read by a non-speculative read. Given a script with no hazards when executed sequentially, we can show that any ordering of those commands that also has no hazards will result in an equivalent output in \S\ref{sec:proof:reorder}. Moreover, any parallel or interleaved execution without hazards will also be equivalent, see \S\ref{sec:proof:parallel}. And further, if any additional commands are run that don't cause hazards, they can be shown to not change the results the normal build produces, see \S\ref{sec:proof:additional}. Finally, we also prove that if a series of commands contains hazards, so will any execution that includes those required commandsin the same order, see \S\ref{sec:proof:keep_hazards}.
+While explicit parallelism is useful, it imposes a burden on the build script author. Alternatively we can use implicit parallelism, where some commands are executed speculatively, before they are required, in the hope that they will be required in the future and thus skipped. Importantly, such speculation can be shown to be safe by tracking hazards, provided we introduce a new hazard \emph{speculative-write-read} corresponding to a speculative write being read by a non-speculative read (defined precisely in \S\ref{sec:hazards_formally}). Given a script with no hazards when executed sequentially, we can show that any ordering of those commands that also has no hazards will result in an equivalent output in \S\ref{sec:proof:reorder}. Moreover, any parallel or interleaved execution without hazards will also be equivalent, see \S\ref{sec:proof:parallel}. And further, if any additional commands are run that don't cause hazards, they can be shown to not change the results the normal build produces, see \S\ref{sec:proof:additional}. Finally, we prove that if a series of commands contains hazards, so will any execution that includes those required commands, see \S\ref{sec:proof:keep_hazards}.
 
 As a consequence, if we can predict what commands are coming up next, and predict that their execution will not cause hazards, it may be worth speculatively executing them. Effective speculation requires us to predict two pieces of data.
 
@@ -131,14 +131,14 @@ As a consequence, if we can predict what commands are coming up next, and predic
 \subsection{Recovering from Speculative Hazards}
 \label{sec:recovering}
 
-If a build using speculative execution causes a hazard, it is possible that the hazard is entirely an artefact of speculation. However, there are other possible approaches.
+If a build using speculative execution causes a hazard, it is possible that the hazard is entirely an artefact of speculation. There are a few actions the build system could take to recover.
 
 \begin{description}
 \item[Restart without speculation] If a hazard occurs, and speculation was involved, we can can abort the build retry without speculation.
 \item[Restart with less speculation] If the hazard can be attributed to a specific speculated command, then the build can be rerun with speculation, omitting the one problematic command. The disadvantage of blacklisting a specific speculated command is that it might mean the build reruns many times with an increasingly large blacklist.
-\item[Raise a hazard] If the hazard occurs due to two non-speculated commands run in the order they were requested, then the build is incorrect, and rerunning will cause the hazard. That hazard can be raised immediately.
+\item[Raise a hazard] If the hazard occurs due to two non-speculated commands run in the order they were requested, then the build is incorrect, and rerunning will cause the same hazard. That hazard can be raised immediately.
 \item[Continue] If the hazard involves a speculated command, but that commands actions have no impact on the real build, then the build can continue as normal.
 \item[Rewind] Given a visible build script, e.g. \S\ref{sec:monadic} choice 2, it might be possible to rewind the build to a specific point and continue from there -- although that can get especially complicated in the presence of mutable state or explicit parallelism (see \S\ref{sec:explicit_parallelism}).
 \end{description}
 
-Given our model of treating the user script as a black box, rewinding is not an option. The remaining approaches are, but we discuss the precise circumstances in each is safe in \S\ref{sec:proof:classify_hazard}.
+Given our model of treating the user script as a black box, rewinding is not an option. The remaining approaches are all \emph{possible}, and we discuss the precise circumstances in which each is \emph{safe} in \S\ref{sec:proof:classify_hazard}.
