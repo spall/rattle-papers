@@ -222,7 +222,14 @@ If two required commands cause a read-write hazard, and the relative order they 
 \subsubsection{Continue}
 \label{sec:proof:continue}
 
-If the hazard only affects speculated commands, and those commands have no subsequent affect on required commands, it is possible to continue the build. However, it is important that the commands have no subsequent effect, even on required commands that have not yet been executed, or even revealed to the build system. Consequently, if a build continues after hazards, it may still fail due to a future hazard.  If a speculated command that was part of a hazard the build continued from, later becomes required by the build script, a new hazard can be raised by the build.
+If the hazard only affects speculated commands, and those commands have no subsequent affect on required commands, it is possible to continue the build. However, it is important that the commands have no subsequent effect, even on required commands that have not yet been executed, or even revealed to the build system. Consequently, if a build continues after hazards, it may still fail due to a future hazard.  If a speculated command that was part of a hazard the build continued from, later becomes required by the build script, a new hazard can be raised by the build.  Hazards which only affect speculated commands are:
+
+\begin{enumerate}
+\item \emph{write-write hazard} where both commands were speculated.
+\item \emph{read-write hazard} where both commands were speculated.
+\item \emph{read-write hazard} where the read was speculated.
+\end{enumerate}
+
 
 % hazards which only affect speculated commdands
 
