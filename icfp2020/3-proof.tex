@@ -215,25 +215,23 @@ As a practical matter, if a command is part of the commands that cause a hazard,
 
 Importantly, if there is no speculation (including reordering and parallelism), and a hazard occurs, the hazard can be raised immediately. This property is essential as a base-case for restarting with no speculation.
 
-If two required commands cause a write-write hazard, and there have been no speculative-write-read hazards, then the same hazard will be reraised if the command restarts. For write-write, this inevitability is a consequence of \S\ref{sec:proof:reorder}, as the same writes will occur.
+If two required commands, commands in the build script, cause a write-write hazard, and there have been no speculative-write-read hazards, then the same hazard will be reraised if the command restarts. For write-write, this inevitability is a consequence of \S\ref{sec:proof:reorder}, as the same writes will occur.
 
 If two required commands cause a read-write hazard, and the relative order they were run in matches their required ordering, then the same hazard will be reraised if the command restarts, because the relative ordering will remain the same. However, if the commands weren't in an order matching their required ordering, it is possible the write will come first avoiding the hazard, so it cannot be immediately raised.
 
 \subsubsection{Continue}
 \label{sec:proof:continue}
 
-If the hazard only involves speculated commands, and those commands have no subsequent affect on required commands, it is possible to continue the build. However, it is important that the commands have no subsequent effect, even on required commands that have not yet been executed, or even revealed to the build system. Consequently, if a build continues after hazards, it may fail even if there are no future hazards. To determine whether a build can continue, we can define which commands are ``poisoned'':
+If the hazard only affects speculated commands, and those commands have no subsequent affect on required commands, it is possible to continue the build. However, it is important that the commands have no subsequent effect, even on required commands that have not yet been executed, or even revealed to the build system. Consequently, if a build continues after hazards, it may still fail due to a future hazard.  If a speculated command that was part of a hazard the build continued from, later becomes required by the build script, a new hazard can be raised by the build.
 
-%% SS gonna come back to this
+% hazards which only affect speculated commdands
 
-\begin{enumerate}
-\item A write-write hazard poisons commands which wrote to the file in question.
-\item A read-write hazard poisons the command which read, but not one that wrote.
-\item A speculative-write-read hazard poisons the command which read, but not that which wrote.
-\item A command which reads any files written by a poisoned command is itself poisoned.
-\end{enumerate}
+% write-write where both commands are speculated
+% read-write where both are speculated
+% read-write where read is speculated
 
-If any required command is poisoned (either now or by the end of the build), then the build cannot continue.
+% may still fail if:
+% one of the speculated commands is required in the build script.
 
 \begin{comment}
 The following are all potential ways a speculated command can cause a hazard and how a build can recover.
