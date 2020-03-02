@@ -1,7 +1,7 @@
 \section{Evaluation}
 \label{sec:evaluation}
 
-In this section we evaluate the design from \S\ref{sec:design}, specifically our implementation from \S\ref{sec:implementation}. We show how the implementation performs on the example from \S\ref{sec:introduction} in \S\ref{sec:eval:introduction}, on microbenchmarks in \S\ref{sec:eval:overhead}, and then on real projects that currently use \Make{} -- namely FSATrace (\S\ref{sec:eval:fsatrace}), Redis (\S\ref{sec:eval:redis}), Vim (\S\ref{sec:eval:vim}), Tmux (\s\Ref{sec:eval:tmux}), and Node (\S\ref{sec:eval:node}). For larger projects we look at both whether the dependencies are correct and the performance.
+In this section we evaluate the design from \S\ref{sec:design}, specifically our implementation from \S\ref{sec:implementation}. We show how the implementation performs on the example from \S\ref{sec:introduction} in \S\ref{sec:eval:introduction}, on microbenchmarks in \S\ref{sec:eval:overhead}, and then on real projects that currently use \Make{} -- namely FSATrace (\S\ref{sec:eval:fsatrace}), Redis (\S\ref{sec:eval:redis}), Vim (\S\ref{sec:eval:vim}), Tmux (\S\ref{sec:eval:tmux}), and Node (\S\ref{sec:eval:node}). For larger projects we look at both whether the dependencies are correct and the performance.
 
 For benchmarks, the first three (\S\ref{sec:eval:introduction}, \S\ref{sec:eval:fsatrace} and \S\ref{sec:eval:redis}) were run on a 4 core Intel i7-4790 3.6GHz CPU, with 16Gb of RAM. The remaining benchmarks were run on a 32 core Intel Xeon E7-4830 2.13GHz, with 62Gb of RAM.
 
@@ -305,7 +305,28 @@ tmux was built over a series of 38 commits with both \Make and \Rattle.  The com
 \subsection{node}
 \label{sec:eval:node}
 
+\begin{tikzpicture}
+\begin{axis}[ymode=log,
+  title=Compile time at each successive commit,
+  width=\textwidth,
+  height=5cm,
+  ylabel={Seconds},
+  ymin=0,
+  xmin=0,
+]
+
+\addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/node.dat}; 	\addlegendentry{\Make -j1}
+\addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/node.dat}; 	\addlegendentry{\Make -j4}
+\addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1_noshared] {data/node.dat}; 	\addlegendentry{\Rattle -j1}
+\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4_noshared] {data/node.dat}; 	\addlegendentry{\Rattle -j4}
+\end{axis}
+\end{tikzpicture}
 % some data but not all; will put in tomorrow
+
+% make4 2373.015 s
+% rattle4 9491.027 s
+% make1 9233.433 s
+% rattle1 9189.8 s
 
 % Brief into to the project
 Node.js is a JavaScript runtime built on Chrome's V8 Javascript engine and can be found on \href{``https://github.com/nodejs/node''}{GitHub}.  The project is largely written in JavaScript, C++, Python, and C, and is built using Make and a meta-build tool called \emph{Generate Your Projects (GYP)}.  To build Node.js from source, a user first runs \emph{./configure} that configures the build and runs GYP.  GYP generates the majority of the Makefiles used to build the project.
@@ -343,8 +364,10 @@ These \emph{.intermediate} files are specified as prerequisites of the special \
 It appears the authors of this build are attempting to keep track of accurate dependencies by recording them every time a command runs, they are also tracking the build by recording every command run and checking whether a command or its prerequisites have changed when deciding whether to run it.  The scheme to accomplish this is in my opinion quite complicated and confusing and relies on various hacks to work around \Make and the fact that this isn't a full-fledged programming language.  \Rattle accomplishes both of these things the build authors are trying to accomplish with \Make without forcing them to work so hard.
 
 To compare the \Make based build to a \Rattle version, we built Node.js over a series of commits checked-out from GitHub with both the original build system and the adapted \Rattle build.  The \Rattle build was created by recording every command executed by the original build, except for the commands creating dependency files.  A new such \Rattle build script was generated for any commit where the original build system changed or files were added to or removed from the project.
-% data
 
+Node was built over a series of 38 commits with both the original \Make build and the adapted \Rattle build, with 1 thread and 4 threads.  \Make and \Rattle took approximately the same amount of time when building Node from scratch with a single thread.  Since \Rattle always does the first build sequentially, with 4 threads \Make obviously built Node more quickly.  For a substantial number of the commits \Rattle was faster than the \Make based build.  As we can see from the chart, there is a baseline of time that the \Make build never dips below.  This is because as mentioned above, there are a series of targets in the \Make build that are set up in such a way that they always run.  \Rattle avoids rebuilding these targets on every build.  This is seems to be an error on the part of Node's build authors and just goes to show how difficult it is to get build systems and dependencies correct.
+
+% SS Note to Neil: I need to add note about hazards; can see in chart where 4core is slower than 1 core that hazard probably ahppened.
 
 % SS add the differences in commits
 % 1. make list of commits run
@@ -358,12 +381,6 @@ To compare the \Make based build to a \Rattle version, we built Node.js over a s
 % b851d7b986 70c32a6d19 3d456b1868 f2ec64fbcf 59a1981a22 [7b7e7bd185]
 % 78743f8e39 a5d4a397d6
 % [] indicate a commit where build appears to have changed. so need new rattle build too
-
-
-% So, pretty much everything needs to be re-run. awesome.
-
-% 5. Record here
-% 6. Run on tank? with various threads; ask sam
 
 
 % Comment from the Makefile
