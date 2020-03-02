@@ -5,7 +5,7 @@
 \section{Correctness}
 \label{sec:proof}
 
-The design of \Rattle relies on taking a sequence of commands from the user, and instead running some commands speculatively. In this section we prove that the manipulations we perform are safe with respect to the reference semantics of sequential evaluation. Throughout these proofs we assume the commands themselves are pure functions from the inputs to their outputs (as reported by tracing).
+The build system design relies on taking a sequence of commands from the user, and additionally running some commands speculatively. In this section we prove that the manipulations we perform are safe with respect to the reference semantics of sequential evaluation. Throughout these proofs we assume the commands themselves are pure functions from the inputs to their outputs (as reported by tracing).
 
 \subsection{Hazards, formally}
 \label{sec:hazards_formally}
@@ -15,7 +15,7 @@ In section \S\ref{sec:proof:classify_hazard} we introduce the notion of hazards 
 \begin{description}
 \item[Read-write hazard] A build has a \emph{read-write hazard} if a file is written to after it has been read. Given the limitations of tracing (see \S\ref{sec:tracing}) we require the stronger property that for all files which are both read and written in a single build, the command which did the write must have finished before any commands reading it start executing.
 \item[Write-write hazard] A build has a \emph{write-write hazard} if a file is written to after it has already been written. Stated equivalently, a build has a write-write hazard if more than one command in a build writes to the same file.
-\item[Speculative-write-read hazard] A build has a \emph{speculative-write-read hazard} if a file is written to by a command which is speculated, then read from by a required command before the speculated command has been required.
+\item[Speculative-write-read hazard] A build has a \emph{speculative-write-read hazard} if a file is written to by a command which is speculated, then read from by a command in the build script before the speculated command has been encountered in the build script.
 \end{description}
 
 \subsection{Argument for correctness}
@@ -93,7 +93,7 @@ Therefore, the first command that performs writes cannot access any writes from 
 \subsection{Preservation of hazards}
 \label{sec:proof:keep_hazards}
 
-\claim If a sequence of commands leads to a hazard, any speculative additional commands or reordering will still cause a hazard.
+\claim If a sequence of commands leads to a hazard, any additional speculative commands or reordering will still cause a hazard.
 
 \proof All hazards are based on the observation of file accesses, not the absence of file accesses. Therefore, additional speculative commands do not reduce hazards, only increase them, as additional reads/writes can only cause additional hazards. For reordering, it cannot reduce write-write hazards, which are irrespective of order. For reordering of read-write hazards, it can only remove such a hazard by speculating the writing command before the reading command. However, such speculation is a speculative-read-write hazard, ensuring a hazard will always be raised.
 
@@ -213,7 +213,7 @@ As a practical matter, if a command is part of the commands that cause a hazard,
 
 \subsubsection{Raise a hazard}
 
-Importantly, if there is no speculation (including reordering and parallelism), and the build raises a hazard, the hazard can be raised immediately. This property is essential as a base-case for restarting with no speculation.
+Importantly, if there is no speculation (including reordering and parallelism), and a hazard occurs, the hazard can be raised immediately. This property is essential as a base-case for restarting with no speculation.
 
 If two required commands cause a write-write hazard, and there have been no speculative-write-read hazards, then the same hazard will be reraised if the command restarts. For write-write, this inevitability is a consequence of \S\ref{sec:proof:reorder}, as the same writes will occur.
 
@@ -222,11 +222,13 @@ If two required commands cause a read-write hazard, and the relative order they 
 \subsubsection{Continue}
 \label{sec:proof:continue}
 
-If the hazard only affects speculated commands, and those commands have no subsequent affect on required commands, it is possible to continue the build. However, it is important that the commands have no subsequent effect, even on required commands that have not yet been executed, or even revealed to the build system. Consequently, if a build continues after hazards, it may fail even if there are no future hazards. To determine whether a build can continue, we can define which commands are ``poisoned'':
+If the hazard only involves speculated commands, and those commands have no subsequent affect on required commands, it is possible to continue the build. However, it is important that the commands have no subsequent effect, even on required commands that have not yet been executed, or even revealed to the build system. Consequently, if a build continues after hazards, it may fail even if there are no future hazards. To determine whether a build can continue, we can define which commands are ``poisoned'':
+
+%% SS gonna come back to this
 
 \begin{enumerate}
 \item A write-write hazard poisons commands which wrote to the file in question.
-\item A read-write hazard poisons the command which read, but not on that which wrote.
+\item A read-write hazard poisons the command which read, but not one that wrote.
 \item A speculative-write-read hazard poisons the command which read, but not that which wrote.
 \item A command which reads any files written by a poisoned command is itself poisoned.
 \end{enumerate}

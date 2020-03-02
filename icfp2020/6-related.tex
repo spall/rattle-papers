@@ -37,7 +37,9 @@ There are also two interesting features available in some backward build systems
 
 \subsection{Analysis of existing build systems}
 
-We aren't the first to observe that existing build systems often have incorrect dependencies.  \citet{bezemer2017empirical} performed an analysis of the missing dependencies in \Make build scripts, finding over \emph{1.2 million unspecified dependencies} among four projects. To detect missing dependencies, \citet{detecting_incorrect_build_rules} introduced a concept called \emph{build fuzzing}, finding race-conditions and errors in 30 projects. It has also been shown that build maintenance requires gives as much as a 27\% overhead \cite{build_maintenance}, a substantial proportion of which is devoted to dependency management. Our anecdotes from \S\ref{sec:evaluation} all reinforce these messages.
+We aren't the first to observe that existing build systems often have incorrect dependencies.  \citet{bezemer2017empirical} performed an analysis of the missing dependencies in \Make build scripts, finding over \emph{1.2 million unspecified dependencies} among four projects. To detect missing dependencies, \citet{detecting_incorrect_build_rules} introduced a concept called \emph{build fuzzing}, finding race-conditions and errors in 30 projects. It has also been shown that build maintenance requires as much as a 27\% overhead \cite{build_maintenance}, a substantial proportion of which is devoted to dependency management. Our anecdotes from \S\ref{sec:evaluation} all reinforce these messages.
+
+% SS TODO maybe mention something about a project like node trying to generate dependencies within make;
 
 \begin{comment}
 \subsection{Other related work}
