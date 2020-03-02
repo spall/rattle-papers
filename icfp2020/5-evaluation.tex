@@ -1,7 +1,7 @@
 \section{Evaluation}
 \label{sec:evaluation}
 
-In this section we evaluate the design from \S\ref{sec:design}, specifically our implementation from \S\ref{sec:implementation}. We show how the implementation performs on the example from \S\ref{sec:introduction} in \S\ref{sec:eval:introduction}, on microbenchmarks in \S\ref{sec:eval:overhead}, and then on real projects that currently use \Make{} -- namely FSATrace (\S\ref{sec:eval:fsatrace}), Redis (\S\ref{sec:eval:redis}), Vim (\S\ref{sec:eval:vim}), Tmux (\S\ref{sec:eval:tmux}), and Node (\S\ref{sec:eval:node}). For larger projects we look at both whether the dependencies are correct and the performance.
+In this section we evaluate the design from \S\ref{sec:design}, specifically our implementation from \S\ref{sec:implementation}. We show how the implementation performs on the example from \S\ref{sec:introduction} in \S\ref{sec:eval:introduction}, on microbenchmarks in \S\ref{sec:eval:overhead}, and then on real projects that currently use \Make{} -- namely FSATrace (\S\ref{sec:eval:fsatrace}), Redis (\S\ref{sec:eval:redis}), Vim (\S\ref{sec:eval:vim}), Tmux (\S\ref{sec:eval:tmux}), and Node.js (\S\ref{sec:eval:node}). For larger projects we look at both whether the dependencies are correct and the performance.
 
 For benchmarks, the first three (\S\ref{sec:eval:introduction}, \S\ref{sec:eval:fsatrace} and \S\ref{sec:eval:redis}) were run on a 4 core Intel i7-4790 3.6GHz CPU, with 16Gb of RAM. The remaining benchmarks were run on a 32 core Intel Xeon E7-4830 2.13GHz, with 62Gb of RAM.
 
@@ -156,7 +156,7 @@ To compare \Make and \Rattle on \Fsatrace we took the commands we extracted for 
 \end{axis}
 \end{tikzpicture}
 
-As we can see, the first build is always > 1s for \Rattle, but \Make is able to optimise it as low as 0.33s with 4 threads. Otherwise, \Rattle and \Make are competitive -- users would struggle to see the difference. The one commit that does show some variation is commit 2, where \Make at 1 thread matches all the \Rattle builds, but \Make at more than 1 thread goes slightly faster. The cause is speculation leading to a write-write hazard. Concretely, the command for linking \texttt{fsatrace.so} changed to include a new file \texttt{proc.o}. \Rattle starts speculating on the old link command, then gets the command for the new link. Both commands write to \texttt{fsatrace.so}, leading to a hazard, and causing \Rattle to restart without speculation.
+As we can see, the first build is always > 1s for \Rattle, but \Make is able to optimise it as low as 0.33s with 4 threads. Otherwise, \Rattle and \Make are competitive -- users would struggle to see the difference. The one commit that does show some variation is commit 2, where both are similar for 1 thread, but \Rattle at 4 threads is slower than 1 thread, while \Make is faster. The cause is speculation leading to a write-write hazard. Concretely, the command for linking \texttt{fsatrace.so} changed to include a new file \texttt{proc.o}. \Rattle starts speculating on the old link command, then gets the command for the new link. Both commands write to \texttt{fsatrace.so}, leading to a hazard, and causing \Rattle to restart without speculation.
 
 % WriteWriteHazard /tmp/extra-dir-39079319872788/fsatrace.so Cmd [EchoStderr False] ["cc","-shared","src/unix/fsatraceso.os","src/emit.os","src/unix/shm.os","-o","fsatrace.so","-ldl","-lrt"] Cmd [EchoStderr False] ["cc","-shared","src/unix/fsatraceso.os","src/emit.os","src/unix/shm.os","src/unix/proc.os","-o","fsatrace.so","-ldl","-lrt"] Restartable
 
@@ -198,7 +198,7 @@ As another example, the GHC package database has additional entries added every 
 and some memoisation operations (\texttt{memo})
 \end{comment}
 
-\subsection{vim}
+\subsection{Vim}
 \label{sec:eval:vim}
 
 \begin{tikzpicture}
@@ -219,11 +219,12 @@ and some memoisation operations (\texttt{memo})
 \end{axis}
 \end{tikzpicture}
 
-Vim is a popular text editor whose source code can be found on \href{https://github.com/vim/vim}{GitHub}.  The majority of the source code is Vim script and C, and it is built with Make.  To build Vim on a Unix based system one can merely call \Make from the top-level project directory.  To compare the original \Make based build to a new \Rattle build, we built Vim over a series of commits checked-out from GitHub with both the original build system and the adapted \Rattle build.  The \Rattle build scripts were created by recording every command executed by the original build, and
-a new \Rattle build script was generated for each commit where the original build system changed or files were added to or removed from the project.  This was necessary since the \Rattle build was created from a literal list of hard-coded shell commands rather than the ideal Haskell program with variables.
+Vim is a popular text editor, over 25 years old. The majority of the source code is Vim script and C, and it is built with \Make. To compare the original \Make based build to \Rattle, we built Vim over a series of commits, using both the original \Make and a \Rattle script created by recording the commands \Make executed on a clean build. The benchmarks show that \Make and \Rattle had similar performance for almost every commit, apart from two.
 
-The benchmarks for Vim show that \Make and \Rattle had similar performance for almost every commit built except for the 20th commit and the 29th commit.  For the 20th commit \Make did much more work than \Rattle did and for the 29th commit \Rattle did much more work than \Make.
-During the 20th commit the script which generates the \emph{osdef.h} header file was changed in a way that did not change the content of \emph{osdef.h} on the machine this benchmark was run.  \Make rebuilt all of the object files which depend on the header file, while \Rattle did not because the header file contents had not changed.  Of course, \Make could have avoided the rebuild as well if it used file hashes instead of timestamps.  On the 29th commit a prototype file changed which is indirectly included by all object files.  This prototype file is not listed as a dependency of the object files so \Make does not rebuild them, but \Rattle does because it is included by all of the c files.  A missing dependency such as this could result in an incorrect build or a build error, but does not appear to in this case.
+\begin{enumerate}
+\item For the 20th commit, \Make did much more work than \Rattle. This commit changed the script which generates the \texttt{osdef.h}, in such a way that it did not change the contents of \texttt{osdef.h}. \Make rebuilt all of the object files which depend on the header file, while \Rattle skipped them as the file contents had not changed.
+\item For the 29th commit, \Rattle did much more work than \Make. This commit changed a prototype file which is indirectly included by all object files.  This prototype file is not listed as a dependency of the object files, so \Make did not rebuild them, but \Rattle noticed the changed dependency.  This missing dependency could have resulted in an incorrect build or a build error, but in this case (by luck) seems not to have been significant. A future prototype change may result in incorrect builds.
+\end{enumerate}
 
 % 21 is e258368; version.c and osdef.sh changed
 % osdef.h is rebuilt; make says all object files depend on this so theyre all rebuilt, which rattle list says they do so; why did it not rebuild them? confusing debug code says osdef.h changed; but that doesn't seem to be the case since the object files that depend on it didnt say it had changed... i'll verify this
@@ -238,6 +239,7 @@ During the 20th commit the script which generates the \emph{osdef.h} header file
   width=\textwidth,
   height=5cm,
   ylabel={Seconds},
+  ymax=50,
   ymin=0,
   xmin=0,
 ]
@@ -250,7 +252,7 @@ During the 20th commit the script which generates the \emph{osdef.h} header file
 \end{tikzpicture}
 
 
-tmux is a terminal multiplexer whose source code is available on  \href{``https://github.com/vim/vim''}{GitHub}.  It can be built from source using \emph{autoconf}, \emph{automake}, \emph{pkg-config}, and \emph{make}.  To build tmux from source grabbed from GitHub one does the following:
+tmux is a terminal multiplexer in development for the last 12 years.  It is built from source using a combination of \textsc{Autoconf}, \textsc{Automake}, \textsc{pkg-config} and \Make.  The build commands are:
 
 \begin{verbatim}
 sh autogen.sh
@@ -258,9 +260,7 @@ sh autogen.sh
 make
 \end{verbatim}
 
-To compare a \Rattle based tmux build to the \Make based one, we first ran \emph{sh autogen.sh} and \emph{./configure}, and then used the resulting Makefile(s) to generate the Rattle build scripts.  A new Rattle build script was generated for any commit where the build appeared to have changed or a file was added or deleted from the repository.
-
-tmux was built over a series of 38 commits with both \Make and \Rattle.  The commands run by each build system for each command were then compared.  For the 11th, 22nd and 23rd commits \Rattle and \Make took noticeably different amounts of time.  This is because for each of these commits the build script changed, so \Rattle had to run the changed commands because it had no prior information about them.
+To compare a \Rattle based tmux build to the \Make based one, we first ran \texttt{sh autogen.sh \&\& ./configure}, and then used the resulting \Make scripts to generate \Rattle build scripts. tmux was built over a series of 38 commits with both \Make and \Rattle. For the 11th, 22nd and 23rd commits \Rattle and \Make took noticeably different amounts of time. In all cases the cause was the build script changing, causing \Rattle to be unable to speculate, and thus taking approximately as long as a full single-threaded build.
 
 
 % 47174f51
@@ -302,7 +302,7 @@ tmux was built over a series of 38 commits with both \Make and \Rattle.  The com
 
 % \subsection{openssl}
 
-\subsection{node}
+\subsection{Node.js}
 \label{sec:eval:node}
 
 \begin{tikzpicture}
@@ -311,7 +311,6 @@ tmux was built over a series of 38 commits with both \Make and \Rattle.  The com
   width=\textwidth,
   height=5cm,
   ylabel={Seconds},
-  ymin=0,
   xmin=0,
 ]
 
