@@ -219,7 +219,7 @@ and some memoisation operations (\texttt{memo})
 \end{axis}
 \end{tikzpicture}
 
-Vim is a popular text editor whose source code can be found on \href{https://github.com/vim/vim}{GitHub}.  The majority of the source code is Vim script and C, and it is built with Make.  To build Vim on a Unix based system one can merely call \Make from the top-level project directory.  To compare the original \Make based build to a new \Rattle build, we built Vim over a series of commits checked-out from GitHub with both the original build system and the adapted \Rattle build.  The \Rattle build scripts were created by recording every command executed by the original build, and 
+Vim is a popular text editor whose source code can be found on \href{https://github.com/vim/vim}{GitHub}.  The majority of the source code is Vim script and C, and it is built with Make.  To build Vim on a Unix based system one can merely call \Make from the top-level project directory.  To compare the original \Make based build to a new \Rattle build, we built Vim over a series of commits checked-out from GitHub with both the original build system and the adapted \Rattle build.  The \Rattle build scripts were created by recording every command executed by the original build, and
 a new \Rattle build script was generated for each commit where the original build system changed or files were added to or removed from the project.  This was necessary since the \Rattle build was created from a literal list of hard-coded shell commands rather than the ideal Haskell program with variables.
 
 The benchmarks for Vim show that \Make and \Rattle had similar performance for almost every commit built except for the 20th commit and the 29th commit.  For the 20th commit \Make did much more work than \Rattle did and for the 29th commit \Rattle did much more work than \Make.
@@ -390,5 +390,3 @@ Node was built over a series of 38 commits with both the original \Make build an
 %# .buildstamp is out of date and need a rebuild.
 %# Just goes to show that recursive make really is harmful...
 %# TODO(bnoordhuis) Force rebuild after gyp update.
-
-
