@@ -119,7 +119,7 @@ The disadvantage of hash forwarding (other than the complexity) is that if the o
 
 In \S\ref{sec:assume_tracing} we assume the existence of \emph{dependency tracing} which can, after a command completes, tell us which files that command read and wrote. Unfortunately, such an API is \emph{not} part of the POSIX standard, and is not easily available on any standard platform. We aim to make \Rattle work on Linux, Mac and Windows, which requires using a variety of approaches. In this section we outline some of the approaches that can be used for tracing, along with their advantages and disadvantages.
 
-\paragraph{Syscall tracing} On Linux you can trace every system call made, examine it's arguments, and thus record which files are accessed. Moreover, you can tell which files have information about them queried (via the \texttt{stat} system call). The syscall tracking approach can be made complete, but because \emph{every} syscall must be hooked, can end up being a bit slow. This approach is used by \Bigbro \cite{bigbro}.
+\paragraph{Syscall tracing} On Linux, \texttt{ptrace} allows tracing every system call made, examining the arguments, and thus recording the files accessed. Moreover, by tracing  the \texttt{stat} system call even file queries can be recorded. The syscall tracking approach can be made complete, but because \emph{every} syscall must be hooked, can end up imposing high overhead. This approach is used by \Bigbro \cite{bigbro} as well as numerous other debugging and instrumentation tools.
 
 \paragraph{Library preload} On both Linux and Mac most programs use a dynamically linked C library to make file accesses. By using \texttt{LD\_LIBRARY\_PRELOAD} it is possible to inject a different library into the program memory which intercepts the relevant C library calls, recording which files are read and written. This approach is simpler than hooking syscalls, but only works if all syscall access is made through the C library. While normally true, that isn't the case for Go programs \cite{go} (syscalls are invoked directly) or statically linked programs (the C library cannot be replaced).
 
@@ -136,7 +136,7 @@ While the technique works on a Mac, from Mac OS X 1.10 onwards system binaries c
 \Rattle currently uses \Fsatrace for the underlying tracing, with a Haskell interface provided by \Shake. That means it uses library preloading on Linux/Mac and kernel hooking on Windows. The biggest practical limitations vary by OS:
 
 \begin{itemize}
-\item On \textbf{Linux} it can't trace into Go programs and statically linked binaries. We plan to integrate \Bigbro as an alternative, to address these concerns.
+\item On \textbf{Linux} it can't trace into Go programs (or other programs that use system calls directly) and statically linked binaries. We plan to integrate \Bigbro as an alternative, to address these concerns.
 \item On \textbf{Mac} it can't trace into system binaries called from other system binaries. We recommend using \Nix binaries if this limitation is problematic.
 \item On \textbf{Windows} it can't trace 64bit programs spawned by 32bit programs. In most cases the 32bit binaries can easily be replaced by 64bit binaries. The only problem we've seen was caused by a five year-old version of \texttt{sh}, which was easily remedied with a newer version.
 \end{itemize}

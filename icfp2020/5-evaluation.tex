@@ -3,9 +3,17 @@
 
 In this section we evaluate the design from \S\ref{sec:design}, specifically our implementation from \S\ref{sec:implementation}. We show how the implementation performs on the example from \S\ref{sec:introduction} in \S\ref{sec:eval:introduction}, on microbenchmarks in \S\ref{sec:eval:overhead}, and then on real projects that currently use \Make{} -- namely FSATrace (\S\ref{sec:eval:fsatrace}), Redis (\S\ref{sec:eval:redis}), Vim (\S\ref{sec:eval:vim}), tmux (\S\ref{sec:eval:tmux}), and Node.js (\S\ref{sec:eval:node}). For larger projects we look at both whether the dependencies are correct and the performance.
 
+Our evaluation shows that Rattle:
+\begin{enumerate}
+\item can tackle complex builds for existing software correctly;
+\item avoids excessive rebuilding in practice;
+\item achieves similar parallelism to \Make-based build systems with explicit dependencies; and
+\item imposes low runtime overhead for its instrumentation.
+\end{enumerate}
+
 For benchmarks, the first three (\S\ref{sec:eval:introduction}, \S\ref{sec:eval:fsatrace} and \S\ref{sec:eval:redis}) were run on a 4 core Intel i7-4790 3.6GHz CPU, with 16Gb of RAM. The remaining benchmarks were run on a 32 core Intel Xeon E7-4830 2.13GHz, with 62Gb of RAM.
 
-\subsection{Validating the claims from \S\ref{sec:introduction}}
+\subsection{Validating Rattle's suitability}
 \label{sec:eval:introduction}
 
 In \S\ref{sec:introduction} we claimed that the following build script is ``just as good'' as a proper \Make script.
@@ -16,7 +24,7 @@ gcc -c util.c
 gcc -o main.exe main.o util.o
 \end{verbatim}
 
-There are two axes on which to measure ``just as good'' -- correctness and performance. Performance can be further broken down into how much rebuilds, how much parallelism can be achieved and how much overhead there is.
+There are two axes on which to measure ``just as good'' -- correctness and performance. Performance can be further broken down into how much rebuilding is avoided, how much parallelism is achieved and how much overhead \Rattle imposes.
 
 \paragraph{Correctness} \Rattle is correct, in that the reference semantics is running all the commands, and as we have shown in \S\ref{sec:design} and \S\ref{sec:proof}, and tested for with examples, \Rattle obeys those semantics. In contrast, the \Make version may have missing dependencies which causes it not to rebuild. Examples of failure to rebuild include if \texttt{gcc} changes or any headers used but not listed in the \Make script change.
 
