@@ -317,15 +317,15 @@ Node.js is a JavaScript runtime built on Chrome's V8 Javascript engine that has 
 
 \subsubsection{Node.js build system}
 
-To build Node.js from source, a user first runs \texttt{./configure}, which configures the build and runs GYP, generating Makefiles. From then on, a user can build with \Make. GYP generates the majority of the Makefiles used to build Node.js, starting from a series of provided \texttt{.gyp} files specifying metadata such as targets and dependencies. GYP generates a separate \texttt{*.mk} Makefile for each target, all of which are included by a generated top-level Makefile. That top-level Makefile can be run by \Make, but through a number of tricks, GYP retains control of the dependency calculation:
+To build Node.js from source, a user first runs \texttt{./configure}, which configures the build and runs GYP, generating Makefiles. From then on, a user can build with \Make. GYP generates the majority of the Makefiles used to build Node.js, starting from a series of source \texttt{.gyp} files specifying metadata such as targets and dependencies. GYP generates a separate \texttt{*.mk} Makefile for each target, all of which are included by a generated top-level Makefile. That top-level Makefile can be run by \Make, but through a number of tricks, GYP retains control of the dependency calculation:
 
 \begin{enumerate}
-\item All tracked commands are run using the \texttt{do\_cmd} function from the top-level Makefile. The \texttt{do\_cmd} checks the command, and if anything has changed since the last run, reruns the command. To ensure this function is called on every run, targets whose rules are guarded by \texttt{do\_cmd} have a fake dependency on the \texttt{phony} target \texttt{FORCE\_DO\_CMD}, forcing \Make to rerun them every time. This function operates much like \Rattle command skipping from \S\ref{sec:skipping_unnecessary}.
+\item All tracked commands are run using the \texttt{do\_cmd} function from the top-level Makefile. The \texttt{do\_cmd} function checks the command, and if anything has changed since the last run, reruns it. To ensure this function is called on every run, targets whose rules use \texttt{do\_cmd} have a fake dependency on the \texttt{phony} target \texttt{FORCE\_DO\_CMD}, forcing \Make to rerun them every time. This mechanism operates much like \Rattle command skipping from \S\ref{sec:skipping_unnecessary}.
 \item Tracked commands also create a dependency file for each target, recording the observed dependencies from the last run. In most cases, such information is produced by the underlying build tool, e.g. \texttt{gcc -MMD}.
-\item Generated source files are produced and managed using \texttt{.intermediate} targets. By relying on a combination of \texttt{do\_cmd}, \texttt{FORCE\_DO\_CMD} and a special prerequisite \texttt{.INTERMEDIATE} that depends on all \texttt{.intermediate} targets, the intention appears to be to regenerate the generated code when something relevant has changed. However, in our experiments, those intermediate targets seem to run every time.
+\item Generated source files are produced and managed using \texttt{.intermediate} targets. By relying on a combination of \texttt{do\_cmd}, \texttt{FORCE\_DO\_CMD} and a special prerequisite \texttt{.INTERMEDIATE} that depends on all \texttt{.intermediate} targets, the intention appears to be to regenerate the generated code whenever something relevant has changed. However, in our experiments, those intermediate targets seem to run every time.
 \end{enumerate}
 
-It appears the build of Node.js has tried to take an approach closer to that of \Rattle, namely, tracking dependencies each time a command runs, and making sure commands re-run when they have changed.  The implementation is quite complicated and relies on deep knowledge of precisely how \Make operates.
+It appears the build of Node.js has tried to take an approach closer to that of \Rattle, namely, tracking dependencies each time a command runs and making sure commands re-run when they have changed.  The implementation is quite complicated and relies on deep knowledge of precisely how \Make operates, but still seems not to match the intention.
 
 
 \begin{comment}
@@ -356,7 +356,7 @@ These \emph{.intermediate} targets are specified as prerequisites of the special
 
   % Other things like parallelism and rattle rebuilding less
 
-\subsubsection{Comparison to \Rattle} \verb" "
+\subsubsection{Comparison to \Rattle} \verb" " % To end the subsection line
 
 \vspace{3mm}
 \begin{tikzpicture}
@@ -364,7 +364,7 @@ These \emph{.intermediate} targets are specified as prerequisites of the special
   title=Compile time at each successive commit,
   width=\textwidth,
   height=5cm,
-  ylabel={Seconds},
+  ylabel={Seconds (log scale)},
   xmin=0,
 ]
 
@@ -376,8 +376,9 @@ These \emph{.intermediate} targets are specified as prerequisites of the special
 \end{tikzpicture}
 % some data but not all; will put in tomorrow
 
+To compare build systems, we built Node.js over a series of 38 commits with both \Make and \Rattle, with 1 thread and 4 threads. The \Rattle build was created for each commit by recording every command executed by the original build, excluding the commands exclusively dealing with dependency files. Due to the large variations in time, the above plot uses a log scale.
 
-To compare the \Make based build to a \Rattle version, we built Node.js over a series of 38 commits with both the original \Make build system and with \Rattle, with 1 thread and 4 thread.  The \Rattle build was created for each commit by recording every command executed by the original build, excluding the commands exclusively dealing with dependency files. \Make and \Rattle took approximately the same amount of time when building Node from scratch with a single thread. Since \Rattle always does the first build sequentially, with 4 threads \Make was able to build Node much faster.  For a substantial number of the commits \Rattle was faster than the \Make based build.  As we can see from the chart, there is a baseline of time that the \Make build never dips below.  This is because as mentioned above, there are a series of targets in the \Make build that are set up in such a way that they always run.  \Rattle avoids rebuilding these targets on every build.  This design seems to be an error on the part of Node.js's build authors and just goes to show how difficult it is to get build systems and dependencies correct.
+For building from scratch, \Make and \Rattle took approximately the same amount of time with a single thread. However, with 4 threads \Make was able to build Node nearly four times faster, since \Rattle had no speculation information. For many commits \Rattle and \Make give similar results, but for those with the least amount of work, where only a few files change, \Rattle is able to beat \Make. The fastest observed \Make time is 35 seconds, while \Rattle goes as low as 12 seconds. The major cause is that \Make \emph{always} rebuilds the generated files but \Rattle (correctly) does not.
 
 % SS Note to Neil: I need to add note about hazards; can see in chart where 4core is slower than 1 core that hazard probably ahppened.
 
@@ -402,3 +403,14 @@ To compare the \Make based build to a \Rattle version, we built Node.js over a s
 %# .buildstamp is out of date and need a rebuild.
 %# Just goes to show that recursive make really is harmful...
 %# TODO(bnoordhuis) Force rebuild after gyp update.
+
+\subsection{Summary}
+
+Looking across the projects in this section, a few themes emerge.
+
+\begin{itemize}
+\item For most commits, \Rattle and \Make give similar performance. The one place that is not the case is the initial build at higher levels of parallelism, where \Rattle has no speculation information. If \Rattle used a shared speculation cache (as it is capable of doing), that difference would disappear.
+\item The difference betwen 1 thread and 4 threads can be quite significant, and typically \Make and \Rattle do equally well with parallelism, so the implicit parallelism in \Rattle is an important feature which works as designed.
+\item In a few cases \Rattle suffers a hazard, which has a visible impact on the build. However, the hazards are relatively rare, and the build impact is fairly minor.
+\item Every \Make project has a slightly different variation on how dependencies are managed. Most make use of \texttt{gcc -MMD} to generate dependency information direct from the compilers, then build on that in different ways. Many projects require user actions on certain changes, e.g. Redis requires a clean build if a dependency changes. Some projects merely use \Make as an execution engine, e.g. Node.js. It appears as though the engineering to get dependencies right significantly outweights the engineering to get the commands right.
+\end{itemize}
