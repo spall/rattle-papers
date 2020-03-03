@@ -15,7 +15,7 @@ In section \S\ref{sec:proof:classify_hazard} we introduce the notion of hazards 
 \begin{description}
 \item[Read-write hazard] A build has a \emph{read-write hazard} if a file is written to after it has been read. Given the limitations of tracing (see \S\ref{sec:tracing}) we require the stronger property that for all files which are both read and written in a single build, the command which did the write must have finished before any commands reading it start executing.
 \item[Write-write hazard] A build has a \emph{write-write hazard} if a file is written to after it has already been written. Stated equivalently, a build has a write-write hazard if more than one command in a build writes to the same file.
-\item[Speculative-write-read hazard] A build has a \emph{speculative-write-read hazard} if a file is written to by a command which is speculated, then read from by a command in the build script before the speculated command has been encountered in the build script.
+\item[Speculative-write-read hazard] A build has a \emph{speculative-write-read hazard} if a file is written to by a speculated command, then read from by a command in the build script, before the build script has attempted to execute the speculated command.
 \end{description}
 
 \subsection{Argument for correctness}
