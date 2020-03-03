@@ -410,20 +410,77 @@ Looking across the projects in this section, a few themes emerge.
 \item In a few cases \Rattle suffers a hazard, which can be observed on the build time plot. However, the hazards are relatively rare, and the build time impact is fairly minor.
 \item Every \Make project has a slightly different variation on how dependencies are managed. Most make use of \texttt{gcc} to generate dependency information direct from the compilers, which then has to be provided to \Make. Some provide it directly (e.g. \Fsatrace), some also use stamp files (e.g. Redis) and some build their own mechanisms on top of \Make (e.g. Node.js, but also \citet[\S2]{hadrian}).
 \item Many projects give up on dependencies in less common cases, requiring user action, e.g. Redis requires a clean build if a dependency changes.
+\item \Rattle correctly rebuilds if the build file itself updates, but most of the \Make projects do not. The one exception is Node.js, through its use of its dependency encoding in the Makefile.
 \end{itemize}
 
 
-\subsection{Writing \Rattle builds}
+\subsection{Writing \Rattle scripts}
 
-SARAH: FIGURING OUT IF THIS SECTION IS REQUIRED, SO VERY DRAFT. DOES IT HELP SELL THE STORY? CAN FINISH IT OFF TONIGHT.
-
-In order to check that writing build scripts with \Rattle is an easy thing to do we tried writing two projects in \Rattle -- namely \Fsatrace and a program to fetch Haskell dependencies and install them.
+In order to check that writing build scripts with \Rattle is an easy thing to do, we tried writing two projects in \Rattle -- namely \Fsatrace and a program to fetch Haskell dependencies and install them (much like the Haskell tool Stack).
 
 \subsubsection{Implementing \Fsatrace}
 
-We implemented FSATrace from scratch. We did all the compilations with explicit parallelism, e.g. \texttt{forP}. Using Haskell, it was way easier to describe the abstraction so the result is much shorter and clearer. It ended up being N lines long.
+We implemented a build system that build \Fsatrace using \Rattle. Unlike the \S\ref{sec:eval:rattle} where we took the outputs from \Make, this time we took the source Makefiles and tried to port their logic to \Rattle. We did not port the testing or \texttt{clean} phony target, but we did port both Windows and Linux support. The script proceeds by defining 11 variables, following much the same pattern as the Makefile defines variables -- some of which are conditional on the OS. Next we compile all the C sources, and finally we do a few links. The total code is 19 non-comment lines, corresponding to 46 non-comment lines in the Makefiles.
 
-\subsubsection{Reimplementing Stack}
+Given the setup of the code, it was trivial to use explicit parallelism for compiling all C files, but doing so for the linking steps, and arranging for the links to be performed as soon as possible, would have been tedious. Taking some representative pieces from the build, we have:
+
+\begin{verbatim}
+let cppflags | isWindows = "-D_WIN32_WINNT=0x600 -isysteminclude/ddk"
+             | otherwise = "-D_GNU_SOURCE -D_DEFAULT_SOURCE=1"
+let sosrcs = ["src/unix/fsatraceso.c","src/emit.c","src/unix/shm.c","src/unix/proc.c"]
+
+forP_ (srcs ++ if isWindows then dllsrcs else sosrcs) $ \x ->
+    cmd "gcc -c" ["-fPIC" | not isWindows] cppflags cflags x "-o" (x -<.> "o")
+
+let objects = map (-<.> "o")
+cmd "gcc" ldflags ldobjs (objects srcs) ldlibs "-o" ("fsatrace" <.> exe)
+\end{verbatim}
+
+The overall experience of porting the Makefile was pleasant. The explicit \texttt{isWindows} is much nicer than the Makefile approach. The explicit availability of arrays and a rich set of operations on them made certain cases more natural. The use of functions, e.g. \texttt{objects}, allowed simplifying transformations and giving more semantically meaningful names. The powerful syntax of \texttt{cmd}, allowing multiple arguments, keeps the code relatively simple. The only downside to \Make was the use of quotes in more places.
+
+\subsubsection{Haskell Dependencies}
+
+As a second test, we wrote a program to fetch and build a Haskell library and its dependencies. For Haskell packages, Cabal is both a low-level library/interface for configuring, building and installing, and also a high-level tool for building sets of packages. Stackage is a set of packages which are known to work together. Stack is a tool that consumes the list of Stackage packages, and using low-level Cabal commands, tries to install them. We decided to try and replicate Stack, with the original motivation that by building on top of \Rattle we could get cloud builds of Haskell for free.
+
+We were able to write a prototype of something Stack-like using \Rattle in 71 non-comment lines. Our prototype is capable of building some projects, showing the fundamental mechanisms work, but due to the number of corner cases in Haskell packages, is unlikely to be practical without further development. The main logic that drives the process is reproduced below.
+
+\begin{verbatim}
+stack :: String -> [PackageName] -> Run ()
+stack resolver packages = do
+    let config = resolver <.> "config"
+    cmd Shell "curl -sSL" ("https://www.stackage.org/" ++ resolver ++ "/cabal.config") "-o" config
+    versions <- liftIO $ readResolver config
+    flags <- liftIO extraConfigureFlags
+    let askVersion x = fromMaybe (error $ "Don't know version for " ++ show x) $ Map.lookup x versions
+    needPkg <- memoRec $ \needPkg name -> do
+        let v = askVersion name
+        whenJust v $ installPackage needPkg config flags name
+        return v
+    forP_ packages needPkg
+\end{verbatim}
+
+Reading this code, given a Stackage resolver (e.g. \texttt{nightly-2012-10-29}), we download the corresponding resolver to disk, read the resolver, then recursively build projects in an order satisfying dependencies. The download uses \texttt{curl}, which has no meaningful reads, so will be cached. Importantly, the URL includes the full resolver which is never changed once published. The parsing of the resolver is Haskell code, not visible to \Rattle, repeated on every run (the time taken is negligible). We then build a recursive memoisation pattern using \texttt{memoRec}, where each package is only built once, and while building a package you can recursively ask for other packages. We then finally demand the packages that were requested. The \texttt{memoRec} function has the signature:
+
+\begin{verbatim}
+memoRec :: (Eq a, Hashable a, MonadIO m) => ((a -> m b) -> a -> m b) -> m (a -> m b)
+\end{verbatim}
+
+
+This use case was significantly more challenging, not least because there are lots of odd corner cases when building Haskell packages. Some packages require developer tools to be installed. Some packages are incorrectly omitted from the Stackage snapshot. Some directories are incorrectly checked by Cabal. The dependencies of a package are hard to determine due to flags. Our solution was sufficient to build some packages, showing the dependency/\Rattle side worked, but would require a lot more investment to turn into a real project.
+
+
+
+, much like Stack or Cabal do for existing Haskell projects. The resulting program was 71 lines long. It proceeds by fetching a Stackage snapshot, parsing the result, and recursively depending on packages. The main logic that drives the process is reproduced below.
+
+
+This use case was significantly more challenging, not least because there are lots of odd corner cases when building Haskell packages. Some packages require developer tools to be installed. Some packages are incorrectly omitted from the Stackage snapshot. Some directories are incorrectly checked by Cabal. The dependencies of a package are hard to determine due to flags. Our solution was sufficient to build some packages, showing the dependency/\Rattle side worked, but would require a lot more investment to turn into a real project.
+
+There were some things we learnt:
+
+\begin{itemize}
+\item Writing the program itself was fairly pleasant. Having Haskell available to parse the configuration and having efficient \texttt{Map} data structures made it feasible. Having to not worry about dependencies, and focus on it working, vastly simplified development.
+\item We encountered a lot of bugs
+\end{itemize}
 
 We reimplemented Stack, which didn't take much effort despite it being a fairly complex process. Freeing us from dealing with dependencies was liberating.
 
