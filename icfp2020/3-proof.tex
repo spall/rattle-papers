@@ -215,20 +215,21 @@ As a practical matter, if a command is part of the commands that cause a hazard,
 
 Importantly, if there is no speculation (including reordering and parallelism), and a hazard occurs, the hazard can be raised immediately. This property is essential as a base-case for restarting with no speculation.
 
-If two required commands, commands in the build script, cause a write-write hazard, and there have been no speculative-write-read hazards, then the same hazard will be reraised if the command restarts. For write-write, this inevitability is a consequence of \S\ref{sec:proof:reorder}, as the same writes will occur.
+If two required commands, that is commands in the users build script, cause a write-write hazard, and there have been no speculative-write-read hazards, then the same hazard will be reraised if the command restarts. For write-write, this inevitability is a consequence of \S\ref{sec:proof:reorder}, as the same writes will occur.
 
 If two required commands cause a read-write hazard, and the relative order they were run in matches their required ordering, then the same hazard will be reraised if the command restarts, because the relative ordering will remain the same. However, if the commands weren't in an order matching their required ordering, it is possible the write will come first avoiding the hazard, so it cannot be immediately raised.
 
 \subsubsection{Continue}
 \label{sec:proof:continue}
 
-If the hazard only affects speculated commands, and those commands have no subsequent affect on required commands, it is possible to continue the build. However, it is important that the commands have no subsequent effect, even on required commands that have not yet been executed, or even revealed to the build system. Consequently, if a build continues after hazards, it may still fail due to a future hazard.  If a speculated command that was part of a hazard the build continued from, later becomes required by the build script, a new hazard can be raised by the build.  Hazards which only affect speculated commands are:
+If the hazard only affects speculated commands, and those commands have no subsequent effect on required commands, it is possible to continue the build. However, it is important that the commands have no subsequent effect, even on required commands that have not yet been executed, or even revealed to the build system. Consequently, even if a build can continue after an initial hazard, it may still fail due to a future hazard. A build can continue if the hazards only affect speculated commands, that is hazards where:
 
 \begin{enumerate}
-\item \emph{write-write hazard} where both commands were speculated.
-\item \emph{read-write hazard} where both commands were speculated.
-\item \emph{read-write hazard} where the read was speculated.
+\item A \emph{write-write hazard} where both commands were speculated.
+\item A \emph{read-write hazard} where the read was speculated.
 \end{enumerate}
+
+For all other hazards it is not safe to continue. If a speculated command is affected by an initial hazard, and that command is later required by the build script, a new non-continuable hazard will be raised.
 
 
 % hazards which only affect speculated commdands
