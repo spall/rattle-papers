@@ -185,19 +185,6 @@ Redis is an in-memory NoSQL database written in C, developed over the last 10 ye
 
 When benchmarking \Rattle vs \Make we found that \Rattle was approximately 10\% slower due to copying files to the cloud cache, something \Make does not do. Therefore, for a fairer comparison, we disabled the cloud cache. For local builds, the consequence of disabling the cloud cache is that if a file changes, then changes back to a previous state, we will have to rebuild rather than get a cache hit -- something that never happens in this benchmark. With those changes \Rattle is able to perform very similarly to \Make, even though it properly checks the dependencies. Differences occur on the initial build, where \Rattle has no information to speculate with, and commit 1, where \Rattle correctly detects no work is required but \Make rebuilds some dependency information.
 
-\begin{comment}
-% I reimplemented Stack in Rattle. Not sure it's useful given how much other evaluation stuff we have.
-\subsection{Reimplementing Stack}
-
-\Rattle assumes that each command is atomic - it cannot be subdivided into smaller parts. If a command is secretly two independent commands then they should usually be expressed as such so they can be individually skipped.
-
-Compound commands: Sometimes a command will produce something that is user specific (not great for caching), but the next step will remove the user specificity (good for caching). To fix that we allow compound commands, by conjoining two commands with \texttt{\&\&}. Sometimes the sole purpose of the second command can be to strip machine-unique data from the first command.
-
-As another example, the GHC package database has additional entries added every time a package is installed, making the output a consequence of the original file\footnote{As a consequence many build systems, including \Bazel and \Rattle, use multiple package databases with only one entry per database}.
-
-and some memoisation operations (\texttt{memo})
-\end{comment}
-
 \subsection{Vim}
 \label{sec:eval:vim}
 
@@ -404,7 +391,8 @@ For building from scratch, \Make and \Rattle took approximately the same amount 
 %# Just goes to show that recursive make really is harmful...
 %# TODO(bnoordhuis) Force rebuild after gyp update.
 
-\subsection{Summary}
+
+\subsection{Summary comparing with \Make}
 
 Looking across the projects in this section, a few themes emerge.
 
@@ -415,3 +403,26 @@ Looking across the projects in this section, a few themes emerge.
 \item Every \Make project has a slightly different variation on how dependencies are managed. Most make use of \texttt{gcc} to generate dependency information direct from the compilers, which then has to be provided to \Make. Some provide it directly (e.g. \Fsatrace), some also use stamp files (e.g. Redis) and some build their own mechanisms on top of \Make (e.g. Node.js, but also \citet[\S2]{hadrian}).
 \item Many projects give up on dependencies in less common cases, requiring user action, e.g. Redis requires a clean build if a dependency changes.
 \end{itemize}
+
+
+\subsection{Writing \Rattle builds}
+
+SARAH: FIGURING OUT IF THIS SECTION IS REQUIRED, SO VERY DRAFT. DOES IT HELP SELL THE STORY? CAN FINISH IT OFF TONIGHT.
+
+In order to check that writing build scripts with \Rattle is an easy thing to do we tried writing two projects in \Rattle -- namely \Fsatrace and a program to fetch Haskell dependencies and install them.
+
+\subsubsection{Implementing \Fsatrace}
+
+We implemented FSATrace from scratch. We did all the compilations with explicit parallelism, e.g. \texttt{forP}. Using Haskell, it was way easier to describe the abstraction so the result is much shorter and clearer. It ended up being N lines long.
+
+\subsubsection{Reimplementing Stack}
+
+We reimplemented Stack, which didn't take much effort despite it being a fairly complex process. Freeing us from dealing with dependencies was liberating.
+
+\Rattle assumes that each command is atomic - it cannot be subdivided into smaller parts. If a command is secretly two independent commands then they should usually be expressed as such so they can be individually skipped.
+
+Compound commands: Sometimes a command will produce something that is user specific (not great for caching), but the next step will remove the user specificity (good for caching). To fix that we allow compound commands, by conjoining two commands with \texttt{\&\&}. Sometimes the sole purpose of the second command can be to strip machine-unique data from the first command.
+
+As another example, the GHC package database has additional entries added every time a package is installed, making the output a consequence of the original file\footnote{As a consequence many build systems, including \Bazel and \Rattle, use multiple package databases with only one entry per database}.
+
+Required some memoisation operations (\texttt{memo})
