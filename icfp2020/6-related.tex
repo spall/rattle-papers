@@ -23,7 +23,7 @@ There are significantly fewer forward build systems than backwards build systems
 
 The design space of backward build systems is discussed in \cite{build_systems_a_la_carte}. In that paper it is notable that forward build systems do not naturally fit into the design space, lacking the features that a build system requires. We feel that omission points to an interesting gap in the landscape of build systems. We think that it is likely forward build systems could be characterised similarly, but that we have yet to develop the necessary variety of forward build systems to do so. There are two dimensions used to classify backward build systems:
 
-\paragraph{Ordering} Looking at the features of \Rattle, the ordering is a sequential list, representing an excessively strict ordering given by the user. The use of speculation is an attempt to weaken that ordering into one that is more precise.
+\paragraph{Ordering} Looking at the features of \Rattle, the ordering is a sequential list, representing an excessively strict ordering given by the user. The use of speculation is an attempt to weaken that ordering into one that is less linear and more precise.
 
 \paragraph{Rebuild} For rebuilding, \Rattle looks a lot like the constructive trace model -- traces are made, stored in a cloud, and available for future use. The one wrinkle is that a trace may be later invalidated if it turns out a hazard occurred (see \S\ref{sec:choices}). In particular, the correspondence to constructive traces illuminates the consequences of moving to a deep constructive trace model (see \S\ref{sec:forward_hashes}) -- it solves non-determinism at the cost of losing unchanging builds.
 
