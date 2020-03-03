@@ -222,8 +222,8 @@ and some memoisation operations (\texttt{memo})
 Vim is a popular text editor, over 25 years old. The majority of the source code is Vim script and C, and it is built with \Make. To compare the original \Make based build to \Rattle, we built Vim over a series of commits, using both the original \Make and a \Rattle script created by recording the commands \Make executed on a clean build. The benchmarks show that \Make and \Rattle had similar performance for almost every commit, apart from two.
 
 \begin{enumerate}
-\item For the 20th commit, \Make did much more work than \Rattle. This commit changed the script which generates the \texttt{osdef.h}, in such a way that it did not change the contents of \texttt{osdef.h}. \Make rebuilt all of the object files which depend on the header file, while \Rattle skipped them as the file contents had not changed.
-\item For the 29th commit, \Rattle did much more work than \Make. This commit changed a prototype file which is indirectly included by all object files.  This prototype file is not listed as a dependency of the object files, so \Make did not rebuild them, but \Rattle noticed the changed dependency.  This missing dependency could have resulted in an incorrect build or a build error, but in this case (by luck) seems not to have been significant. A future prototype change may result in incorrect builds.
+\item For the 20th commit, \Make did much more work than \Rattle. This commit changed the script which generates \texttt{osdef.h}, in such a way that it did not change the contents of \texttt{osdef.h}. \Make rebuilt all of the object files which depend on this header file, while \Rattle skipped them as the file contents had not changed.
+\item For the 29th commit, \Rattle did much more work than \Make. This commit changed a prototype file that is indirectly included by all object files.  This prototype file is not listed as a dependency of the object files, so \Make did not rebuild them, but \Rattle noticed the changed dependency.  This missing dependency could have resulted in an incorrect build or a build error, but in this case (by luck) seems not to have been significant. A future prototype change may result in incorrect builds.
 \end{enumerate}
 
 % 21 is e258368; version.c and osdef.sh changed
@@ -260,7 +260,17 @@ sh autogen.sh
 make
 \end{verbatim}
 
-To compare a \Rattle based tmux build to the \Make based one, we first ran \texttt{sh autogen.sh \&\& ./configure}, and then used the resulting \Make scripts to generate \Rattle build scripts. tmux was built over a series of 38 commits with both \Make and \Rattle. For the 11th, 22nd and 23rd commits \Rattle and \Make took noticeably different amounts of time. In all cases the cause was the build script changing, causing \Rattle to be unable to speculate, and thus taking approximately as long as a full single-threaded build.
+To compare a \Rattle based tmux build to the \Make based one, we first ran \texttt{sh autogen.sh \&\& ./configure}, and then used the resulting \Make scripts to generate \Rattle build scripts. tmux was built over a series of 38 commits with both \Make and \Rattle. For the 11th, 22nd and 23rd commits \Rattle and \Make took noticeably different amounts of time. In all cases the cause was the build script changing, causing \Rattle to be unable to speculate, and thus taking approximately as long as a full single-threaded build.  For all of those commits where the build script changed, it was possible for a \emph{hazard} to occur caused by a command from the previous build writing to the same file the new version of the command wrote to.  When building this project we observed this happen for the 11th and 22nd commits, but it did not appear to happen during the builds which were timed.  During runs where this did occur, \Rattle just restarted the build with no speculation.
+
+% 12th because previous command was skipped isnce it errors
+% 13th is 685eb38 what changed? added flag so almost all commands changed
+% ^ yes hazard
+
+% 23rd is really 4822130  what changed? flag changed again.
+% ^ yes hazard
+
+% 24th is really 47174f5 what changed? flag changed agian.
+% no hazard; deps hadn't changed so no conflicitng commands ran; but ran everything because commands had changed
 
 
 % 47174f51
@@ -300,8 +310,6 @@ To compare a \Rattle based tmux build to the \Make based one, we first ran \text
 % commits
 % ed16f51e 61b075a2 e9b12943 3e701309 8457f54e a01c9ffc cdf13837 74b42407 0eb7b547 f3ea318a 7cdf5ee9 ee3d3db3 685eb381 60ab7144 7eada28f 7f3feb18 8b22da69 bc36700d 32be954b 6f0241e6 19d5f4a0 43b36752 0bf153da 4822130b 47174f51 c915cfc7 54553903 400750bb 470cba35 a4d8437b 6c28d0dd 24cd726d 9900ccd0 c391d50c 0c6c8c4e fdbc1116 37919a6b 22e9cf04 ba542e42 4694afb
 
-% \subsection{openssl}
-
 \subsection{Node.js}
 \label{sec:eval:node}
 
@@ -322,22 +330,17 @@ To compare a \Rattle based tmux build to the \Make based one, we first ran \text
 \end{tikzpicture}
 % some data but not all; will put in tomorrow
 
-% make4 2373.015 s
-% rattle4 9491.027 s
-% make1 9233.433 s
-% rattle1 9189.8 s
-
 % Brief into to the project
-Node.js is a JavaScript runtime built on Chrome's V8 Javascript engine and can be found on \href{``https://github.com/nodejs/node''}{GitHub}.  The project is largely written in JavaScript, C++, Python, and C, and is built using Make and a meta-build tool called \emph{Generate Your Projects (GYP)}.  To build Node.js from source, a user first runs \emph{./configure} that configures the build and runs GYP.  GYP generates the majority of the Makefiles used to build the project.
+Node.js is a JavaScript runtime built on Chrome's V8 Javascript engine that has been in development since 2009.  The project is largely written in JavaScript, C++, Python, and C, and is built using Make and a meta-build tool called \emph{Generate Your Projects (GYP)} \cite{gyp}.  To build Node.js from source, a user first runs \emph{./configure}, which configures the build and runs GYP.
 
-GYP takes a series of \emph{.gyp} files and produces the project's build from those.  It puts all generated files in the project's \emph{out} directory and generates a separate \emph{*.mk} Makefile for each target, all of which are included by the top-level Makefile.  The generated top-level Makefile includes a \emph{do\_cmd} function which first checks if a command changed since the last time it was run, and if it has runs the command.  Additionally, it writes the command run to a generated dependency file, and if the command run was a \emph{g++} command that produced a file with dependencies, the dependencies in that file are cleaned up and written to the generated dependency file.
+GYP generates the majority of the Makefiles used to build Node.js from a series of provided \emph{.gyp} files, which use a JSON dictionary format to specify things such as targets and dependencies.
+It generates a separate \emph{*.mk} Makefile for each target, all of which are included by the generated top-level Makefile.  The generated top-level Makefile includes a \emph{do\_cmd} function which checks if a command changed since the last time it was run, and if it has runs the command.  Additionally, it creates a dependency file for the target running the command, recording the command run in the dependency file.  If the command run produced a dependency file, like a \emph{g++} command can, the reported dependencies will also be recorded in the target's generated dependency file.
 
-These dependency files are included in the top-level \emph{out/Makefile}, presumably so on future runs Make can consider the recorded dependencies as well as check whether the command has changed since it was previously run.  Most of these targets include the dependency \emph{FORCE\_DO\_CMD} which is an empty phony target and serves the purpose of forcing the build to check each time whether the command has changed since it was previously run. Each time a command is re-run, these dependency files are re-generated.
+These dependency files are included in the top-level generated \emph{Makefile}, so on future runs Make can consider the recorded dependencies as well as enable \emph{do\_cmd} to check whether the command it is running has changed since it was last run.  Targets whose rules are executed by \emph{do\_cmd} include the empty, \emph{phony} target \emph{FORCE\_DO\_CMD} as a dependency, forcing the \emph{do\_cmd} rules to run every time the target is considered.  This enables the build to force a check of whether the command has changed since it was last run.  Additionally, each time a command is re-run, the target's generated dependency file is re-generated.
 
 % Explain the makefile insanity and all of this dependency stuff they do
 % Still trying to make coherent since of what this gyp is doing, so here is my current understanding
 
-The build seems to both be using a form of tracing to keep track of accurate dependencies as well as tracking whether or not the build itself has changed.  \Rattle would make it unnecessary for the build to explicitly do this, since it internally traces and tracks the dependencies of all commands run, and doesn't need to worry about when a build changes.
 
 % The generator/make.py
 
@@ -354,17 +357,16 @@ The build seems to both be using a form of tracing to keep track of accurate dep
 
 % Explain the intermediate files and how on a rebuild with no changes stuff still happens
 
-When building certain targets, \emph{.intermediate} files are created and at the end of the build deleted.  These \emph{.intermediate} commands appear to be for doing code generation.  So, the generated files depend on the \emph{.intermediate} target which runs the code generator.  As with the object file targets mentioned, a \emph{.intermediate.d} dependency file is generated for the \emph{.intermediate} target.  This dependency file contains the \emph{.intermediate} code generation command run, so the build can check whether the command changed since it was last run.
+There are \emph{.intermediate} file targets that appear to be for doing code generation.  The generated files depend on the \emph{.intermediate} target, which runs the code generator.  As with the targets mentioned above, a dependency file is generated for the \emph{.intermediate} targets because they use \emph{do\_cmd} to run their rules.  This dependency file contains the \emph{.intermediate} code generation command run, so the build can check whether the command changed since it was last run.
 
-These \emph{.intermediate} files are specified as prerequisites of the special \Make target {.INTERMEDIATE}, which means that when one does not exist \Make won't bother updating it unless one of its prerequisites has changed.  Because these \emph{.intermediate} targets have \emph{DO\_FORCE\_CMD} as a prerequisite they always run.  This would enable the build to check if the command changed since it was last run, but this only works if the Makefile includes the dependency file storing that information.  The dependency files of these \emph{.intermediate} targets, which run every time, are not included in the Makefile.  Because of this the Makefile thinks the command has never run before, causing them to run every time.  Even if the Makefile is modified to include the dependency files of these \emph{.intermediate} targets, the targets still execute the recipe which does the file generation even though the command has not changed. % SS comment on this further when I fully understand why the commands are registering as changed...
-
+These \emph{.intermediate} targets are specified as prerequisites of the special \Make target {.INTERMEDIATE}, which means that when one does not exist \Make won't bother updating it unless one of its prerequisites has changed.  However, because these \emph{.intermediate} targets have \emph{DO\_FORCE\_CMD} as a prerequisite they always run.  This would enable the build to check if the code generation command changed since it was last run, but that only works if the Makefile includes the dependency file storing that information.  The dependency files of these \emph{.intermediate} targets, which run every time, are not included in the Makefile, so \emph{do\_cmd} thinks the commands have never run before, causing them to run every time.  It seems unlikely that this was the build authors' intention.
   % Other things like parallelism and rattle rebuilding less
 
-It appears the authors of this build are attempting to keep track of accurate dependencies by recording them every time a command runs, they are also tracking the build by recording every command run and checking whether a command or its prerequisites have changed when deciding whether to run it.  The scheme to accomplish this is in my opinion quite complicated and confusing and relies on various hacks to work around \Make and the fact that this isn't a full-fledged programming language.  \Rattle accomplishes both of these things the build authors are trying to accomplish with \Make without forcing them to work so hard.
+It appears the Node.js build has tried to gain some of the feature's of \Rattle, namely, tracking dependencies each time a command runs, and making sure commands re-run when they have changed.  The scheme to accomplish this is quite complicated and relies on various hacks to work around the limitations of \Make.  \Rattle accomplishes both of these things the build authors appear to be trying to accomplish with \Make without forcing them to work so hard.
 
-To compare the \Make based build to a \Rattle version, we built Node.js over a series of commits checked-out from GitHub with both the original build system and the adapted \Rattle build.  The \Rattle build was created by recording every command executed by the original build, except for the commands creating dependency files.  A new such \Rattle build script was generated for any commit where the original build system changed or files were added to or removed from the project.
+To compare the \Make based build to a \Rattle version, we built Node.js over a series of commits checked-out from GitHub with both the original build system and the adapted \Rattle build.  The \Rattle build was created by recording every command executed by the original build, except for the commands exclusively dealing with dependency files.  A new such \Rattle build script was generated for any commit where the original build system changed or files were added to or removed from the project.
 
-Node was built over a series of 38 commits with both the original \Make build and the adapted \Rattle build, with 1 thread and 4 threads.  \Make and \Rattle took approximately the same amount of time when building Node from scratch with a single thread.  Since \Rattle always does the first build sequentially, with 4 threads \Make obviously built Node more quickly.  For a substantial number of the commits \Rattle was faster than the \Make based build.  As we can see from the chart, there is a baseline of time that the \Make build never dips below.  This is because as mentioned above, there are a series of targets in the \Make build that are set up in such a way that they always run.  \Rattle avoids rebuilding these targets on every build.  This is seems to be an error on the part of Node's build authors and just goes to show how difficult it is to get build systems and dependencies correct.
+Node.js was built over a series of 38 commits with both the original \Make build and the adapted \Rattle build, with 1 thread and 4 threads.  \Make and \Rattle took approximately the same amount of time when building Node from scratch with a single thread.  Since \Rattle always does the first build sequentially, with 4 threads \Make obviously built Node more quickly.  For a substantial number of the commits \Rattle was faster than the \Make based build.  As we can see from the chart, there is a baseline of time that the \Make build never dips below.  This is because as mentioned above, there are a series of targets in the \Make build that are set up in such a way that they always run.  \Rattle avoids rebuilding these targets on every build.  This design seems to be an error on the part of Node.js's build authors and just goes to show how difficult it is to get build systems and dependencies correct.
 
 % SS Note to Neil: I need to add note about hazards; can see in chart where 4core is slower than 1 core that hazard probably ahppened.
 
