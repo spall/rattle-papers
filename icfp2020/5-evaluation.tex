@@ -409,8 +409,9 @@ For building from scratch, \Make and \Rattle took approximately the same amount 
 Looking across the projects in this section, a few themes emerge.
 
 \begin{itemize}
-\item For most commits, \Rattle and \Make give similar performance. The one place that is not the case is the initial build at higher levels of parallelism, where \Rattle has no speculation information. If \Rattle used a shared speculation cache (as it is capable of doing), that difference would disappear.
-\item The difference betwen 1 thread and 4 threads can be quite significant, and typically \Make and \Rattle do equally well with parallelism, so the implicit parallelism in \Rattle is an important feature which works as designed.
-\item In a few cases \Rattle suffers a hazard, which has a visible impact on the build. However, the hazards are relatively rare, and the build impact is fairly minor.
-\item Every \Make project has a slightly different variation on how dependencies are managed. Most make use of \texttt{gcc -MMD} to generate dependency information direct from the compilers, then build on that in different ways. Many projects require user actions on certain changes, e.g. Redis requires a clean build if a dependency changes. Some projects merely use \Make as an execution engine, e.g. Node.js. It appears as though the engineering to get dependencies right significantly outweights the engineering to get the commands right.
+\item For most commits, \Rattle and \Make give similar performance. The one case that is not true is the initial build at higher levels of parallelism, where \Make outperforms \Rattle, because \Rattle has no speculation information. If \Rattle used a shared speculation cache for the initial build that difference would disappear.
+\item The difference betwen 1 thread and 4 threads can be quite significant, and typically \Make and \Rattle do equally well with parallelism. The implicit parallelism in \Rattle is an important feature which works as designed.
+\item In a few cases \Rattle suffers a hazard, which can be observed on the build time plot. However, the hazards are relatively rare, and the build time impact is fairly minor.
+\item Every \Make project has a slightly different variation on how dependencies are managed. Most make use of \texttt{gcc} to generate dependency information direct from the compilers, which then has to be provided to \Make. Some provide it directly (e.g. \Fsatrace), some also use stamp files (e.g. Redis) and some build their own mechanisms on top of \Make (e.g. Node.js, but also \citet[\S2]{hadrian}).
+\item Many projects give up on dependencies in less common cases, requiring user action, e.g. Redis requires a clean build if a dependency changes.
 \end{itemize}
