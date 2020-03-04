@@ -6,6 +6,7 @@ Every non-trivial piece of software includes a ``build system'', describing how 
 Build scripts \cite{build_systems_a_la_carte} describe \emph{commands to run} and \emph{dependencies to respect}. For example, using the \Make build system \cite{make}, a build script might look like:
 
 \vspace{3mm}
+\begin{small}
 \begin{verbatim}
 main.o: main.c
     gcc -c main.c
@@ -14,16 +15,19 @@ util.o: util.c
 main.exe: main.o util.o
     gcc -o main.exe main.o util.o
 \end{verbatim}
+\end{small}
 \vspace{3mm}
 
 This script contains three rules. Looking at the first rule, it says \texttt{main.o} depends on \texttt{main.c}, and is produced by running \texttt{gcc -c main.c}. What if we copy the commands into a shell script? We get:
 
 \vspace{3mm}
+\begin{small}
 \begin{verbatim}
 gcc -c main.c
 gcc -c util.c
 gcc -o main.exe main.o util.o
 \end{verbatim}
+\end{small}
 \vspace{3mm}
 
 That's shorter, simpler and easier to follow. Instead of declaring the outputs and dependencies of each command, we've merely given one valid ordering of the commands (we could equally have put \texttt{gcc -c util.c} first). This simpler specification has additional benefits. First, we've fixed an inadvertent bug -- these commands depend on the undeclared dependency \texttt{gcc}, and potentially whatever header files are used by \texttt{main.c} and \texttt{util.c}. Furthermore, as the files \texttt{main.c} and \texttt{util.c} evolve, and their dependencies change (by changing the \texttt{\#include} directives), the shell script remains correct, while the \Make script \emph{must} be kept consistent or builds will become incorrect.

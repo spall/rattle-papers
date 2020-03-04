@@ -286,11 +286,13 @@ A hazard is classified as \emph{non-recoverable} if it is triggered by a consist
 \paragraph{Recoverable}
 A hazard is classified as \emph{recoverable} if it is caused by a speculated command that read a file which was concurrently or later written to by another command.  In this situation the speculated command likely read stale data and if re-executed would read up-to-date data.  Here is an example where \emph{cp foo.o baz.o} potentially copied the wrong version of \emph{foo.o} because it executed before \emph{gcc -c foo.c} completed.  If \emph{cp foo.o baz.o} re-executes it will read the new \emph{foo.o} produced by \emph{gcc -c foo.c}.
 
+\begin{small}
 \begin{verbatim}
 cp foo.o baz.o [speculate]
 gcc -c foo.c
 cp foo.o baz.o [re-execute]
 \end{verbatim}
+\end{small}
 
 \paragraph{Proof that if the speculative read command of a \emph{recoverable} hazard is re-executed the same hazard will not re-occur.}
 

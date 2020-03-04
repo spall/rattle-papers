@@ -18,11 +18,13 @@ For benchmarks, the first three (\S\ref{sec:eval:introduction}, \S\ref{sec:eval:
 
 In \S\ref{sec:introduction} we claimed that the following build script is ``just as good'' as a proper \Make script.
 
+\begin{small}
 \begin{verbatim}
 gcc -c main.c
 gcc -c util.c
 gcc -o main.exe main.o util.o
 \end{verbatim}
+\end{small}
 
 There are two axes on which to measure ``just as good'' -- correctness and performance. Performance can be further broken down into how much rebuilding is avoided, how much parallelism is achieved and how much overhead \Rattle imposes.
 
@@ -248,13 +250,11 @@ Vim is a popular text editor, over 25 years old. The majority of the source code
 
 
 tmux is a terminal multiplexer in development for the last 12 years.  It is built from source using a combination of \textsc{Autoconf}, \textsc{Automake}, \textsc{pkg-config} and \Make.  The build commands are:
-
+\begin{small}
 \begin{verbatim}
-sh autogen.sh
-./configure
-make
+sh autogen.sh && ./configure && make
 \end{verbatim}
-
+\end{small}
 To compare a \Rattle based tmux build to the \Make based one, we first ran \texttt{sh autogen.sh \&\& ./configure}, and then used the resulting \Make scripts to generate \Rattle build scripts. tmux was built over a series of 38 commits with both \Make and \Rattle. For the 11th, 22nd and 23rd commits \Rattle and \Make took noticeably different amounts of time. In all cases the cause was the build script changing, causing \Rattle to be unable to speculate, and thus taking approximately as long as a full single-threaded build.  For all of those commits where the build script changed, it was possible for a \emph{hazard} to occur caused by a command from the previous build writing to the same file the new version of the command wrote to.  When building this project we observed this happen for the 11th and 22nd commits, but it did not appear to happen during the builds which were timed.  During runs where this did occur, \Rattle just restarted the build with no speculation.
 
 % 12th because previous command was skipped isnce it errors
@@ -375,7 +375,9 @@ To compare build systems, we built Node.js over a series of 38 commits with both
 
 For building from scratch, \Make and \Rattle took approximately the same amount of time with a single thread. However, with 4 threads \Make was able to build Node nearly four times faster, since \Rattle had no speculation information. For many commits \Rattle and \Make give similar results, but for those with the least amount of work, where only a few files change, \Rattle is able to beat \Make. The fastest observed \Make time is 35 seconds, while \Rattle goes as low as 12 seconds. The major cause is that \Make \emph{always} rebuilds the generated files but \Rattle (correctly) does not.
 
-From the chart, we can see that for three commits, 2, 12, and 29, the \Rattle build with 4 threads was slower than single threaded \Rattle.  \emph{read-write hazards} occurred when \Rattle was building these commits, forcing \Rattle to restart the build with no speculation.  For each of these commits the \Rattle build script changed, so hazards occurred when \Rattle speculated commands from the previous script then ran the changed commands from the new script.
+
+
+For three commits, 2, 12, and 29, the \Rattle build with 4 threads was slower than single threaded \Rattle.  This is because \emph{read-write hazards} occurred, forcing \Rattle to restart the build with no speculation.  The build script changed at each of these commits, and so \Rattle speculating commands from the previous script led to hazards with the changed commands in the new script.
 
 % 3: 7b7e7bd (new script) read-write hazard
 % 13: 64161f2 (new script)  read-write hazard
@@ -430,6 +432,7 @@ We implemented a \Rattle script to build \Fsatrace. Unlike \S\ref{sec:eval:fsatr
 
 Given the setup of the code, it was trivial to use explicit parallelism for compiling all C files, but doing so for the linking steps, and arranging for the links to be performed as soon as possible, would have been tedious. Taking some representative pieces from the build, we have:
 
+\begin{small}
 \begin{verbatim}
 let cppflags | isWindows = "-D_WIN32_WINNT=0x600 -isysteminclude/ddk"
              | otherwise = "-D_GNU_SOURCE -D_DEFAULT_SOURCE=1"
@@ -441,6 +444,7 @@ forP_ (srcs ++ if isWindows then dllsrcs else sosrcs) $ \x ->
 let objects = map (-<.> "o")
 cmd "gcc" ldflags ldobjs (objects srcs) ldlibs "-o" ("fsatrace" <.> exe)
 \end{verbatim}
+\end{small}
 
 The overall experience of porting the Makefile was pleasant. The explicit \texttt{isWindows} is much nicer than the Makefile approach. The  availability of lists and a rich set of operations on them made certain cases more natural. The use of functions, e.g. \texttt{objects}, allowed simplifying transformations and giving more semantically meaningful names. The powerful syntax of \texttt{cmd}, allowing multiple arguments, keeps the code relatively simple. The only downside to \Make was the use of quotes in more places.
 
@@ -450,6 +454,7 @@ As a second test, we wrote a program to fetch and build a Haskell library and it
 
 We were able to write a prototype of something Stack-like using \Rattle in 71 non-comment lines. Our prototype is capable of building some projects, showing the fundamental mechanisms work, but due to the number of corner cases in Haskell packages, is unlikely to be practical without further development. The main logic that drives the process is reproduced below.
 
+\begin{small}
 \begin{verbatim}
 stack :: String -> [PackageName] -> Run ()
 stack resolver packages = do
@@ -464,13 +469,14 @@ stack resolver packages = do
         return v
     forP_ packages needPkg
 \end{verbatim}
+\end{small}
 
 Reading this code, given a Stackage resolver (e.g. \texttt{nightly-2012-10-29}), we download the resolver to disk, read it, then recursively build projects in an order satisfying dependencies. The download uses \texttt{curl}, which has no meaningful reads, so will be cached. Importantly, the URL includes the full resolver which will never change once published. The parsing of the resolver is Haskell code, not visible to \Rattle, repeated on every run (the time taken is negligible). We then build a recursive memoisation pattern using \texttt{memoRec}, where each package is only built once, and while building a package you can recursively ask for other packages. We then finally demand the packages that were requested. The \texttt{memoRec} function has the signature:
-
+\begin{small}
 \begin{verbatim}
 memoRec :: (Eq a, Hashable a, MonadIO m) => ((a -> m b) -> a -> m b) -> m (a -> m b)
 \end{verbatim}
-
+\end{small}
 This function memoises an \texttt{a -> m b} operation, which may recursively call itself. Note that \texttt{memoRec} works over any type of \texttt{MonadIO}, and is not specific to \Rattle or the \texttt{Run} monad.
 
 Writing the program itself was complex, due to Haskell corner cases -- but the \Rattle aspect was pleasant. Having Haskell available to parse the configuration and having efficient \texttt{Map} data structures made it feasible. Having to not worry about dependencies, and focus on it working, vastly simplified development. There were lots of compilcations due to the nature of Haskell packages (e.g. some tools/packages are special, parsing metadata is harder than it should be), but only a few which interacted closely with \Rattle:

@@ -6,6 +6,7 @@ We have implemented the design from \S\ref{sec:design} in a build system called 
 \subsection{A \Rattle example}
 
 \begin{figure}
+\begin{small}
 \begin{verbatim}
 import Development.Rattle
 import System.FilePath
@@ -18,11 +19,13 @@ main = rattle $ do
         cmd "gcc -c" c
     cmd "gcc -o main.exe" (map toO cs)
 \end{verbatim}
+\end{small}
 \caption{A Haskell/\Rattle version of the script from \S\ref{sec:monadic}}
 \label{fig:rattle_example}
 \end{figure}
 
 \begin{figure}
+\begin{small}
 \begin{verbatim}
 -- The Run monad
 data Run a = ... deriving (Functor, Applicative, Monad, MonadIO)
@@ -39,6 +42,7 @@ cmdWriteFile :: FilePath -> String -> Run ()
 -- Parallelism
 forP :: [a] -> (a -> Run b) -> Run [b]
 \end{verbatim}
+\end{small}
 \caption{The \Rattle API}
 \label{fig:api}
 \end{figure}
@@ -60,12 +64,14 @@ Looking at the functions from Figure \ref{fig:api}, there are two functions this
 Given the above API, combined with the choice to treat the control logic as opaque, it is possible to write wrappers that expose \Rattle in new ways. For example, to run a series of commands from a file, we can write:
 
 \vspace{3mm}
+\begin{small}
 \begin{verbatim}
 main = rattle $ do
     [x] <- liftIO getArgs
     src <- readFile x
     forM_ (lines src) cmd
 \end{verbatim}
+\end{small}
 \vspace{3mm}
 
 Here we take a command line argument, read the file it points to, then run each command sequentially using \texttt{forM\_}. We use this script for our evaluation in \S\ref{sec:evaluation}.
@@ -95,10 +101,12 @@ Relative to the reference design in \S\ref{sec:design} we have made a few specif
 
 One of the problems of non-deterministic builds is that they reduce external cache hits, as described in \S\ref{sec:cloud_builds}. As a concrete example, assuming we have the build script:
 
+\begin{small}
 \begin{verbatim}
 gcc -c main.c
 gcc -o main.exe main.o
 \end{verbatim}
+\end{small}
 
 Here we first compile \texttt{main.c} to produce \texttt{main.o}, then link \texttt{main.o} to produce \texttt{main.exe}. If we assume \texttt{gcc -c} is non-deterministic (e.g. embeds the current build time), and locally compile \texttt{gcc -c main.c}, then we will never get cache hits for the linking step. To avoid this problem, assuming all \texttt{main.o} values produced by the same \texttt{main.c} can be replaced for each other, we can use the hash of \texttt{main.c} to identify the output \texttt{main.o}.
 

@@ -14,6 +14,7 @@ Given a build script as a list of commands, like in \S\ref{sec:introduction}, th
 While a static list of commands is sufficient for simple builds, it is limited in its expressive power. Taking the build system from \S\ref{sec:introduction}, it would be better to compile and link \emph{all} \texttt{.c} files -- not just those explicitly listed by the script. A more powerful script might be:
 
 \vspace{3mm}
+\begin{small}
 \begin{verbatim}
 FILES=$(ls *.c)
 for FILE in $FILES; do
@@ -21,6 +22,7 @@ for FILE in $FILES; do
 done
 gcc -o main.exe ${FILES%.c}.o
 \end{verbatim}
+\end{small}
 \vspace{3mm}
 
 This script now has a curious mixture of commands (\texttt{ls}, \texttt{gcc}), control logic (\texttt{for}) and simple manipulation (changing file extension\footnote{We take some liberties with shell scripts around replacing extensions, so as not to obscure the main focus.}). Importantly, there is \emph{no fixed list of commands} -- the future commands are determined based on the results of previous commands. Concretely, in this example, the result of \texttt{ls} changes which \texttt{gcc} commands are executed. The transition from a fixed list of commands to a dynamic list matches the \texttt{Applicative} vs \texttt{Monadic} distinction of \citet[\S3.5]{build_systems_a_la_carte}.
@@ -86,20 +88,24 @@ As stated in \citet[\S3.6]{build_systems_a_la_carte}, a build is correct provide
 Specified in terms more applicable to our design, it means that after a build completes, an immediate subsequent rebuild should have no effect because all commands are skipped (assuming the commands given to the build system are the same). However, there are sequences of commands, where each command meets our assumptions in isolation (as per \S\ref{sec:skipping_unnecessary}), but the combination is problematic, for example:
 
 \vspace{1mm}
+\begin{small}
 \begin{verbatim}
 echo 1 > foo.txt
 echo 2 > foo.txt
 \end{verbatim}
+\end{small}
 \vspace{1mm}
 
 % consistent -> correct because consistent had never been defined and I think correct is what we meant
 This program writes \texttt{1} to \texttt{foo.txt}, then writes \texttt{2}. If the commands are re-executed then the first command reruns because its output changed, and after the first command reruns, now the second commands output has changed. More generally, if a build writes different values to the same file multiple times, it is not correct. But even without writing to the same file twice, it is possible to have an incorrect build:
 
 \vspace{1mm}
+\begin{small}
 \begin{verbatim}
 sha1sum foo.txt > bar.txt
 sha1sum bar.txt > foo.txt
 \end{verbatim}
+\end{small}
 \vspace{1mm}
 
 Here \texttt{sha1sum} takes the SHA1 hash of a file, first taking the SHA1 of \texttt{foo.txt} and storing it in \texttt{bar.txt}, then taking the SHA1 of \texttt{bar.txt} and storing it in \texttt{foo.txt}. The problem is that the script first reads from \texttt{foo.txt} on the first line, then writes to \texttt{foo.txt} on the second line, meaning that when the script is rerun the read of \texttt{foo.txt} will have to be repeated as its value has changed.
