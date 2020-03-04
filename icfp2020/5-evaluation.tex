@@ -57,7 +57,7 @@ We performed the above steps with 1, 2 and 3 threads, on Linux. To make the para
 %   make   -j4: 2.20s 0.00s 2.19s 2.18s 2.19s
 %   rattle -j4: 3.28s 0.00s 1.14s 2.21s 2.20s
 
-\vspace{3mm}
+\vspace{2.8mm}
 \begin{tabular}{l|r|r||r|r||r|r}
 Number of threads & \multicolumn{2}{c||}1 & \multicolumn{2}{c||}2 & \multicolumn{2}{c}3 \\
 Tool & \Make & \Rattle & \Make & \Rattle & \Make & \Rattle \\
@@ -68,7 +68,7 @@ Tool & \Make & \Rattle & \Make & \Rattle & \Make & \Rattle \\
 4) \texttt{main.c} changed & 2.19s & 2.16s & 2.23s & 2.21s & 2.19s & 2.22s \\
 5) Both C files changed & 3.28s & 3.29s & 2.22s & 2.20s & 2.19s & 2.20s \\
 \end{tabular}
-\vspace{3mm}
+\vspace{2.8mm}
 
 As expected, we see that during the initial build \Rattle doesn't exhibit any parallelism, but \Make does (1). In contrast, \Rattle benefits when a file changes in whitespace only and the resulting object file doesn't change, while \Make can't (3). We see 3 threads has no benefit over 2 threads, as this build contains no more parallelism opportunities. Comparing the non-sleep portion of the build, \Make and \Rattle are quite evenly matched, typically within a few milliseconds, showing low overheads. We focus on the overheads in the next section.
 
@@ -116,7 +116,7 @@ To obtain a set of commands typical of building, we took the latest version of \
 %     rattle: 1.50s 1.29s 1.25s 1.25s 1.25s = 1.25s
 %     rattle share: 1.31s 1.31s 1.31s 1.26s 1.24s = 1.27s
 
-\vspace{3mm}
+\vspace{2.8mm}
 \begin{tabular}{l|rrr|rrr}
 Commands & \multicolumn{3}{c|}{Windows} & \multicolumn{3}{c}{Linux} \\
 \hline
@@ -128,7 +128,7 @@ Commands & \multicolumn{3}{c|}{Windows} & \multicolumn{3}{c}{Linux} \\
 6) \Rattle                   & 14.43s & 145\% & +14\% &    1.25s & 105\% & +2\% \\
 7) \Rattle + everything      & 14.53s & 146\% &  +1\% &    1.27s & 107\% & +2\% \\
 \end{tabular}
-\vspace{3mm}
+\vspace{2.8mm}
 
 In the above chart both Windows and Linux have three columns -- the time taken (average of the three fastest of five runs), that time as a percentage of the \Make run, and the delta from the row above. The results are significantly different between platforms:
 
@@ -173,7 +173,7 @@ As we can see, the first build is always > 1s for \Rattle, but \Make is able to 
 \subsection{Redis}
 \label{sec:eval:redis}
 
-\vspace{2mm}
+\vspace{3mm}
 \begin{tikzpicture}
 \begin{axis}[
   title={Compile time at each successive commit},
