@@ -1,7 +1,7 @@
 \section{Evaluation}
 \label{sec:evaluation}
 
-In this section we evaluate the design from \S\ref{sec:design}, specifically our implementation from \S\ref{sec:implementation}. We show how the implementation performs on the example from \S\ref{sec:introduction} in \S\ref{sec:eval:introduction}, on microbenchmarks in \S\ref{sec:eval:overhead}, and then on real projects that currently use \Make{} -- namely FSATrace (\S\ref{sec:eval:fsatrace}), Redis (\S\ref{sec:eval:redis}), Vim (\S\ref{sec:eval:vim}), tmux (\S\ref{sec:eval:tmux}), and Node.js (\S\ref{sec:eval:node}). For larger projects we look at both whether the dependencies are correct and the performance.
+In this section we evaluate the design from \S\ref{sec:design}, specifically our implementation from \S\ref{sec:implementation}. We show how the implementation performs on the example from \S\ref{sec:introduction} in \S\ref{sec:eval:introduction}, on microbenchmarks in \S\ref{sec:eval:overhead}, and then on real projects that currently use \Make{} -- namely FSATrace (\S\ref{sec:eval:fsatrace}), Redis (\S\ref{sec:eval:redis}), Vim (\S\ref{sec:eval:vim}), tmux (\S\ref{sec:eval:tmux}), and Node.js (\S\ref{sec:eval:node}). We implement two sample projects using \Rattle in \S\ref{sec:eval:writing_rattle}.
 
 %% Our evaluation shows that Rattle:
 %% \begin{enumerate}
@@ -11,7 +11,7 @@ In this section we evaluate the design from \S\ref{sec:design}, specifically our
 %% \item imposes low runtime overhead for its instrumentation.
 %% \end{enumerate}
 
-For benchmarks, the first three (\S\ref{sec:eval:introduction}, \S\ref{sec:eval:fsatrace} and \S\ref{sec:eval:redis}) were run on a 4 core Intel i7-4790 3.6GHz CPU, with 16Gb of RAM. The remaining benchmarks were run on a 32 core Intel Xeon E7-4830 2.13GHz, with 62Gb of RAM.
+For benchmarks, the first four (\S\ref{sec:eval:introduction}-\S\ref{sec:eval:redis}) were run on a 4 core Intel i7-4790 3.6GHz CPU, with 16Gb of RAM. The remaining benchmarks were run on a 32 core Intel Xeon E7-4830 2.13GHz, with 62Gb of RAM.
 
 \subsection{Validating Rattle's suitability}
 \label{sec:eval:introduction}
@@ -87,7 +87,7 @@ In order to determine what overhead \Rattle introduces, we ran a fixed set of co
 \item Using \Rattle with all features turned on, including shared storage.
 \end{enumerate}
 
-To obtain a set of commands typical of building, we took the latest version of \Fsatrace\footnote{\url{https://github.com/jacereda/fsatrace/commit/41fbba17da580f81ababb32ec7e6e5fd49f11473}} and ran \texttt{make -j1}, capturing the commands that were executed. On Windows \Fsatrace runs 25 commands (21 compiles, 4 links). On Linux \Fsatrace runs 9 commands (7 compiles, 2 links). On Linux the list of commands produces write-write hazards, because it compiles some files (e.g. \texttt{shm.c}) twice, once with \texttt{-fPIC} (position independent code), and once without. However, both times it passes \texttt{-MMD} to cause \texttt{gcc} to produce \texttt{shm.d} which is used for dependencies -- we removed the \texttt{-MMD} flag as it doesn't impact the benchmark. We ran all sets of commands five times, and took the average of the three fastest, on both Windows and Linux.
+To obtain a set of commands typical of building, we took the latest version of \Fsatrace\footnote{\url{https://github.com/jacereda/fsatrace/commit/41fbba17da580f81ababb32ec7e6e5fd49f11473}} and ran \texttt{make -j1}, capturing the commands that were executed. On Windows \Fsatrace runs 25 commands (21 compiles, 4 links). On Linux \Fsatrace runs 9 commands (7 compiles, 2 links). On Linux the list of commands produces write-write hazards, because it compiles some files (e.g. \texttt{shm.c}) twice, once with \texttt{-fPIC} (position independent code), and once without. However, both times it passes \texttt{-MMD} to cause \texttt{gcc} to produce \texttt{shm.d} which is used for dependencies -- we removed the \texttt{-MMD} flag as it doesn't impact the benchmark. We ran all sets of commands on both Windows and Linux.
 
 % RAW RESULTS (final number is avg of fastest 3, to ignore swapping etc)
 % $ rattle-benchmark micro
@@ -132,15 +132,15 @@ Commands & \multicolumn{3}{c|}{Windows} & \multicolumn{3}{c}{Linux} \\
 
 In the above chart both Windows and Linux have three columns -- the time taken (average of the three fastest of five runs), that time as a percentage of the \Make run, and the delta from the row above. The results are significantly different between platforms:
 
- On Windows, we see that the total overhead of \Rattle makes the execution 46\% slower. 21\% of the slowdown is from \Fsatrace (due to hooking Windows kernel API), with the next greatest overhead being from \Rattle itself. Of the \Rattle overhead, the greatest slowdown is caused by canonicalizing paths. Using the default NTFS file system, Windows considers paths to be case insensitive. As a result, we observe paths like \verb"C:\windows\system32\KERNELBASE.dll", which on disk are called \verb"C:\Windows\System32\KernelBase.dll", but can also be accessed by names such as \verb"C:\Windows\System32\KERNEL~1.DLL". Unfortunately, Windows also supports case sensitive file systems, so  using case-insensitive equality is insufficient.
+On Windows, we see that the total overhead of \Rattle makes the execution 46\% slower. 21\% of the slowdown is from \Fsatrace (due to hooking Windows kernel API), with the next greatest overhead being from \Rattle itself. Of the \Rattle overhead, the greatest slowdown is caused by canonicalizing paths. Using the default NTFS file system, Windows considers paths to be case insensitive. As a result, we observe paths like \verb"C:\windows\system32\KERNELBASE.dll", which on disk are called \verb"C:\Windows\System32\KernelBase.dll", but can also be accessed by names such as \verb"C:\Windows\System32\KERNEL~1.DLL". Unfortunately, Windows also supports case sensitive file systems, so  using case-insensitive equality is insufficient.
 %
 On Windows, enabling the default anti-virus (Windows Defender) has a significant impact on the result, increasing the \Make baseline by 11\% and the final time by 29\%. These results were collected with the anti-virus disabled.
 
- In contrast, on Linux, the total overhead is only 7\%, of which nearly all (5\%) comes from tracing.
+On Linux, the total overhead is only 7\%, of which nearly all (5\%) comes from tracing.
 
 %\postparagraphs
 
-These results show that tracing has a minor but not insignificant effect on Linux, whereas on Windows can be a substantial performance reduction. Additionally, the Windows results had far more variance, in particular large outliers. As a consequence, our remaining benchmarks were all performed on Linux.
+These results show that tracing has a minor but not insignificant effect on Linux, whereas on Windows can be a substantial performance reduction. Additionally, the Windows results had far more variance, in particular large outliers. As a consequence, our remaining benchmarks were all run on Linux.
 
 \subsection{\Fsatrace}
 \label{sec:eval:fsatrace}
@@ -166,7 +166,7 @@ To compare \Make and \Rattle building \Fsatrace we took the commands we extracte
 \end{axis}
 \end{tikzpicture}
 
-As we can see, the first build is always > 1s for \Rattle, but \Make is able to optimise it as low as 0.33s with 4 threads. Otherwise, \Rattle and \Make are competitive -- users would struggle to see the difference. The one commit that does show some variation is commit 2, where both are similar for 1 thread, but \Rattle at 4 threads is slower than 1 thread, while \Make is faster. The cause is speculation leading to a write-write hazard. Concretely, the command for linking \texttt{fsatrace.so} changed to include a new file \texttt{proc.o}. \Rattle starts speculating on the old link command, then gets the command for the new link. Both commands write to \texttt{fsatrace.so}, leading to a hazard, and causing \Rattle to restart without speculation.
+As we can see, the first build is always > 1s for \Rattle, but \Make is able to optimise it as low as 0.33s with 4 threads. Otherwise, \Rattle and \Make are competitive -- users would struggle to see the difference. The one commit that does show some variation is commit 2, where both are similar for 1 thread, but \Rattle at 4 threads is slightly slower than 1 thread, while \Make is faster. The cause is speculation leading to a write-write hazard. Concretely, the command for linking \texttt{fsatrace.so} changed to include a new file \texttt{proc.o}. \Rattle starts speculating on the old link command, then gets the command for the new link. Both commands write to \texttt{fsatrace.so}, leading to a hazard, and causing \Rattle to restart without speculation.
 
 % WriteWriteHazard /tmp/extra-dir-39079319872788/fsatrace.so Cmd [EchoStderr False] ["cc","-shared","src/unix/fsatraceso.os","src/emit.os","src/unix/shm.os","-o","fsatrace.so","-ldl","-lrt"] Cmd [EchoStderr False] ["cc","-shared","src/unix/fsatraceso.os","src/emit.os","src/unix/shm.os","src/unix/proc.os","-o","fsatrace.so","-ldl","-lrt"] Restartable
 
@@ -216,7 +216,7 @@ When benchmarking \Rattle vs \Make we found that \Rattle was approximately 10\% 
 \end{axis}
 \end{tikzpicture}
 
-Vim is a popular text editor, over 25 years old. The majority of the source code is Vim script and C, and it is built with \Make. To compare the original \Make based build to \Rattle, we built Vim over a series of commits, using both the original \Make and a \Rattle script created by recording the commands \Make executed on a clean build. The benchmarks show that \Make and \Rattle had similar performance for almost every commit, apart from two.
+Vim is a popular text editor, over 25 years old. The majority of the source code is Vim script and C, and it is built with \Make. To compare the original \Make based build to \Rattle, we built Vim over a 35 commits, using both the original \Make and a \Rattle script created by recording the commands \Make executed on a clean build. The benchmarks show that \Make and \Rattle had similar performance for almost every commit, apart from two.
 
 \begin{enumerate}
 \item For the 20th commit in the chart, \Make did much more work than \Rattle. This commit changed the script which generates \texttt{osdef.h}, in such a way that it did not change the contents of \texttt{osdef.h}. \Make rebuilt all of the object files which depend on this header file, while \Rattle skipped them as the file contents had not changed.
@@ -255,7 +255,7 @@ tmux is a terminal multiplexer in development for the last 12 years.  It is buil
 sh autogen.sh && ./configure && make
 \end{verbatim}
 \end{small}
-To compare a \Rattle based tmux build to the \Make based one, we first ran \texttt{sh autogen.sh \&\& ./configure}, and then used the resulting \Make scripts to generate \Rattle build scripts. tmux was built over a series of 38 commits with both \Make and \Rattle. For the 11th, 22nd and 23rd commits \Rattle and \Make took noticeably different amounts of time. In all cases the cause was the build script changing, causing \Rattle to be unable to speculate, and thus taking approximately as long as a full single-threaded build.  For all of those commits where the build script changed, it was possible for a \emph{hazard} to occur caused by a command from the previous build writing to the same file the new version of the command wrote to.  When building this project we observed this happen for the 11th and 22nd commits, but it did not appear to happen during the builds which were timed.  During runs where this did occur, \Rattle just restarted the build with no speculation.
+To compare a \Rattle based tmux build to the \Make based one, we first ran \texttt{sh autogen.sh \&\& ./configure}, and then used the resulting \Make scripts to generate \Rattle build scripts. tmux was built over a series of 38 commits with both \Make and \Rattle. For the 11th, 22nd and 23rd commits \Rattle and \Make took noticeably different amounts of time. In all cases the cause was the build script changing, causing \Rattle to be unable to speculate, and thus taking approximately as long as a full single-threaded build.  For those three commits where the build script changed, it was possible for a write-write hazard to occur, and we occasionally observed it for the 11th and 22nd commits (but not in the 5 runs that contributed to the benchmark above).
 
 % 12th because previous command was skipped isnce it errors
 % 13th is 685eb38 what changed? added flag so almost all commands changed
@@ -320,7 +320,7 @@ To build Node.js from source, a user first runs \texttt{./configure}, which conf
 \item Generated source files are produced and managed using \texttt{.intermediate} targets. By relying on a combination of \texttt{do\_cmd}, \texttt{FORCE\_DO\_CMD} and a special prerequisite \texttt{.INTERMEDIATE} that depends on all \texttt{.intermediate} targets, the intention appears to be to regenerate the generated code whenever something relevant has changed. However, in our experiments, those intermediate targets seem to run every time.
 \end{enumerate}
 
-It appears the build of Node.js has tried to take an approach closer to that of \Rattle, namely, tracking dependencies each time a command runs and making sure commands re-run when they have changed.  The implementation is quite complicated and relies on deep knowledge of precisely how \Make operates, but still seems not to match the intention.
+It appears the build of Node.js has tried to take an approach closer to that of \Rattle, namely, tracking dependencies each time a command runs and making sure commands re-run when they have changed.  The implementation is quite complicated and relies on deep knowledge of precisely how \Make operates, but still seems to not match the intention.
 
 
 \begin{comment}
@@ -377,7 +377,7 @@ For building from scratch, \Make and \Rattle took approximately the same amount 
 
 
 
-For three commits, 2, 12, and 29, the \Rattle build with 4 threads was slower than single threaded \Rattle.  This is because \emph{read-write hazards} occurred, forcing \Rattle to restart the build with no speculation.  The build script changed at each of these commits, and so \Rattle speculating commands from the previous script led to hazards with the changed commands in the new script.
+For three commits, 2, 12, and 29, the \Rattle build with 4 threads was slower than single threaded \Rattle.  The cause was read-write hazards occurring, forcing \Rattle to restart the build with no speculation.  The build script changed at each of these commits, and so \Rattle speculating commands from the previous script led to hazards with the changed commands in the new script.
 
 % 3: 7b7e7bd (new script) read-write hazard
 % 13: 64161f2 (new script)  read-write hazard
@@ -415,16 +415,17 @@ Looking across the projects in this section, a few themes emerge.
 \begin{itemize}
 \item For most commits, \Rattle and \Make give similar performance. The one case that is not true is the initial build at higher levels of parallelism, where \Make outperforms \Rattle, because \Rattle has no speculation information. If \Rattle used a shared speculation cache for the initial build that difference would disappear.
 \item The difference between 1 thread and 4 threads can be quite significant, and typically \Make and \Rattle do equally well with parallelism. The implicit parallelism in \Rattle is an important feature which works as designed.
-\item In a few cases \Rattle suffers a hazard, which can be observed on the build time plot. However, the hazards are relatively rare, and the build time impact is fairly minor.
-\item Every \Make project has a slightly different variation on how dependencies are managed. Most make use of \texttt{gcc} to generate dependency information direct from the compilers, which then has to be provided to \Make. Some provide it directly (e.g. \Fsatrace), some also use stamp files (e.g. Redis) and some build their own mechanisms on top of \Make (e.g. Node.js, but also \citet[\S2]{hadrian}).
+\item In a few cases \Rattle suffers a hazard, which can be observed on the build time plot. However, the hazards are relatively rare.
+\item Every \Make project has a slightly different variation on how dependencies are managed. Most make use of \texttt{gcc} to generate dependency information, which then has to be provided to \Make. Some provide it directly (e.g. \Fsatrace), some also use stamp files (e.g. Redis) and some build their own mechanisms on top of \Make (e.g. Node.js, but also \citet[\S2]{hadrian}).
 \item Many projects give up on dependencies in less common cases, requiring user action, e.g. Redis requires a clean build if a dependency changes.
 \item \Rattle correctly rebuilds if the build file itself updates, but most of the \Make projects do not. The one exception is Node.js, through its use of its dependency encoding in the Makefile.
 \end{itemize}
 
 
 \subsection{Writing \Rattle scripts}
+\label{sec:eval:writing_rattle}
 
-In order to see how difficult it is to write build scripts for \Rattle, we tried writing two projects -- namely \Fsatrace, and a program to fetch Haskell dependencies and install them.
+In order to see how difficult it is to write build scripts for \Rattle, we tried writing two examples -- namely \Fsatrace, and a program to fetch Haskell dependencies and install them.
 
 \subsubsection{Implementing \Fsatrace}
 
@@ -446,7 +447,7 @@ cmd "gcc" ldflags ldobjs (objects srcs) ldlibs "-o" ("fsatrace" <.> exe)
 \end{verbatim}
 \end{small}
 
-The overall experience of porting the Makefile was pleasant. The explicit \texttt{isWindows} is much nicer than the Makefile approach. The  availability of lists and a rich set of operations on them made certain cases more natural. The use of functions, e.g. \texttt{objects}, allowed simplifying transformations and giving more semantically meaningful names. The powerful syntax of \texttt{cmd}, allowing multiple arguments, keeps the code relatively simple. The only downside to \Make was the use of quotes in more places.
+The overall experience of porting the Makefile was pleasant. The explicit \texttt{isWindows} is much nicer than the Makefile approach. The  availability of lists and a rich set of operations on them made certain cases more natural. The use of functions, e.g. \texttt{objects}, allowed simplifying transformations and giving more semantically meaningful names. The powerful syntax of \texttt{cmd}, allowing multiple arguments, makes the code look relatively simple. The only downside compared to \Make was the use of quotes in more places.
 
 \subsubsection{Haskell Dependencies}
 
@@ -471,7 +472,7 @@ stack resolver packages = do
 \end{verbatim}
 \end{small}
 
-Reading this code, given a Stackage resolver (e.g. \texttt{nightly-2012-10-29}), we download the resolver to disk, read it, then recursively build projects in an order satisfying dependencies. The download uses \texttt{curl}, which has no meaningful reads, so will be cached. Importantly, the URL includes the full resolver which will never change once published. The parsing of the resolver is Haskell code, not visible to \Rattle, repeated on every run (the time taken is negligible). We then build a recursive memoisation pattern using \texttt{memoRec}, where each package is only built once, and while building a package you can recursively ask for other packages. We then finally demand the packages that were requested. The \texttt{memoRec} function has the signature:
+Reading this code, given a Stackage resolver (e.g. \texttt{nightly-2012-10-29}), we download the resolver to disk, read it, then recursively build projects in an order satisfying dependencies. The download uses \texttt{curl}, which has no meaningful reads, so will always be skipped. Importantly, the URL includes the full resolver which will never change once published. The parsing of the resolver is Haskell code, not visible to \Rattle, repeated on every run (the time taken is negligible). We then build a recursive memoisation pattern using \texttt{memoRec}, where each package is only built once, and while building a package you can recursively ask for other packages. We then finally demand the packages that were requested. The \texttt{memoRec} function has the signature:
 \begin{small}
 \begin{verbatim}
 memoRec :: (Eq a, Hashable a, MonadIO m) => ((a -> m b) -> a -> m b) -> m (a -> m b)
@@ -479,11 +480,11 @@ memoRec :: (Eq a, Hashable a, MonadIO m) => ((a -> m b) -> a -> m b) -> m (a -> 
 \end{small}
 This function memoises an \texttt{a -> m b} operation, which may recursively call itself. Note that \texttt{memoRec} works over any type of \texttt{MonadIO}, and is not specific to \Rattle or the \texttt{Run} monad.
 
-Writing the program itself was complex, due to Haskell corner cases -- but the \Rattle aspect was pleasant. Having Haskell available to parse the configuration and having efficient \texttt{Map} data structures made it feasible. Having to not worry about dependencies, and focus on it working, vastly simplified development. There were lots of complications due to the nature of Haskell packages (e.g. some tools/packages are special, parsing metadata is harder than it should be), but only a few which interacted closely with \Rattle:
+Writing the program itself was complex, due to Haskell packaging corner cases -- but the \Rattle aspect was pleasant. Having Haskell available to parse the configuration and having efficient \texttt{Map} data structures made it feasible. Not worrying about dependencies, focusing on it working, vastly simplified development. There were lots of complications due to the nature of Haskell packages (e.g. some tools/packages are special, parsing metadata is harder than it should be), but only a few which interacted closely with \Rattle:
 
 \begin{enumerate}
 \item There are some lock files, e.g. \texttt{package.cache.lock}, which are both read and written by many commands, but not in an interesting way. We explicitly ignored these files from being considered for hazards.
 \item Haskell packages are installed in a database, which by default is appended to with each package registration. That pattern relies on the order of packages and is problematic for concurrency. Many build systems, e.g. \Bazel, use multiple package databases, each containing one package. We follow the same trick.
-\item By default, Cabal produces packages where some fields (but not all) include an absolute path. To make the results generally applicable by a cloud build, we remove the absolute paths. To ensure the absolute paths never make it to the cloud, we run the command that generates and the command that cleans up as a single command from the point of view of \Rattle.
-\item Since cachable things have to be commands, that required putting logic into commands, not just shell calls. To make that pleasant, we wrote a small utility to take Template Haskell commands \cite{template_haskell} and turn them into Haskell scripts that could then be ran as command lines.
+\item By default, Cabal produces packages where some fields (but not all) include an absolute path. To make the results generally applicable for cloud builds, we remove the absolute paths. To ensure the absolute paths never make it to the cloud, we run the command that produces and the command that cleans up as a single command from the point of view of \Rattle.
+\item Since cachable things have to be commands, that required putting logic into commands, not just shell calls. To make that pleasant, we wrote a small utility to take Template Haskell commands \cite{template_haskell} and turn them into Haskell scripts that could then be run from the command line.
 \end{enumerate}
