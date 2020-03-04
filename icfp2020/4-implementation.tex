@@ -82,7 +82,7 @@ Relative to the reference design in \S\ref{sec:design} we have made a few specif
 \item We run a command speculatively if 1) it hasn't been run so far this build; 2) was required in the last run; and 3) doesn't cause a hazard relative to both the completed commands and predicted file accesses of the currently running commands. Importantly, if we are currently running a command we have never run before, we don't speculate anything -- the build system has changed in an unknown way so we take the cautious approach.
 \item We never attempt to recover after speculation (see \S\ref{sec:recovering}), simply aborting the build and restarting without any speculation.
 \item We have not yet implemented speculative-read-write hazards, and equally have not seen them occur. Under normal (non-adversarial) circumstances, given our cautious approach to speculation, we consider such hazards extremely unlikely.
-\item We treat command lines as black boxes, never examining them to predict their outputs. For many programs a simple analysis (e.g. looking for \texttt{-o} flags) might give additional predictive power.
+\item We treat command lines as black boxes, never examining them to predict their outputs. For many programs a simple analysis (e.g. looking for \texttt{-o} flags) might be predictive.
 \item We use a shared drive for sharing build artefacts, but allow the use of tools such as NFS or Samba to provide remote connectivity and thus full ``cloud builds''.
 \item \Rattle can go wrong if a speculated command writes to an input file, as per \S\ref{sec:proof:restart_no_speculation}. This problem hasn't occurred in practice, but dividing files into inputs and outputs would be perfectly reasonable -- typically the inputs are either checked into version control or outside the project directory, so that information is readily available.
 \item It is important that traces (as stored for \S\ref{sec:skipping_unnecessary}) are only recorded to disk when we can be sure they were not poisoned (see \S\ref{sec:proof:continue}) by any hazards. That determination requires waiting for all commands which ran at the same time as the command in question to have finished.
@@ -143,14 +143,15 @@ While the technique works on a Mac, from Mac OS X 1.10 onwards system binaries c
 
 \noindent In practice, none of the limitations have been overly problematic in the examples we have explored.
 
-\subsection{Possible Tracing Enhancements}
+%\subsection{Possible Tracing Enhancements}
 
-We designed \Rattle to work with the limitations of the best cross-platform tracing easily available -- but that involves trade-offs. Our wishlist for tracing would be:
+We designed \Rattle to work with the limitations of the best cross-platform tracing easily available -- but that involves trade-offs. An enhanced, portable system would be a significnat enabler for \Rattle.
+Our wishlist for tracing would include a cross-platform API, precise detection times, detection as access happens, and executing code at interception points.
 
-\begin{itemize}
-\item A standardised cross-platform API for tracing, implemented by the operating system itself, would vastly simplify the work required and guarantee robustness.
-\item If we could detect exactly when files were opened and closed we could report fewer hazards, as currently we assume all files are open during the entire command.
-\item If we could detect file accesses as they happened we could report hazards sooner, and avoid speculating on commands that are guaranteed to conflict with those currently running.
-\item If we could reject file writes, we could eliminate most hazards from speculation by rejecting the speculative write that leads to a read-write or write-write hazard.
-\item If we could redirect file writes, we could eliminate all hazards from speculation by sending such writes to a shared cache, not directly to the output files.
-\end{itemize}
+%% \begin{itemize}
+%% \item A standardised cross-platform API for tracing, implemented by the operating system itself, would vastly simplify the work required and guarantee robustness.
+%% \item If we could detect exactly when files were opened and closed we could report fewer hazards, as currently we assume all files are open during the entire command.
+%% \item If we could detect file accesses as they happened we could report hazards sooner, and avoid speculating on commands that are guaranteed to conflict with those currently running.
+%% \item If we could reject file writes, we could eliminate most hazards from speculation by rejecting the speculative write that leads to a read-write or write-write hazard.
+%% \item If we could redirect file writes, we could eliminate all hazards from speculation by sending such writes to a shared cache, not directly to the output files.
+%% \end{itemize}

@@ -1,11 +1,12 @@
 %\newcommand{\claim}{\noindent \textbf{Claim}: }
-\newtheorem{claim}{Claim}{thm}
 
 \renewcommand{\proof}{\vspace{1mm}\noindent \textbf{Proof}: }
 \newcommand{\refutation}{\vspace{1mm}\noindent \textbf{Refutation}: }
 
 \section{Correctness}
 \label{sec:proof}
+
+\newtheorem{claim}{Claim}
 
 The build system design relies on taking a sequence of commands from the user, and additionally running some commands speculatively. In this section we prove that the manipulations we perform are safe with respect to the reference semantics of sequential evaluation. Throughout these proofs we assume the commands themselves are pure functions from the inputs to their outputs (as reported by tracing).
 
