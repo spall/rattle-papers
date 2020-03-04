@@ -375,7 +375,7 @@ To compare build systems, we built Node.js over a series of 38 commits with both
 
 For building from scratch, \Make and \Rattle took approximately the same amount of time with a single thread. However, with 4 threads \Make was able to build Node nearly four times faster, since \Rattle had no speculation information. For many commits \Rattle and \Make give similar results, but for those with the least amount of work, where only a few files change, \Rattle is able to beat \Make. The fastest observed \Make time is 35 seconds, while \Rattle goes as low as 12 seconds. The major cause is that \Make \emph{always} rebuilds the generated files but \Rattle (correctly) does not.
 
-From the chart, we can see that on average \Rattle with 4 threads took longer than single threaded \Rattle, for commits 2, 12, and 29 in the chart.  \emph{read-write hazards} occurred when \Rattle was building these commits, forcing \Rattle to restart the build with no speculation.  For each of these commits the \Rattle build script changed, so hazards occurred when \Rattle speculated commands from the previous script then ran the changed commands from the new script.
+From the chart, we can see that for three commits, 2, 12, and 29, the \Rattle build with 4 threads was slower than single threaded \Rattle.  \emph{read-write hazards} occurred when \Rattle was building these commits, forcing \Rattle to restart the build with no speculation.  For each of these commits the \Rattle build script changed, so hazards occurred when \Rattle speculated commands from the previous script then ran the changed commands from the new script.
 
 % 3: 7b7e7bd (new script) read-write hazard
 % 13: 64161f2 (new script)  read-write hazard
