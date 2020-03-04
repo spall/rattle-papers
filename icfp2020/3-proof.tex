@@ -1,9 +1,12 @@
-\newcommand{\claim}{\noindent Claim: }
-\renewcommand{\proof}{\vspace{1mm}\noindent Proof: }
-\newcommand{\refutation}{\vspace{1mm}\noindent Refutation: }
+%\newcommand{\claim}{\noindent \textbf{Claim}: }
+
+\renewcommand{\proof}{\vspace{1mm}\noindent \textbf{Proof}: }
+\newcommand{\refutation}{\vspace{1mm}\noindent \textbf{Refutation}: }
 
 \section{Correctness}
 \label{sec:proof}
+
+\newtheorem{claim}{Claim}
 
 The build system design relies on taking a sequence of commands from the user, and additionally running some commands speculatively. In this section we prove that the manipulations we perform are safe with respect to the reference semantics of sequential evaluation. Throughout these proofs we assume the commands themselves are pure functions from the inputs to their outputs (as reported by tracing).
 
@@ -18,7 +21,11 @@ In section \S\ref{sec:proof:classify_hazard} we introduce the notion of hazards 
 \item[Speculative-write-read hazard] A build has a \emph{speculative-write-read hazard} if a file is written to by a speculated command, then read from by a command in the build script, before the build script has attempted to execute the speculated command.
 \end{description}
 
-\subsection{Argument for correctness}
+\subsection{Correctness properties}
+
+We now state and prove (semi-formally) several key correctness
+properties of our approach, particularly in the treatment of hazards.
+
 \label{sec:argument}
 
 We define the following terms:
@@ -38,7 +45,9 @@ We define the following terms:
 \]
 \end{description}
 
-\claim If a set of commands $C$ is run, and no hazards arise, then every command within $C$ has reached a fixed point.
+\begin{claim}[Completeness] If a set of commands $C$ is run, and no hazards arise, then every command within $C$ has reached a fixed point.
+  \label{claim:complete}
+\end{claim}
 
 \proof A command $c$ has reached a fixed point if none of the files in $c_r$ and $c_w$ have changed. Taking $c_r$ and $c_w$ separately:
 
@@ -49,25 +58,25 @@ We define the following terms:
 
 As a consequence, all commands within $C$ must have reached a fixed point.
 
-\subsection{Unchanging builds}
+
+\begin{claim}[{Unchanging builds}] A build with deterministic control logic that completes with no hazards has reached a fixed point.  % meaning if re-run, nothing would change
 \label{sec:proof:no_rebuild}
-
-\claim A build with deterministic control logic that completes with no hazards has reached a fixed point.  % meaning if re-run, nothing would change
-
+\end{claim}
 
 % ok so the difference between this proof and the previous one is that we need to prove that
 % for a set of commands that are not unrelated; meaning a previous command can influence a future command, the commands are unchanged
 % hopefully this does that
 
 \proof The build's deterministic control logic means that beginning with the first command in the build, which is unchanged, given the same set of input files, the command will write to the same set of output files and produce the same results.  It follows that the subsequent command in the build will be unchanged as well since the results of the previous command did not change.  It follows by induction that each of the following commands in the build will remain unchanged.
-Because the commands in the build will have not changed, it follows from the proof in \S\ref{sec:argument} that the commands will not change the values of any files, therefore, the build is at a fixed point.
+Because the commands in the build will have not changed, it follows from the proof of Claim \ref{claim:complete} that the commands will not change the values of any files, therefore, the build is at a fixed point.
 
-\subsection{Reordered builds}
+\begin{claim}[{Reordered builds}]
 \label{sec:proof:reorder}
 
-\claim Given a script with no hazards when executed sequentially, with the same initial file contents, any ordering of those commands that also has no hazards will result in the same terminal file contents.
+Given a script with no hazards when executed sequentially, with the same initial file contents, any ordering of those commands that also has no hazards will result in the same terminal file contents.
+\end{claim}
 
-\proof The proof from \S\ref{sec:argument} shows that any script with no hazards will result in a fixed point. We can prove the stronger claim, that for any filesystem state where all \emph{inputs} have identical contents, there is only one fixed point. For each command, it can only read from files that are in the inputs or files that are the outputs of other commands. Taking these two cases separately:
+\proof The proof of Claim \ref{claim:complete} shows that any script with no hazards will result in a fixed point. We can prove the stronger claim, that for any filesystem state where all \emph{inputs} have identical contents, there is only one fixed point. For each command, it can only read from files that are in the inputs or files that are the outputs of other commands. Taking these two cases separately:
 
 \begin{enumerate}
 \item For read files that are in the inputs, they aren't written to by the build system (or they wouldn't be in the inputs), and they must be the same in both cases (because the filesystem state must be the same for inputs). Therefore, changes to the inputs cannot have an effect on the command.
@@ -76,30 +85,33 @@ Because the commands in the build will have not changed, it follows from the pro
 
 Therefore, the first command that performs writes cannot access any writes from other commands, and so (assuming determinism) its writes must be a consequence of only inputs. Similarly, the second command can only have accessed inputs and writes produced by the first command, which themselves were consequences of inputs, so that commands writes are also consequences of the input. By induction, we can show that all writes are consequences of the inputs, so identical inputs results in identical writes.
 
-\subsection{Parallel commands}
+\begin{claim}[{Parallel commands}]
 \label{sec:proof:parallel}
 
-\claim Given a script with no hazards when executed sequentially, any parallel or interleaved execution without hazards will also be equivalent.
+Given a script with no hazards when executed sequentially, any parallel or interleaved execution without hazards will also be equivalent.
+\end{claim}
 
-\proof None of the claims in \S\ref{sec:proof:reorder} rely on commands being run not in parallel, so that proof still applies.
+\proof None of the proof of claim \ref{sec:proof:reorder} relies on commands being run not in parallel, so that proof still applies.
 
-\subsection{Additional commands have no effect}
+\begin{claim}[{Additional commands have no effect}]
 \label{sec:proof:additional}
 
-\claim Given a script with no hazards when executed, speculating unnecessary commands that do not lead to hazards will not have an effect on the build's inputs or outputs.
+ Given a script with no hazards when executed, speculating unnecessary commands that do not lead to hazards will not have an effect on the build's inputs or outputs.
+\end{claim}
 
-\proof Provided the inputs are unchanged, and there are no hazards, the proof from \S\ref{sec:proof:reorder} means the same outputs will be produced. If speculated commands wrote to the outputs, it would result in a write-write hazard. If speculated commands wrote to the inputs before they were used, it would result in a speculative-write-read hazard. If speculated commands wrote to the inputs after they were used, it would result in a read-write hazard. Therefore, assuming no hazards are raised, the speculated commands cannot have an effect on the inputs or outputs.
+\proof Provided the inputs are unchanged, and there are no hazards, the proof from Claim \ref{sec:proof:reorder} means the same outputs will be produced. If speculated commands wrote to the outputs, it would result in a write-write hazard. If speculated commands wrote to the inputs before they were used, it would result in a speculative-write-read hazard. If speculated commands wrote to the inputs after they were used, it would result in a read-write hazard. Therefore, assuming no hazards are raised, the speculated commands cannot have an effect on the inputs or outputs.
 
-\subsection{Preservation of hazards}
+\begin{claim}[{Preservation of hazards}]
 \label{sec:proof:keep_hazards}
 
-\claim If a sequence of commands leads to a hazard, any additional speculative commands or reordering will still cause a hazard.
+ If a sequence of commands leads to a hazard, any additional speculative commands or reordering will still cause a hazard.
+\end{claim}
 
 \proof All hazards are based on the observation of file accesses, not the absence of file accesses. Therefore, additional speculative commands do not reduce hazards, only increase them, as additional reads/writes can only cause additional hazards. For reordering, it cannot reduce write-write hazards, which are irrespective of order. For reordering of read-write hazards, it can only remove such a hazard by speculating the writing command before the reading command. However, such speculation is a speculative-read-write hazard, ensuring a hazard will always be raised.
 
 \begin{comment}
 
-\subsection{No rebuilds}
+\paragraph{No rebuilds}
 \label{sec:proof:no_rebuild}
 
 We prove that a build system with deterministic control logic and with no hazards always results in no rebuilds when no changes have occurred.
@@ -135,7 +147,7 @@ Let $B$ be a build with no hazards when executed sequentially.
 
 \end{description}
 
-\subsection{Reordered builds}
+\paragraph{Reordered builds}
 \label{sec:proof:reorder}
 
 Given a script with no hazards when executed sequentially, we can show that any interleaving of those commands that also has no hazards will result in an equivalent output.

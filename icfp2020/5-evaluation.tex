@@ -3,13 +3,13 @@
 
 In this section we evaluate the design from \S\ref{sec:design}, specifically our implementation from \S\ref{sec:implementation}. We show how the implementation performs on the example from \S\ref{sec:introduction} in \S\ref{sec:eval:introduction}, on microbenchmarks in \S\ref{sec:eval:overhead}, and then on real projects that currently use \Make{} -- namely FSATrace (\S\ref{sec:eval:fsatrace}), Redis (\S\ref{sec:eval:redis}), Vim (\S\ref{sec:eval:vim}), tmux (\S\ref{sec:eval:tmux}), and Node.js (\S\ref{sec:eval:node}). For larger projects we look at both whether the dependencies are correct and the performance.
 
-Our evaluation shows that Rattle:
-\begin{enumerate}
-\item can tackle complex builds for existing software correctly;
-\item avoids excessive rebuilding in practice;
-\item achieves similar parallelism to \Make-based build systems with explicit dependencies; and
-\item imposes low runtime overhead for its instrumentation.
-\end{enumerate}
+%% Our evaluation shows that Rattle:
+%% \begin{enumerate}
+%% \item can tackle complex builds for existing software correctly;
+%% \item avoids excessive rebuilding in practice;
+%% \item achieves similar parallelism to \Make-based build systems with explicit dependencies; and
+%% \item imposes low runtime overhead for its instrumentation.
+%% \end{enumerate}
 
 For benchmarks, the first three (\S\ref{sec:eval:introduction}, \S\ref{sec:eval:fsatrace} and \S\ref{sec:eval:redis}) were run on a 4 core Intel i7-4790 3.6GHz CPU, with 16Gb of RAM. The remaining benchmarks were run on a 32 core Intel Xeon E7-4830 2.13GHz, with 62Gb of RAM.
 
@@ -26,7 +26,7 @@ gcc -o main.exe main.o util.o
 
 There are two axes on which to measure ``just as good'' -- correctness and performance. Performance can be further broken down into how much rebuilding is avoided, how much parallelism is achieved and how much overhead \Rattle imposes.
 
-\paragraph{Correctness} \Rattle is correct, in that the reference semantics is running all the commands, and as we have shown in \S\ref{sec:design} and \S\ref{sec:proof}, and tested for with examples, \Rattle obeys those semantics. In contrast, the \Make version may have missing dependencies which causes it not to rebuild. Examples of failure to rebuild include if \texttt{gcc} changes or any headers used but not listed in the \Make script change.
+\paragraph{Correctness} \Rattle is correct, in that the reference semantics is running all the commands, and as we have shown in \S\ref{sec:design} and \S\ref{sec:proof}, and tested for with examples, \Rattle obeys those semantics. In contrast, the \Make version may have missing dependencies which causes it not to rebuild. Examples of failure to rebuild include if \texttt{gcc} changes or headers used but not listed in the \Make script change.
 
 \paragraph{Rebuilding too much} \Rattle only rebuilds a command if some of the files it reads or writes have changed. It is possible that a command only depends on part of a file, but at the level of abstraction \Rattle works, it never rebuilds too much. As a matter of implementation, \Rattle detects changes by hashing the file contents, while \Make uses the modification time. As a consequence, if a file is modified, but it's contents do not change (e.g. using \texttt{touch}), \Make will rebuild but \Rattle will not.
 
@@ -130,13 +130,13 @@ Commands & \multicolumn{3}{c|}{Windows} & \multicolumn{3}{c}{Linux} \\
 
 Both Windows and Linux have three columns -- the time taken (average of the three fastest of five runs), that time as a percentage of the \Make run, and the delta from the row above. The results are significantly different between platforms:
 
-\paragraph{Windows} On Windows, we see that the total overhead of \Rattle makes the execution 46\% slower. Of the parts, 21\% of the slowdown is from \Fsatrace (due to hooking Windows kernel API), with the next greatest overhead being from \Rattle itself. Of the \Rattle overhead, the greatest slowdown is caused by canonicalizing file names. Using the default NTFS file system, Windows considers paths to be case insensitive. As a result, we observe paths like \verb"C:\windows\system32\KERNELBASE.dll", which on disk are called \verb"C:\Windows\System32\KernelBase.dll", but can also be accessed by names such as \verb"C:\Windows\System32\KERNEL~1.DLL". Unfortunately, Windows also supports case sensitive file systems, so simply using case-insensitive equality is insufficient.
-
+ On Windows, we see that the total overhead of \Rattle makes the execution 46\% slower. Of the parts, 21\% of the slowdown is from \Fsatrace (due to hooking Windows kernel API), with the next greatest overhead being from \Rattle itself. Of the \Rattle overhead, the greatest slowdown is caused by canonicalizing paths. Using the default NTFS file system, Windows considers paths to be case insensitive. As a result, we observe paths like \verb"C:\windows\system32\KERNELBASE.dll", which on disk are called \verb"C:\Windows\System32\KernelBase.dll", but can also be accessed by names such as \verb"C:\Windows\System32\KERNEL~1.DLL". Unfortunately, Windows also supports case sensitive file systems, so  using case-insensitive equality is insufficient.
+%
 On Windows, enabling the default anti-virus (Windows Defender) has a significant impact on the result, increasing the \Make baseline by 11\% and the final time by 29\%. These results were collected with the anti-virus disabled.
 
-\paragraph{Linux} In contrast, on Linux, the total overhead is only 7\%, of which nearly all (5\%) comes from tracing.
+ In contrast, on Linux, the total overhead is only 7\%, of which nearly all (5\%) comes from tracing.
 
-\postparagraphs
+%\postparagraphs
 
 These results show that tracing has a minor but not insignificant effect on Linux, whereas on Windows can be a substantial performance reduction. Additionally, the Windows results had far more variance, in particular large outliers. As a consequence, our remaining benchmarks were all performed on Linux.
 
@@ -416,18 +416,18 @@ Looking across the projects in this section, a few themes emerge.
 
 \subsection{Writing \Rattle scripts}
 
-In order to check that writing build scripts with \Rattle is an easy thing to do, we tried writing two projects in \Rattle -- namely \Fsatrace and a program to fetch Haskell dependencies and install them (much like the Haskell tool Stack).
+In order to see how difficult it is to write build scripts for \Rattle, we tried writing two projects -- namely \Fsatrace, and a program to fetch Haskell dependencies and install them.
 
 \subsubsection{Implementing \Fsatrace}
 
-We implemented a build system that build \Fsatrace using \Rattle. Unlike the \S\ref{sec:eval:rattle} where we took the outputs from \Make, this time we took the source Makefiles and tried to port their logic to \Rattle. We did not port the testing or \texttt{clean} phony target, but we did port both Windows and Linux support. The script proceeds by defining 11 variables, following much the same pattern as the Makefile defines variables -- some of which are conditional on the OS. Next we compile all the C sources, and finally we do a few links. The total code is 19 non-comment lines, corresponding to 46 non-comment lines in the Makefiles.
+We implemented a \Rattle script to build \Fsatrace. Unlike \S\ref{sec:eval:fsatrace}, where we took the outputs from \Make, this time we took the source Makefiles and tried to port their logic to \Rattle. We did not port the testing or \texttt{clean} phony target, but we did port both Windows and Linux support. The script first defines 11 variables, following much the same pattern as the Makefile defines the same variables -- some of which are conditional on the OS. Next we compile all the C sources, and finally we do a few links. The total code is 19 non-comment lines, corresponding to 46 non-comment lines in the original Makefiles.
 
 Given the setup of the code, it was trivial to use explicit parallelism for compiling all C files, but doing so for the linking steps, and arranging for the links to be performed as soon as possible, would have been tedious. Taking some representative pieces from the build, we have:
 
 \begin{verbatim}
 let cppflags | isWindows = "-D_WIN32_WINNT=0x600 -isysteminclude/ddk"
              | otherwise = "-D_GNU_SOURCE -D_DEFAULT_SOURCE=1"
-let sosrcs = ["src/unix/fsatraceso.c","src/emit.c","src/unix/shm.c","src/unix/proc.c"]
+let sosrcs = ["src/unix/fsatraceso.c","src/unix/shm.c","src/unix/proc.c"]
 
 forP_ (srcs ++ if isWindows then dllsrcs else sosrcs) $ \x ->
     cmd "gcc -c" ["-fPIC" | not isWindows] cppflags cflags x "-o" (x -<.> "o")
@@ -436,11 +436,11 @@ let objects = map (-<.> "o")
 cmd "gcc" ldflags ldobjs (objects srcs) ldlibs "-o" ("fsatrace" <.> exe)
 \end{verbatim}
 
-The overall experience of porting the Makefile was pleasant. The explicit \texttt{isWindows} is much nicer than the Makefile approach. The explicit availability of arrays and a rich set of operations on them made certain cases more natural. The use of functions, e.g. \texttt{objects}, allowed simplifying transformations and giving more semantically meaningful names. The powerful syntax of \texttt{cmd}, allowing multiple arguments, keeps the code relatively simple. The only downside to \Make was the use of quotes in more places.
+The overall experience of porting the Makefile was pleasant. The explicit \texttt{isWindows} is much nicer than the Makefile approach. The  availability of lists and a rich set of operations on them made certain cases more natural. The use of functions, e.g. \texttt{objects}, allowed simplifying transformations and giving more semantically meaningful names. The powerful syntax of \texttt{cmd}, allowing multiple arguments, keeps the code relatively simple. The only downside to \Make was the use of quotes in more places.
 
 \subsubsection{Haskell Dependencies}
 
-As a second test, we wrote a program to fetch and build a Haskell library and its dependencies. For Haskell packages, Cabal is both a low-level library/interface for configuring, building and installing, and also a high-level tool for building sets of packages. Stackage is a set of packages which are known to work together. Stack is a tool that consumes the list of Stackage packages, and using low-level Cabal commands, tries to install them. We decided to try and replicate Stack, with the original motivation that by building on top of \Rattle we could get cloud builds of Haskell for free.
+As a second test, we wrote a program to fetch and build a Haskell library and its dependencies. For Haskell packages, Cabal is both a low-level library/interface for configuring, building and installing, and also a high-level tool for building sets of packages. Stackage is a set of packages which are known to work together. Stack is a tool that consumes the list of Stackage packages, and using low-level Cabal commands, tries to install them. We decided to try and replicate Stack, with the original motivation that by building on top of \Rattle we could get cloud builds of Haskell libraries for free.
 
 We were able to write a prototype of something Stack-like using \Rattle in 71 non-comment lines. Our prototype is capable of building some projects, showing the fundamental mechanisms work, but due to the number of corner cases in Haskell packages, is unlikely to be practical without further development. The main logic that drives the process is reproduced below.
 
@@ -448,46 +448,30 @@ We were able to write a prototype of something Stack-like using \Rattle in 71 no
 stack :: String -> [PackageName] -> Run ()
 stack resolver packages = do
     let config = resolver <.> "config"
-    cmd Shell "curl -sSL" ("https://www.stackage.org/" ++ resolver ++ "/cabal.config") "-o" config
+    let url = "https://www.stackage.org/" ++ resolver ++ "/cabal.config")
+    cmd Shell "curl -sSL" url "-o" config
     versions <- liftIO $ readResolver config
     flags <- liftIO extraConfigureFlags
-    let askVersion x = fromMaybe (error $ "Don't know version for " ++ show x) $ Map.lookup x versions
     needPkg <- memoRec $ \needPkg name -> do
-        let v = askVersion name
+        let v = version Map.! name
         whenJust v $ installPackage needPkg config flags name
         return v
     forP_ packages needPkg
 \end{verbatim}
 
-Reading this code, given a Stackage resolver (e.g. \texttt{nightly-2012-10-29}), we download the corresponding resolver to disk, read the resolver, then recursively build projects in an order satisfying dependencies. The download uses \texttt{curl}, which has no meaningful reads, so will be cached. Importantly, the URL includes the full resolver which is never changed once published. The parsing of the resolver is Haskell code, not visible to \Rattle, repeated on every run (the time taken is negligible). We then build a recursive memoisation pattern using \texttt{memoRec}, where each package is only built once, and while building a package you can recursively ask for other packages. We then finally demand the packages that were requested. The \texttt{memoRec} function has the signature:
+Reading this code, given a Stackage resolver (e.g. \texttt{nightly-2012-10-29}), we download the resolver to disk, read it, then recursively build projects in an order satisfying dependencies. The download uses \texttt{curl}, which has no meaningful reads, so will be cached. Importantly, the URL includes the full resolver which will never change once published. The parsing of the resolver is Haskell code, not visible to \Rattle, repeated on every run (the time taken is negligible). We then build a recursive memoisation pattern using \texttt{memoRec}, where each package is only built once, and while building a package you can recursively ask for other packages. We then finally demand the packages that were requested. The \texttt{memoRec} function has the signature:
 
 \begin{verbatim}
 memoRec :: (Eq a, Hashable a, MonadIO m) => ((a -> m b) -> a -> m b) -> m (a -> m b)
 \end{verbatim}
 
+This function memoises an \texttt{a -> m b} operation, which may recursively call itself. Note that \texttt{memoRec} works over any type of \texttt{MonadIO}, and is not specific to \Rattle or the \texttt{Run} monad.
 
-This use case was significantly more challenging, not least because there are lots of odd corner cases when building Haskell packages. Some packages require developer tools to be installed. Some packages are incorrectly omitted from the Stackage snapshot. Some directories are incorrectly checked by Cabal. The dependencies of a package are hard to determine due to flags. Our solution was sufficient to build some packages, showing the dependency/\Rattle side worked, but would require a lot more investment to turn into a real project.
+Writing the program itself was complex, due to Haskell corner cases -- but the \Rattle aspect was pleasant. Having Haskell available to parse the configuration and having efficient \texttt{Map} data structures made it feasible. Having to not worry about dependencies, and focus on it working, vastly simplified development. There were lots of compilcations due to the nature of Haskell packages (e.g. some tools/packages are special, parsing metadata is harder than it should be), but only a few which interacted closely with \Rattle:
 
-
-
-, much like Stack or Cabal do for existing Haskell projects. The resulting program was 71 lines long. It proceeds by fetching a Stackage snapshot, parsing the result, and recursively depending on packages. The main logic that drives the process is reproduced below.
-
-
-This use case was significantly more challenging, not least because there are lots of odd corner cases when building Haskell packages. Some packages require developer tools to be installed. Some packages are incorrectly omitted from the Stackage snapshot. Some directories are incorrectly checked by Cabal. The dependencies of a package are hard to determine due to flags. Our solution was sufficient to build some packages, showing the dependency/\Rattle side worked, but would require a lot more investment to turn into a real project.
-
-There were some things we learnt:
-
-\begin{itemize}
-\item Writing the program itself was fairly pleasant. Having Haskell available to parse the configuration and having efficient \texttt{Map} data structures made it feasible. Having to not worry about dependencies, and focus on it working, vastly simplified development.
-\item We encountered a lot of bugs
-\end{itemize}
-
-We reimplemented Stack, which didn't take much effort despite it being a fairly complex process. Freeing us from dealing with dependencies was liberating.
-
-\Rattle assumes that each command is atomic - it cannot be subdivided into smaller parts. If a command is secretly two independent commands then they should usually be expressed as such so they can be individually skipped.
-
-Compound commands: Sometimes a command will produce something that is user specific (not great for caching), but the next step will remove the user specificity (good for caching). To fix that we allow compound commands, by conjoining two commands with \texttt{\&\&}. Sometimes the sole purpose of the second command can be to strip machine-unique data from the first command.
-
-As another example, the GHC package database has additional entries added every time a package is installed, making the output a consequence of the original file\footnote{As a consequence many build systems, including \Bazel and \Rattle, use multiple package databases with only one entry per database}.
-
-Required some memoisation operations (\texttt{memo})
+\begin{enumerate}
+\item There are some lock files, e.g. \texttt{package.cache.lock}, which are both read and written by many commands, but not in an interesting way. We explicitly ignored these files from being considered for hazards.
+\item Haskell packages are installed in a database, which by default is appended to with each package registration. That pattern relies on the order of packages and is problematic for concurrency. Many build systems, e.g. \Bazel, use multiple package databases, each containing one package. We follow the same trick.
+\item By default, Cabal produces packages where some fields (but not all) include an absolute path. To make the results generally applicable by a cloud build, we remove the absolute paths. To ensure the absolute paths never make it to the cloud, we run the command that generates and the command that cleans up as a single command from the point of view of \Rattle.
+\item Since cachable things have to be commands, that required putting logic into commands, not just shell calls. To make that pleasant, we wrote a small utility to take Template Haskell commands \cite{template_haskell} and turn them into Haskell scripts that could then be ran as command lines.
+\end{enumerate}
