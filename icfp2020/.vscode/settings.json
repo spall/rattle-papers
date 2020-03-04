@@ -17,5 +17,13 @@
           "%DOC%.tex"
         ]
       }
+    ],
+    "spellright.language": [
+      "en"
+    ],
+    "spellright.documentTypes": [
+      "markdown",
+      "latex",
+      "plaintext"
     ]
 }
