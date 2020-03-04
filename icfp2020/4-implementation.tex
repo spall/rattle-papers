@@ -90,8 +90,8 @@ Relative to the reference design in \S\ref{sec:design} we have made a few specif
 \item We have not yet implemented speculative-read-write hazards, and equally have not seen them occur. Under normal (non-adversarial) circumstances, given our cautious approach to speculation, we consider such hazards extremely unlikely.
 \item We treat command lines as black boxes, never examining them to predict their outputs. For many programs a simple analysis (e.g. looking for \texttt{-o} flags) might be predictive.
 \item We use a shared drive for sharing build artefacts, but allow the use of tools such as NFS or Samba to provide remote connectivity and thus full ``cloud builds''.
-\item \Rattle can go wrong if a speculated command writes to an input file, as per \S\ref{sec:proof:restart_no_speculation}. This problem hasn't occurred in practice, but dividing files into inputs and outputs would be perfectly reasonable -- typically the inputs are either checked into version control or outside the project directory, so that information is readily available.
-\item It is important that traces (as stored for \S\ref{sec:skipping_unnecessary}) are only recorded to disk when we can be sure they were not poisoned (see \S\ref{sec:proof:continue}) by any hazards. That determination requires waiting for all commands which ran at the same time as the command in question to have finished.
+\item \Rattle can go wrong if a speculated command writes to an input file, as per \S\ref{sec:proof:restart_no_speculation}. This problem hasn't occurred in practice, but dividing files into inputs and outputs would be perfectly reasonable. Typically the inputs are either checked into version control or outside the project directory, so that information is readily available.
+\item It is important that traces (as stored for \S\ref{sec:skipping_unnecessary}) are only recorded to disk when we can be sure they were not effected by any hazards (see \S\ref{sec:proof:continue}). That determination requires waiting for all commands which ran at the same time as the command in question to have completed.
 \item We model queries for information about a file (e.g. existence or modification time) as a read for tracing purposes, thus depending on the contents of the file. For queries about the existence of a file, we rerun if the file contents changes, which may be significantly more frequent than when the file is created or deleted. For queries about modification time, we don't rerun if the modification time changes but the file contents don't, potentially not changing when we should. In practice, most modification time queries are to implement rebuilding logic, so can be safely ignored if the file contents haven't changed.
 \end{itemize}
 
@@ -99,7 +99,7 @@ Relative to the reference design in \S\ref{sec:design} we have made a few specif
 \subsection{Hash forwarding}
 \label{sec:forward_hashes}
 
-One of the problems of non-deterministic builds is that they reduce external cache hits, as described in \S\ref{sec:cloud_builds}. As a concrete example, assuming we have the build script:
+One of the problems of non-deterministic builds is that they reduce external cache hits, as described in \S\ref{sec:cloud_builds}. As a concrete example, consider the build script:
 
 \begin{small}
 \begin{verbatim}
@@ -119,7 +119,7 @@ gcc -o main.exe main.o
 
 We require that if the ``important'' part of \texttt{main.o} changes then the file \texttt{main.o.forward} must also change. It would be equally possible to trim non-significant whitespace or comments from \texttt{main.c} to produce a more stable hash.
 
-The disadvantage of hash forwarding (other than the complexity) is that if the output file eliminates some information compared to the inputs, e.g. is simply the number of lines in the input, then there might be instances where two output values would be equal despite their forwarding hashes being different, causing fewer cache hits. The use of hash forwarding is very similar to the idea of deep-constructive traces from \citet[\S4.2.4]{build_systems_a_la_carte}, including the inability to benefit from unchanging outputs.
+The disadvantage of hash forwarding (other than complexity) is that if the output file eliminates some information compared to the inputs, e.g. is simply the number of lines in the input, then there might be instances where two output values would be equal despite their forwarding hashes being different, causing fewer cache hits. The use of hash forwarding is very similar to the idea of deep-constructive traces from \citet[\S4.2.4]{build_systems_a_la_carte}, including the inability to benefit from unchanging outputs.
 
 
 \subsection{Tracing approaches}

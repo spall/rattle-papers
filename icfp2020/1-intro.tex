@@ -34,7 +34,7 @@ That's shorter, simpler and easier to follow. Instead of declaring the outputs a
 
 \subsection{Why dependencies?}
 
-Given the manifest simplicity of the shell script, why write a \texttt{Makefile}? Build systems such as \Make have two primary advantages, both provided by dependency specification: \textbf{incrementality} and \textbf{parallelism}. \Make is able to re-run only the commands needed when only some of the files change, saving significant work when only \texttt{util.c} changes. \Make can also run multiple commands in parallel when neither depends on the other, such as the two invocations of \texttt{gcc -c}. With a shell script, these are both challenging research problems in incremental computing and automatic parallelization, respectively, and unlikely to be solvable for arbitrary programs such as \texttt{gcc}.
+Given the manifest simplicity of the shell script, why write a \texttt{Makefile}? Build systems such as \Make have two primary advantages, both provided by dependency specification: \textbf{incrementality} and \textbf{parallelism}. \Make is able to re-run only the commands needed when a subset of the files change, saving significant work when only \texttt{util.c} changes. \Make can also run multiple commands in parallel when neither depends on the other, such as the two invocations of \texttt{gcc -c}. With a shell script, these are both challenging research problems in incremental computing and automatic parallelization, respectively, and unlikely to be solvable for arbitrary programs such as \texttt{gcc}.
 
 \subsection{Builds without dependencies}
 
