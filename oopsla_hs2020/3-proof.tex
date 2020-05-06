@@ -1,0 +1,308 @@
+%\newcommand{\claim}{\noindent \textbf{Claim}: }
+
+\renewcommand{\proof}{\vspace{1mm}\noindent \textbf{Proof}: }
+\newcommand{\refutation}{\vspace{1mm}\noindent \textbf{Refutation}: }
+
+\section{Correctness}
+\label{sec:proof}
+
+\newtheorem{claim}{Claim}
+
+The build system design relies on taking a sequence of commands from the user, and additionally running some commands speculatively. In this section we prove that the manipulations we perform are safe with respect to the reference semantics of sequential evaluation. Throughout these proofs we assume the commands themselves are pure functions from the inputs to their outputs (as reported by tracing).
+
+\subsection{Hazards, formally}
+\label{sec:hazards_formally}
+
+In section \S\ref{sec:proof:classify_hazard} we introduce the notion of hazards through intuition and how they are used. Here we give more precise definitions:
+
+\begin{description}
+\item[Read-write hazard] A build has a \emph{read-write hazard} if a file is written to after it has been read. Given the limitations of tracing (see \S\ref{sec:tracing}) we require the stronger property that for all files which are both read and written in a single build, the command which did the write must have finished before any commands reading it start executing.
+\item[Write-write hazard] A build has a \emph{write-write hazard} if a file is written to after it has already been written. Stated equivalently, a build has a write-write hazard if more than one command in a build writes to the same file.
+\item[Speculative-write-read hazard] A build has a \emph{speculative-write-read hazard} if a file is written to by a speculated command, then read from by a command in the build script, before the build script has required the speculated command.
+\end{description}
+
+\subsection{Correctness properties}
+\label{sec:argument}
+\label{sec:claims}
+
+We now state and prove (semi-formally) several key correctness
+properties of our approach, particularly in the treatment of hazards. We define the following terms:
+
+\begin{description}
+\item[Command] A command $c$ reads from a set of files ($c_r$), and writes to a set of files ($c_w$). We assume the set of files are disjoint ($c_r \cap c_r \equiv \emptyset$), as per \S\ref{sec:skipping_unnecessary}.
+\item[Deterministic command] A command is deterministic if for any set of files and values it reads, it always writes the same values to the same set of files. We assume commands are deterministic.
+\item[Fixed point] A deterministic command will have no effect if none of the files it reads or writes have changed since the last time it was run. Since the command is deterministic, and its reads/writes are disjoint, the same reads will take place, the same computation will follow, and then the original values will be rewritten as they were before. We describe such a command as having \emph{reached a fixed point}.
+\item[Correct builds] If a build containing a set of commands $C$ has reached a fixed point for every command $c$ within the set, then it is a correct build system as per the definition in \S\ref{sec:hazards}.
+\item[Input files] We define the input files as those the build reads from but does not write to, namely:
+\[
+  \bigcup_{c \in C} c_r \setminus \bigcup_{c \in C} c_w
+\]
+\item[Output files] We define the output files as those the build writes to, namely:
+\[
+  \bigcup_{c \in C} c_w
+\]
+\end{description}
+
+\begin{claim}[Completeness] If a set of commands $C$ is run, and no hazards arise, then every command within $C$ has reached a fixed point.
+  \label{claim:complete}
+\end{claim}
+
+\proof A command $c$ has reached a fixed point if none of the files in $c_r$ or $c_w$ have changed. Taking $c_r$ and $c_w$ separately:
+
+\begin{enumerate}
+\item None of the files in $c_w$ have changed. Within a set of commands $C$, if any file was written to by more than one command it would result in a write-write hazard. Therefore, if a command wrote to a file, it must have been the \emph{only} command to write to that file.
+\item None of the files $c_r$ have changed. For a read file to have changed would require it to be written to afterwards. If a file is read from then written to it is a read-write hazard, so the files $c_r$ can't have changed.
+\end{enumerate}
+
+As a consequence, all commands within $C$ must have reached a fixed point.
+
+
+\begin{claim}[{Unchanging builds}] A build with deterministic control logic that completes with no hazards has reached a fixed point.  % meaning if re-run, nothing would change
+\label{claim:no_rebuild}
+\end{claim}
+
+% ok so the difference between this proof and the previous one is that we need to prove that
+% for a set of commands that are not unrelated; meaning a previous command can influence a future command, the commands are unchanged
+% hopefully this does that
+
+\proof The build's deterministic control logic means that beginning with the first command in the build, which is unchanged, given the same set of input files, the command will write to the same set of output files and produce the same results.  It follows that the subsequent command in the build will be unchanged as well since the results of the previous command did not change.  It follows by induction that each of the following commands in the build will remain unchanged.
+Because the commands in the build will not have changed, it follows from the proof of Claim \ref{claim:complete} that the commands will not change the values of any files, therefore, the build is at a fixed point.
+
+\begin{claim}[{Reordered builds}]
+\label{claim:reorder}
+
+Given a script with no hazards when executed sequentially, with the same initial file contents, any ordering of those commands that also has no hazards will result in the same terminal file contents.
+\end{claim}
+
+\proof The proof of Claim \ref{claim:complete} shows that any script with no hazards will result in a fixed point. We can prove the stronger claim, that for any filesystem state where all \emph{inputs} have identical contents, there is only one fixed point. For each command, it can only read from files that are in the inputs or files that are the outputs of other commands. Taking these two cases separately:
+
+\begin{enumerate}
+\item For read files that are in the inputs, they aren't written to by the build system (or they wouldn't be in the inputs), and they must be the same in both cases (because the filesystem state must be the same for inputs). Therefore, changes to the inputs cannot have an effect on the command.
+\item For read files that are the outputs of other commands, they must have been written to \emph{before} this command, or a read-write hazard would be raised.
+\end{enumerate}
+
+Therefore, the first command that performs writes cannot access any writes from other commands, and so (assuming determinism) its writes must be a consequence of only inputs. Similarly, the second command can only have accessed inputs and writes produced by the first command, which themselves were consequences of inputs, so that commands writes are also consequences of the input. By induction, we can show that all writes are consequences of the inputs, so identical inputs results in identical writes.
+
+\begin{claim}[{Parallel commands}]
+\label{claim:parallel}
+
+Given a script with no hazards when executed sequentially, any parallel or interleaved execution without hazards will also be equivalent.
+\end{claim}
+
+\proof None of the proof of Claim \ref{claim:reorder} relies on commands not running in parallel, so that proof still applies.
+
+\begin{claim}[{Additional commands have no effect}]
+\label{claim:additional}
+
+ Given a script with no hazards when executed, speculating unnecessary commands that do not lead to hazards will not have an effect on the build's inputs or outputs.
+\end{claim}
+
+\proof Provided the inputs are unchanged, and there are no hazards, the proof from Claim \ref{claim:reorder} means the same outputs will be produced. If speculated commands wrote to the outputs, it would result in a write-write hazard. If speculated commands wrote to the inputs before they were used, it would result in a speculative-write-read hazard. If speculated commands wrote to the inputs after they were used, it would result in a read-write hazard. Therefore, assuming no hazards are raised, the speculated commands cannot have an effect on the inputs or outputs.
+
+\begin{claim}[{Preservation of hazards}]
+\label{claim:keep_hazards}
+
+ If a sequence of commands leads to a hazard, any additional speculative commands or reordering will still cause a hazard.
+\end{claim}
+
+\proof All hazards are based on the observation of file accesses, not the absence of file accesses. Therefore, additional speculative commands do not reduce hazards, only increase them, as additional reads/writes can only cause additional hazards. For reordering, it cannot reduce write-write hazards, which are irrespective of order. For reordering of read-write hazards, it can only remove such a hazard by speculating the writing command before the reading command. However, such speculation is a speculative-read-write hazard, ensuring a hazard will always be raised.
+
+\begin{comment}
+
+\paragraph{No rebuilds}
+
+We prove that a build system with deterministic control logic and with no hazards always results in no rebuilds when no changes have occurred.
+
+\begin{align}
+  build :: \bar{command} \\
+  command :: (cmd, reads :: \bar{file}, writes:: \bar{file}) \\
+  file :: (name, content) \\
+  eq(f1 :: file, f2 :: file) = name(f1) = name(f2) \&\& content(f1) = content(f2) \\
+  hazard :: (file, command, command) \\
+  files(command) = reads(command) \cup writes(command)
+\end{align}
+
+In a build system without hazards there is at most one write to any file, which occurs before any reads of that file. We can therefore prove there are no rebuilds by showing the first command can't rebuild, and proceeding by induction.
+
+Let $B$ be a build with no hazards when executed sequentially.
+
+\begin{description}
+\item[Base case: $|B| = 1$]
+
+  $\forall f \in reads(B[0]) \cup writes(B[0]), f \text{ has not changed}$, therefore, $B[0]$ does not run, and $\forall f \in writes(B[0])$ are not written to.
+
+  % show that inputs of c = B[0] have not changed
+  % therefore, c[0] will not run
+  % therefore, the outputs of B, which are third(c[0]) will not have changed
+
+\item[Induction step: $|B| = n+1$]
+  Let us assume the above claim is true for a build, $|B| = n$.  Also, Let $D$ be the set of files written to during the build.
+  It follows that, $\forall c \in B, \forall f \in writes(c), f \notin D$.
+  Let us assume we have a build $A=B$, and $A$ has an extra command $A[n]=c1$.
+
+  $\forall f \in files(c1), f \notin D, f \text{ has not changed}$, therefore, $A[n]$ does not run and $\forall f \in writes(A[n])$ are not written to.
+
+\end{description}
+
+\paragraph{Reordered builds}
+\label{sec:proof:reorder}
+
+Given a script with no hazards when executed sequentially, we can show that any interleaving of those commands that also has no hazards will result in an equivalent output.
+
+Let us assume we have a build $A$, with no hazards, meaning $\forall c = A[i] \in A, \forall f \in files(c), f \notin \bigcup^{|A|}_{j=i+1} writes(A[j])$.
+
+Let us assume there exists a build $B$, that also has no hazards, meaning $\forall c = B[i] \in B, \forall f \in files(c), f \notin \bigcup^{|B|}_{j=i+1} writes(B[j])$.
+Let us also assume that $|A|$ = $|B|$, and $\forall c \in A, \exists d \in B, s.t. cmd(c) = cmd(d)$.
+
+Prove that $\forall c \in B, \exists d \in A, s.t. cmd(c) = cmd(d) \land reads(c) = reads(d) \implies writes(c) = writes(d) \implies \bigcup^{|B|}_{i=0} writes(B[i]) = \bigcup^{|A|}_{i=0} writes(A[i])$.
+
+$\forall c = B[i] \in B, \forall f \in files(c), f \nexists d = B[j] \in B, s.t. i < j$
+
+$\forall c \in B, \exists e = A[k] \in A, s.t. cmd(c) = cmd(e) \land \forall f \in files(c), \exists g \in files(e) \land \forall f \in files(e), \exists g \in files(c)$
+
+$\implies \forall c \in B, \exists d \in A, s.t. cmd(c) = cmd(d) \land reads(c) = reads(d) \implies writes(c) = writes(d)$
+
+$\implies \bigcup^{|B|}_{i=0} writes(B[i]) = \bigcup^{|A|}_{i=0} writes(A[i])$.
+Therefore, for any script with no hazards when executed sequentially, any interleaving of those commands that also has no hazards will result in an equivalent output.
+
+\subsection{Parallel commands}
+\label{sec:proof:parallel}
+
+Given a script with no hazards when executed sequentially, we can show that any parallel or interleaved execution without hazards will also be equivalent.
+
+Proof by contradiction.
+
+Let us assume we have a build $A$, which has no hazards.  Let us also assume there is an alternative execution of $A$, which has no hazards, but is not equivalent.
+Recall that for the builds to be equivalent, they write to the same set of files and a file will have the same hash regardless of the build that wrote it.
+Therefore, the parallel execution must write to a different set of files than $A$ or at least one of those files has a different hash.
+
+\paragraph{Parallel build writes to a file $A$ does not write to, or $A$ writes to a file the parallel build does not write to.}
+  There must exist a cmd $c$ which when run in parallel with one or more other commands, writes to a different set of files than when run sequentially.  The set of files written to by $c$ is affected by the content of the cmd, and the files it reads.  Since, the content of the cmd is the same between the parallel and sequential builds, the input files must differ.
+  By the definition of the parallel build of $A$ having no hazards, any files read by $c$ must be written to by commands that precede $c$ in the build.  Therefore, the files written by $c$ in the parallel build will be the same as the files written by $c$ in the sequential build.  Therefore, a contradiction.
+
+
+\paragraph{Parallel build writes to a file $f$ whose hash is $h$ and $A$ writes to the same file but its hash is $k$; $h \neq k$}
+  There must exist a cmd $c$ which when run in parallel with one or more other commands, writes to the file $f$ and produces the hash $h$ and when run sequentially in build $A$ produces the hash $k$.
+  The files written to by $c$, and their hashes, is affected by the content of the command and the files read by the command.  Since $c$ is unchanged between $A$ the sequential run of $A$ and the parallel run of $A$, the files and their hashes read by $c$ must differ.  By the definition of parallel $A$ having no hazards, any files read by $c$ must be written to by commands that precede $c$ in the build.  And because parallel $A$ and sequential $A$ contain the same commands, $c$'s input must be the same regardless of whether $A$ was run in parallel or sequentially.  Therefore, a contradiction.
+
+  % clean up
+
+\subsection{Additional commands have no effect}
+\label{sec:proof:additional}
+
+Given a script with no hazards when executed sequentially, we can show that speculating unnecessary commands will not affect the build's output. % hmm
+
+Proof by induction.
+
+Let us assume we have a build $A$ which has no hazards when executed sequentially.
+
+Base case:  Build $A$ has 1 command $c$.  Let us assume we have a command $d$ that does not write to any file read or written by $c$.  By this definition of $d$, it is obvious that $d$ running before or
+concurrently with $c$ as part of build $A$, will not affect the files written by $c$ and therefore will not affect the output of $A$.
+
+Inductive case: Let us assume the above claim is true for a build with $n$ commands.  Let us show the claim is true for a build of $n+1$ commands.
+
+Let $A$ have $n+1$ command.  From the inductive hypothesis we know the output of the first $n$ commands is unchanged.  And, we know that $c$ does not write to any file read or written by command $n+1$.  And, because the build has no hazards, all files read by $n+1$ were written to before $n+1$ ran, so the output files of $n+1$ remain unchanged as well.  Therefore, the output of $A$ remained unaffected by $c$.
+\end{comment}
+
+\subsection{Hazard Recovery}
+\label{sec:proof:classify_hazard}
+
+If a build involving speculation reaches a hazard there are several remedies that can be taken, as per \S\ref{sec:recovering}. In this section we outline when each approach is safe to take.
+
+\subsubsection{Restart with no speculation}
+\label{sec:proof:restart_no_speculation}
+
+Restarting the entire build that happened with speculation, with no speculation, is safe and gives an equivalent result provided the inputs to the build have not changed, Claim \ref{claim:reorder}. Unfortunately, while writing to an input is guaranteed to give a hazard, restarting does \emph{not} change the input back. As a concrete example, consider the build script with the single command \texttt{gcc -c main.c}. If we speculate the command \texttt{echo 1 >> main.c} first, it will raise a speculative-write-read hazard, but restarting will not put \texttt{main.c} back to its original value, potentially breaking the build indefinitely. We discuss consequences and possible remediations from speculative commands writing to inputs in \S\ref{sec:choices}, but note such a situation can be made very rare. For all other recovery actions, we assume that restarting with no speculation is the baseline state, and consider them safe if it is equivalent to restarting with no speculation.
+
+\subsubsection{Restart with less speculation}
+
+Given the proofs in this section, running again with speculation is still safe. However, running with speculation might repeatedly cause the same speculation hazard, in which case the build would never terminate. Therefore, it is safe to restart with speculation provided there is strictly less speculation, so that (in the worst case) eventually there will be a run with no speculation.
+
+As a practical matter, if a command is part of the commands that cause a hazard, it is a good candidate for excluding from speculation.
+
+\subsubsection{Raise a hazard}
+
+Importantly, if there is no speculation (including reordering and parallelism), and a hazard occurs, the hazard can be raised immediately. This property is essential as a base-case for restarting with no speculation.
+
+If two required commands, that is commands in the users build script, cause a write-write hazard, and there have been no speculative-write-read hazards, then the same hazard will be reraised if the command restarts. For write-write, this inevitability is a consequence of Claim \ref{claim:reorder}, as the same writes will occur.
+
+If two required commands cause a read-write hazard, and the relative order they were run in matches their required ordering, then the same hazard will be reraised if the command restarts, because the relative ordering will remain the same. However, if the commands weren't in an order matching their required ordering, it is possible the write will come first avoiding the hazard, so it cannot be immediately raised.
+
+\subsubsection{Continue}
+\label{sec:proof:continue}
+
+If the hazard only affects speculated commands, and those commands have no subsequent effect on required commands, it is possible to continue the build. However, it is important that the commands have no subsequent effect, even on required commands that have not yet been executed, or even revealed to the build system. Consequently, even if a build can continue after an initial hazard, it may still fail due to a future hazard. A build can continue if the hazards only affect speculated commands, that is hazards where:
+
+\begin{enumerate}
+\item A \emph{write-write hazard} where both commands were speculated.
+\item A \emph{read-write hazard} where the read was speculated.
+\end{enumerate}
+
+For all other hazards it is not safe to continue. If a speculated command is affected by an initial hazard, and that command is later required by the build script, a new non-continuable hazard will be raised.
+
+
+% hazards which only affect speculated commdands
+
+% write-write where both commands are speculated
+% read-write where both are speculated
+% read-write where read is speculated
+
+% may still fail if:
+% one of the speculated commands is required in the build script.
+
+\begin{comment}
+The following are all potential ways a speculated command can cause a hazard and how a build can recover.
+
+\begin{description}
+\item [Two speculated commands write to the same file]
+  Two commands in a build script writing to the same file violates the consistency requirement from section \S\ref{sec:hazards} and causes a \emph{write-write hazard}.  If both commands were speculated and no commands in the build script read or write to that file, then inconsistency should not affect the output of the normal build.
+
+\item [A speculated command and a build script command write to the same file]
+  In this situation a \emph{write-write hazard} has occurred, but it might be entirely due to speculation, meaning if the build re-executes and does not speculate the offending command, then the hazard might not re-occur.
+
+\item [A speculated command writes to a file a build script command reads from]
+  In this situation a \emph{read-write hazard} has occurred, and like the previous case might be caused entirely by speculation.  Therefore, the build can re-execute without speculating the offending command.
+
+\item [Speculated command reads from a file that another command writes to]
+  In this situation a \emph{read-write hazard} has occurred, which is entirely caused by speculation.  Unlike the previous cases, where to recover the build must restart from the beginning, in this case the build can just re-execute the speculative command and the same hazard will not re-occur.  It is safe for the build to do this because the speculated command merely executed a file read too soon.  Now that the command which wrote to the file has executed the speculated command can execute again and read the correct file.  A proof of this claim is provided in section \S\ref{sec:proof:classify_hazard}.
+
+\end{description}
+
+  A more detailed explanation of hazards follows in section \S\ref{sec:proof:classify_hazard}.
+
+% NM TODO: Write a lot about selectively eliminate a subset of commands from speculation (if speculation was at fault).
+
+
+In section \S\ref{sec:speculation} we describe how speculation can be used to execute builds in parallel.  Speculation can lead to hazards that wouldn't have occurred if the build script was executed sequentially. Here we offer a more precise classification of hazards.
+
+As per section \S\ref{sec:hazards}, hazards are first classified as either \emph{read-write} or \emph{write-write}.  A Hazard can be further classified by if and how a build can recover from it.
+
+\paragraph{Non Recoverable}
+A hazard is classified as \emph{non-recoverable} if it is triggered by a consistency violation in the build script.  A \emph{non-recoverable hazard} always results in the build terminating immediately with an error.  For two examples of \emph{non-recoverable hazards} see section \ref{sec:hazards}.
+
+\paragraph{Recoverable}
+A hazard is classified as \emph{recoverable} if it is caused by a speculated command that read a file which was concurrently or later written to by another command.  In this situation the speculated command likely read stale data and if re-executed would read up-to-date data.  Here is an example where \emph{cp foo.o baz.o} potentially copied the wrong version of \emph{foo.o} because it executed before \emph{gcc -c foo.c} completed.  If \emph{cp foo.o baz.o} re-executes it will read the new \emph{foo.o} produced by \emph{gcc -c foo.c}.
+
+\begin{small}
+\begin{verbatim}
+cp foo.o baz.o [speculate]
+gcc -c foo.c
+cp foo.o baz.o [re-execute]
+\end{verbatim}
+\end{small}
+
+\paragraph{Proof that if the speculative read command of a \emph{recoverable} hazard is re-executed the same hazard will not re-occur.}
+
+Let us assume there is a command $c$ which reads a file with the name $f$.  Let us assume there
+is another command $d$ which writes to the file $f$.  It follows that if $d$ executes concurrently with or after $c$ that a \emph{read-write hazard}, $h$, involving the file $f$ would occur.
+
+If $c$ were to execute again after $d$ terminated, by definition, the hazard $h$ cannot re-occur because the read of $f$ will have happened after the write of $f$.
+
+\paragraph{Restartable} % when speculation causes a consistency violation. or a command to read incorrect data.
+If a speculatively executed command wrote to a file that was later written to or read by another command, then incorrectness was potentially introduced to the build.  In a sequential build, it is a
+consistency violation for any command to write to a file after a previous command has written to it, but it is ok for a command to read from a file that has previously been written to.  It isn't safe in this case, because if the speculated command wasn't supposed to run, it might have changed the contents of the file read by the later command.
+The hazard might not have occurred in the speculated command wasn't run.  Therefore, if the build script was re-executed without the speculated command, the hazard might not re-occur.
+
+
+%Proof that restartable hazard are handled
+\end{comment}

@@ -1,0 +1,155 @@
+\section{Build Scripts from Commands}
+\label{sec:design}
+
+Our goal is to design a build system where a build script is simply a list of commands. In this section we develop our design, starting with the simplest system that just executes all the commands in order, and ending up with the benefits of a conventional build system.
+
+\subsection{Executing commands}
+\label{sec:executing_commands}
+
+Given a build script as a list of commands, like in \S\ref{sec:introduction}, the simplest execution model is to run each command sequentially in the order they were given. Importantly, we require the list of commands is ordered, such that any dependencies are produced before they are used. We consider this sequential execution the reference semantics, and as we develop our design further, require that any optimised/cached implementation gives the same results.
+
+\subsection{Value-dependent commands}
+\label{sec:monadic}
+
+While a static list of commands is sufficient for simple builds, it is limited in its expressive power. Taking the build system from \S\ref{sec:introduction}, it would be better to compile and link \emph{all} \texttt{.c} files -- not just those explicitly listed by the script. A more powerful script might be:
+
+\vspace{3mm}
+\begin{small}
+\begin{verbatim}
+FILES=$(ls *.c)
+for FILE in $FILES; do
+    gcc -c $FILE
+done
+gcc -o main.exe ${FILES%.c}.o
+\end{verbatim}
+\end{small}
+\vspace{3mm}
+
+This script now has a curious mixture of commands (\texttt{ls}, \texttt{gcc}), control logic (\texttt{for}) and simple manipulation (changing file extension\footnote{We take some liberties with shell scripts around replacing extensions, so as not to obscure the main focus.}). Importantly, there is \emph{no fixed list of commands} -- the future commands are determined based on the results of previous commands. Concretely, in this example, the result of \texttt{ls} changes which \texttt{gcc} commands are executed. The transition from a fixed list of commands to a dynamic list matches the \texttt{Applicative} vs \texttt{Monadic} distinction of \citet[\S3.5]{build_systems_a_la_carte}.
+
+There are three approaches to modelling a dynamic list of commands:
+
+\begin{enumerate}
+\item We could consider the commands as a series that are given to the build system as they are available. The build system has no knowledge of which commands are coming next or how they were created. In this model, a build script supplies a stream of commands, with the invariant that dependencies are produced before they are used, but provides no further information. The main downside is that it becomes impossible to perform any analysis that might guide optimisation.
+\item We could expose the full logic of the script to the build system, giving a complete understanding of what commands are computed from previous output, and how that computation is structured. The main downside is that the logic between commands would need to be specified in some constrained domain-specific language (DSL) in order to take advantage of that information. Limiting build scripts to a specific DSL complicates writing such scripts.
+\item It would be possible to have a hybrid approach, where dependencies between commands are specified, but the computation is not. Such an approach still complicates specification (some kind of dependency specification is required), but would allow some analysis to be performed.
+\end{enumerate}
+
+% SS build -> shell; I think this was what was meant but change back if I misunderstood.
+In order to retain the desired simplicity of shell scripts, we have chosen the first option, modelling a build script as a series of commands given to the build system. Future commands may depend on the results of previous commands in ways that are not visible to the build system. The commands are produced with ``cheap'' functions such as control logic and simple manipulations. We consider the cheap commands to be fixed overhead, run on every build, and not cached or parallelised in any way. If any of these cheap manipulations becomes expensive, they can be replaced by a command, which will then be visible to the build system. The simple list of commands from \S\ref{sec:executing_commands} is a degenerate case of no interesting logic between commands.
+
+An important consequence of the control logic not being visible to the build system is that the build system has no prior knowledge of which commands are coming next, or if they have changed. As a result, even when the build is a simple static script such as from \S\ref{sec:introduction}, when it is manually edited, the build will execute correctly. The build system is unaware if you edited the script, or if the commands were conditional on something that it cannot observe. Therefore, this model solves the problem of self-tracking from \citet[\S6.5]{build_systems_a_la_carte}.
+
+\subsection{Dependency tracing}
+\label{sec:assume_tracing}
+
+For the rest of this section we assume the existence of \emph{dependency tracing} which can tell us which files a command accesses. Concretely, we can run a command in a special mode such that when the command completes (and not before) we can determine which files it read and wrote. We cannot determine at which point during the execution these files were accessed, nor which order they were accessed in. We cannot prevent or otherwise redirect an in-progress access. We discuss the implementation of dependency tracing, and the reasons behind the (frustrating!) limitations, in \S\ref{sec:tracing}.
+
+\subsection{Skipping unnecessary commands}
+\label{sec:skipping_unnecessary}
+
+When running a command, we can use tracing to capture the files that command reads and writes, and then after the command completes, record the cryptographic hashes of the contents of those files. If the same command is ever run again, and the inputs and outputs haven't changed (same hashes), it can be skipped. This approach is the key idea behind both \Memoize\cite{memoize} and \Fabricate\cite{fabricate}. However, this technique makes the assumption that commands are pure functions from their inputs to their outputs. Below are four ways that assumption can be violated, along with ways to work around it.
+
+\paragraph{Non-deterministic commands} Many commands are non-deterministic -- e.g. the output of \texttt{ghc} object files contains unpredictable values within it (a consequence of the technique described by \citet{lennart:unique_names}). We assume that where such non-determinism exists, any possible output is equally valid.
+
+\paragraph{Incorporating external information} Some commands incorporate system information such as a timestamp, so a cached value will be based on the first time the command was run, not the current time. For compilations that embed the timestamp in metadata, the first timestamp is probably fine. For commands that really want the current time, that step can be lifted into the control logic (as per \S\ref{sec:monadic}) so it will run each time the build runs. Similarly, commands that require unique information, e.g. a GUID or random number, can be moved into control logic and always run.
+
+\paragraph{Reading and writing the same file} If a command both reads and writes the same file, and the information written is fundamentally influenced by the file that was read, then the command never reaches a stable state. As an example, \verb"echo x >> foo.txt" will append the character \texttt{x} every time the command is run. Equally, there are also commands that read the existing file to avoid rewriting a file that hasn't changed (e.g. \texttt{ghc} generating a \texttt{.hi} file) and commands that can cheaply update an existing file in some circumstances (the Microsoft C++ linker in incremental mode). We make the assumption that if a command both reads and writes to a file, that the read does not meaningfully influence the write, otherwise it is not really suitable as part of a build system because the command never reaches a stable state.
+% SS is it really the reference semantics that are violated? Reference semantics are just whatever
+% sequential version does right?
+
+% SS I probably worte that assumptions are violated but now it doesnt make sense to me what assumptions were're talking about
+
+\paragraph{Simultaneous modification} If a command reads a file, but before the command completes something else modifies the file (e.g. a human or untracked control logic), then the final hash will not match what the command saw. It is possible to detect such problems with reads by ensuring that the modification time after computing the hash is before the command was started. For simultaneous writes the problem is much harder, so we require that all files produced by the build script are not simultaneously written to.
+
+\postparagraphs In general we assume all commands given to the build system are well behaved and meet the above assumptions.
+
+\subsection{Cloud builds}
+\label{sec:cloud_builds}
+
+We can skip execution of a command if all the files accessed have the same hashes as any previous execution (\S\ref{sec:skipping_unnecessary}). However, if \emph{only the files read} match a previous execution, and the files that were written have been stored away, those stored files can be copied over as outputs \emph{without} rerunning the command. If that storage is on a server, multiple users can share the results of one compilation, resulting in cloud build functionality. While this approach works well in theory, there are some problems in practice.
+
+\paragraph{Machine-specific outputs} Sometimes a generated output will only be applicable to the machine on which it was generated -- for example if a compiler auto-detects the precise chipset (e.g. presence of AVX2 instructions) or hardcodes machine specific details (e.g. the username). Such information can often be lifted into the command line, e.g. by moving chipset detection into the control logic and passing it explicitly to the compiler. Alternatively, such commands can be explicitly tagged as not being suitable for cloud builds.
+
+\paragraph{Relative build directories} Often the current directory, or users profile directory, will be accessed by commands. These directories change if a user has two working directories, or if they use different machines. We can solve this problem by having a substitution table, replacing values such as the users home directory with \texttt{\$HOME}. If not rectified, this issue reduces the reusability of cloud results, but is otherwise not harmful.
+
+\paragraph{Non-deterministic builds} If a command has non-deterministic output, then every time it runs it may generate a different result. Anything that transitively depends on that output is likely to also vary on each run. If the user temporarily disconnects from the shared storage, and runs a non-deterministic command, even if they subsequently reconnect, it is likely anything transitively depending on that command will never match again until after a clean rebuild. There are designs to solve this problem (see \S\ref{sec:forward_hashes}), but the issue only reduces the effectiveness of the cloud cache, and usually occurs with intermittent network access, so can often be ignored.
+
+\subsection{Build consistency}
+\label{sec:hazards}
+
+As stated in \citet[\S3.6]{build_systems_a_la_carte}, a build is correct provided that:
+
+\begin{quote}
+\emph{If we recompute the value of the key (...), we should get exactly the same value as we see in the final store.}
+\end{quote}
+
+% SS just trying to make it clear nothign has changed between builds; although maybe that goes without saying?
+Specified in terms more applicable to our design, it means that after a build completes, an immediate subsequent rebuild should have no effect because all commands are skipped (assuming the commands given to the build system are the same). However, there are sequences of commands, where each command meets our assumptions in isolation (as per \S\ref{sec:skipping_unnecessary}), but the combination is problematic, for example:
+
+\vspace{1mm}
+\begin{small}
+\begin{verbatim}
+echo 1 > foo.txt
+echo 2 > foo.txt
+\end{verbatim}
+\end{small}
+\vspace{1mm}
+
+% consistent -> correct because consistent had never been defined and I think correct is what we meant
+This program writes \texttt{1} to \texttt{foo.txt}, then writes \texttt{2}. If the commands are re-executed then the first command reruns because its output changed, and after the first command reruns, now the second commands output has changed. More generally, if a build writes different values to the same file multiple times, it is not correct. But even without writing to the same file twice, it is possible to have an incorrect build:
+
+\vspace{1mm}
+\begin{small}
+\begin{verbatim}
+sha1sum foo.txt > bar.txt
+sha1sum bar.txt > foo.txt
+\end{verbatim}
+\end{small}
+\vspace{1mm}
+
+Here \texttt{sha1sum} takes the SHA1 hash of a file, first taking the SHA1 of \texttt{foo.txt} and storing it in \texttt{bar.txt}, then taking the SHA1 of \texttt{bar.txt} and storing it in \texttt{foo.txt}. The problem is that the script first reads from \texttt{foo.txt} on the first line, then writes to \texttt{foo.txt} on the second line, meaning that when the script is rerun the read of \texttt{foo.txt} will have to be repeated as its value has changed.
+
+Writing to a file after it has already been either read or written is the only circumstance in which a build, where every individual command is well-formed (as per \S\ref{sec:skipping_unnecessary}), is incorrect. We define such a build as \emph{hazardous} using the following rules:
+
+\begin{description}
+\item[Read then write] If one command reads from a file, and a later command writes to that file, on a future build, the first command will have to be rerun because its input has changed. This behaviour is defined as a \emph{read-write hazard}.
+\item[Write then write] If two commands both write to the same file, on a future build, the first will be rerun (it's output has changed), which is likely to then cause the second to be rerun. This behaviour is defined as a \emph{write-write hazard}.
+\end{description}
+
+Using tracing we can detect hazards and raise errors if they occur, detecting that a build system is incorrect before unnecessary rebuilds occur. We prove that a build system with deterministic control logic and with no hazards always results in no rebuilds in \S\ref{sec:claims} Claim \ref{claim:no_rebuild}. It is not the case that the presence of hazards guarantees subsequent executions will definitely rebuild, for example if the write doesn't actually change the value, but such a build system is malformed by our definition -- if the write definitely can't change the output, the write should not be present.
+
+\subsection{Explicit Parallelism}
+\label{sec:explicit_parallelism}
+
+A build script can use explicit parallelism by giving further commands to the build system before previous commands have completed. For example, the script in \S\ref{sec:monadic} has a \texttt{for} loop where the inner commands are independent and could all be given to the build system simultaneously. Such a build system with explicit parallelism must still obey the invariant that the inputs of a command must have been generated before the command is given, requiring some kind of two-way feedback that an enqueued command has completed. The use of explicit parallelism is convenient when replacing a loop, but harder when expressing that three executables can be built in parallel, but that a single shared object common to all of them must complete before starting, so it is difficult to provide \emph{complete} parallelism annotations.
+
+Interestingly, given complete \emph{dependency} information (e.g. as available to \Make) it is possible to infer complete \emph{parallelism} information. However, the difficulty of specifying complete dependency information is the attraction of a tracing based approach to build systems.
+
+\subsection{Implicit Parallelism (Speculation)}
+\label{sec:speculation}
+
+While explicit parallelism is useful, it imposes a burden on the build script author. Alternatively we can use implicit parallelism, where some commands are executed speculatively, before they are required, in the hope that they will be required in the future and thus skipped. Importantly, such speculation can be shown to be safe by tracking hazards, provided we introduce a new hazard \emph{speculative-write-read}, corresponding to a speculative command writing to a file that is later read by a non-speculative command (defined precisely in \S\ref{sec:hazards_formally}).
+
+Given a script with no hazards when executed sequentially, we show in \S\ref{sec:claims}: 1) that any ordering of those commands that also has no hazards will result in an equivalent output, see Claim \ref{claim:reorder}; 2) that any parallel or interleaved execution without hazards will also be equivalent, see Claim \ref{claim:parallel}; and 3) if any additional commands are run that don't cause hazards, they can be shown to not change the results the normal build produces, see Claim \ref{claim:additional}. Finally, we prove that if a series of commands contains hazards, so will any execution that includes those required commands, see Claim \ref{claim:keep_hazards}.
+
+As a consequence, if we can predict what commands the build script will execute next, and predict that their execution will not cause hazards, it may be worth speculatively executing them. Effective speculation requires us to predict two pieces of data.
+
+\paragraph{Future commands} The benefit of speculatively executing commands is that they will subsequently be skipped, which only happens if the speculative command indeed occurs in the build script. The simplest way to predict future commands is to assume that they will be the same as they were last time. It is possible to predict in a more nuanced manner given more history of which commands run. Given more information about the build, e.g. all the control logic as per \S\ref{sec:monadic} choice 2, it would be possible to use static analysis to refine the prediction.
+
+\paragraph{Absence of hazards} If a hazard occurs the build is no longer correct, and remediation must be taken (e.g. rerunning the build without speculation, see \S\ref{sec:recovering}). Therefore, performance can be significantly diminished if a speculative command leads to a hazard. Given knowledge of the currently running commands, and the files all commands accessed in the last run, it is possible to predict whether a hazard will occur if the access patterns do not change. If tracing made it possible to abort runs that performed hazardous accesses then speculation could be unwound without restarting, but such implementations are difficult (see \S\ref{sec:tracing}).
+
+\subsection{Recovering from Speculative Hazards}
+\label{sec:recovering}
+
+If a build using speculative execution causes a hazard, it is possible that the hazard is entirely an artefact of speculation. There are a few actions the build system could take to recover.
+
+\begin{description}
+\item[Restart without speculation] If a hazard occurs, and speculation was involved, we can can abort the build and retry without speculation.
+\item[Restart with less speculation] If the hazard can be attributed to a specific speculated command, then the build can be rerun with speculation, omitting the problematic command. The disadvantage of blacklisting a specific speculated command is that it might mean the build reruns many times with an increasingly large blacklist.
+\item[Raise a hazard] If the hazard occurs due to two non-speculated commands run in the order they were requested, then the build is incorrect, and rerunning will cause the same hazard. That hazard can be raised immediately.
+\item[Continue] If the hazard involves a speculated command, but that commands actions have no impact on the real build, then the build can continue as normal.
+\item[Rewind] Given a visible build script, e.g. \S\ref{sec:monadic} choice 2, it might be possible to rewind the build to a specific point and continue from there -- although that can get especially complicated in the presence of mutable state or explicit parallelism (see \S\ref{sec:explicit_parallelism}).
+\end{description}
+
+Given our model of treating the user script as a black box, rewinding is not an option. The remaining approaches are all \emph{possible}, and we discuss the precise circumstances in which each is \emph{safe} in \S\ref{sec:proof:classify_hazard}.

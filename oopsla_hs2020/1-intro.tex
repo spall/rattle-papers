@@ -1,0 +1,43 @@
+\section{Introduction}
+\label{sec:introduction}
+
+
+Every non-trivial piece of software includes a ``build system'', describing how to set up the system from source code.
+Build scripts \cite{build_systems_a_la_carte} describe \emph{commands to run} and \emph{dependencies to respect}. For example, using the \Make build system \cite{make}, a build script might look like:
+
+\vspace{3mm}
+\begin{small}
+\begin{verbatim}
+main.o: main.c
+    gcc -c main.c
+util.o: util.c
+    gcc -c util.c
+main.exe: main.o util.o
+    gcc -o main.exe main.o util.o
+\end{verbatim}
+\end{small}
+\vspace{3mm}
+
+This script contains three rules. Looking at the first rule, it says \texttt{main.o} depends on \texttt{main.c}, and is produced by running \texttt{gcc -c main.c}. What if we copy the commands into a shell script? We get:
+
+\vspace{3mm}
+\begin{small}
+\begin{verbatim}
+gcc -c main.c
+gcc -c util.c
+gcc -o main.exe main.o util.o
+\end{verbatim}
+\end{small}
+\vspace{3mm}
+
+That's shorter, simpler and easier to follow. Instead of declaring the outputs and dependencies of each command, we've merely given one valid ordering of the commands (we could equally have put \texttt{gcc -c util.c} first). This simpler specification has additional benefits. First, we've fixed an inadvertent bug -- these commands depend on the undeclared dependency \texttt{gcc}, and potentially whatever header files are used by \texttt{main.c} and \texttt{util.c}. Furthermore, as the files \texttt{main.c} and \texttt{util.c} evolve, and their dependencies change (by changing the \texttt{\#include} directives), the shell script remains correct, while the \Make script \emph{must} be kept consistent or builds will become incorrect.
+
+\subsection{Why dependencies?}
+
+Given the manifest simplicity of the shell script, why write a \texttt{Makefile}? Build systems such as \Make have two primary advantages, both provided by dependency specification: \textbf{incrementality} and \textbf{parallelism}. \Make is able to re-run only the commands needed when a subset of the files change, saving significant work when only \texttt{util.c} changes. \Make can also run multiple commands in parallel when neither depends on the other, such as the two invocations of \texttt{gcc -c}. With a shell script, these are both challenging research problems in incremental computing and automatic parallelization, respectively, and unlikely to be solvable for arbitrary programs such as \texttt{gcc}.
+
+\subsection{Builds without dependencies}
+
+In this paper we show how to take the above shell script and gain the benefits of a \Make build (\S\ref{sec:design}). Firstly, we can skip those commands whose dependencies haven't changed by \emph{tracing} which files they read and write (\S\ref{sec:skipping_unnecessary}) and keeping a history of such traces. Secondly, we can run some commands in parallel, using \emph{speculation} to guess which future commands won't interfere with things already running (\S\ref{sec:speculation}). The key to speculation is a robust model of what ``interfering'' means -- we call a problematic interference a \emph{hazard}, which we define  in \S\ref{sec:hazards}; we formalize hazards and show important properties about the safety of speculation in \S\ref{sec:proof}.
+
+We have implemented these techniques in a build system called \Rattle\footnote{\url{https://github.com/author_name_omitted/rattle}}, introduced in \S\ref{sec:implementation}, which embeds commands in a Haskell script. A key part of the implementation is the ability to trace commands, using techniques we describe in \S\ref{sec:tracing}. To evaluate our claims, and properly understand the subtleties of our design, we converted existing \Make scripts into \Rattle scripts, and discuss the performance characteristics and \Make script issues uncovered in \S\ref{sec:evaluation}. We also implement two small but non-trivial builds from scratch in \Rattle and report on the lessons learned. Our design can be considered a successor to the \Memoize build system \cite{memoize}, and we compare \Rattle with it and other related work in \S\ref{sec:related}. Finally, in \S\ref{sec:conclusion} we conclude and describe future work.
