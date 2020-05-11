@@ -30,7 +30,8 @@ gcc -o main.exe main.o util.o
 \end{small}
 \vspace{3mm}
 
-That's shorter, simpler and easier to follow. Instead of declaring the outputs and dependencies of each command, we've merely given one valid ordering of the commands (we could equally have put \texttt{gcc -c util.c} first). This simpler specification has additional benefits. First, we've fixed an inadvertent bug -- these commands depend on the undeclared dependency \texttt{gcc}, and potentially whatever header files are used by \texttt{main.c} and \texttt{util.c}. Furthermore, as the files \texttt{main.c} and \texttt{util.c} evolve, and their dependencies change (by changing the \texttt{\#include} directives), the shell script remains correct, while the \Make script \emph{must} be kept consistent or builds will become incorrect.
+That's shorter, simpler and easier to follow. Instead of declaring the outputs and dependencies of each command, we've merely given one valid ordering of the commands (we could equally have put \texttt{gcc -c util.c} first). This simpler specification has additional benefits. First, we've fixed an inadvertent bug -- these commands depend on the undeclared dependency \texttt{gcc}, and potentially whatever header files are used by \texttt{main.c} and \texttt{util.c}.  This bug could be fixed in the Makefile by adding a dependency on the version of gcc used, as well as by listing every header file included by \texttt{main.c} and \texttt{util.c}
+Furthermore, as the files \texttt{main.c} and \texttt{util.c} evolve, and their dependencies change (by changing the \texttt{\#include} directives), the shell script remains correct, while the \Make script \emph{must} be kept consistent or builds will become incorrect.
 
 \subsection{Why dependencies?}
 
