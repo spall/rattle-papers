@@ -1,0 +1,29 @@
+{
+    "latex-workshop.latex.recipes": [
+      {
+        "name": "builder",
+        "tools": [
+          "texify"
+        ]
+      },
+    ],
+    "latex-workshop.latex.tools": [
+      {
+        "name": "texify",
+        "command": "texify",
+        "args": [
+          "--pdf",
+          "--batch",
+          "%DOC%.tex"
+        ]
+      }
+    ],
+    "spellright.language": [
+      "en"
+    ],
+    "spellright.documentTypes": [
+      "markdown",
+      "latex",
+      "plaintext"
+    ]
+}
