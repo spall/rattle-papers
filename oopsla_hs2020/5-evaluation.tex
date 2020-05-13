@@ -3,6 +3,8 @@
 
 In this section we evaluate the design from \S\ref{sec:design}, specifically our implementation from \S\ref{sec:implementation}. We show how the implementation performs on the example from \S\ref{sec:introduction} in \S\ref{sec:eval:introduction}, on microbenchmarks in \S\ref{sec:eval:overhead}, and then on real projects that currently use \Make{} -- namely FSATrace (\S\ref{sec:eval:fsatrace}), Redis (\S\ref{sec:eval:redis}), Vim (\S\ref{sec:eval:vim}), tmux (\S\ref{sec:eval:tmux}), and Node.js (\S\ref{sec:eval:node}). We implement two sample projects using \Rattle in \S\ref{sec:eval:writing_rattle}.
 
+We have focused our real-world comparison on \Make projects using C because such projects often have minimal external dependencies (making them easier to evaluate in isolation), and despite using the same programming language, have an interesting variety of implementation/dependency tracking strategies. Most newer programming languages (e.g. Rust, Haskell etc) have dedicated built tools (e.g. Cargo, Cabal) so small projects in such languages tend to not use general-purpose build tools.
+
 %% Our evaluation shows that Rattle:
 %% \begin{enumerate}
 %% \item can tackle complex builds for existing software correctly;
@@ -11,7 +13,7 @@ In this section we evaluate the design from \S\ref{sec:design}, specifically our
 %% \item imposes low runtime overhead for its instrumentation.
 %% \end{enumerate}
 
-For benchmarks, the first four (\S\ref{sec:eval:introduction}-\S\ref{sec:eval:redis}) were run on a 4 core Intel i7-4790 3.6GHz CPU, with 16Gb of RAM. The remaining benchmarks were run on a 32 core Intel Xeon E7-4830 2.13GHz, with 62Gb of RAM.
+For benchmarks, the first four (\S\ref{sec:eval:introduction}-\S\ref{sec:eval:redis}) were run on a 4 core Intel i7-4790 3.6GHz CPU, with 16Gb of RAM. The remaining benchmarks were run on a 32 core Intel Xeon E7-4830 2.13GHz, with 64Gb of RAM.
 
 \subsection{Validating Rattle's suitability}
 \label{sec:eval:introduction}
@@ -28,13 +30,13 @@ gcc -o main.exe main.o util.o
 
 There are two axes on which to measure ``just as good'' -- correctness and performance. Performance can be further broken down into how much rebuilding is avoided, how much parallelism is achieved and how much overhead \Rattle imposes.
 
-\paragraph{Correctness} \Rattle is correct, in that the reference semantics is running all the commands, and as we have shown in \S\ref{sec:design} and \S\ref{sec:proof}, and tested for with examples, \Rattle obeys those semantics. In contrast, the \Make version may have missing dependencies which causes it not to rebuild. Examples of failure to rebuild include if \texttt{gcc} changes or headers used but not listed in the \Make script change.
+\paragraph{Correctness} \Rattle is correct, in that the reference semantics is running all the commands, and as we have shown in \S\ref{sec:design} and \S\ref{sec:proof}, and tested for with examples, \Rattle obeys those semantics. In contrast, the \Make version may have missing dependencies which causes it not to rebuild. Examples of failure to rebuild include if there are changes in \texttt{gcc} itself, or changes in any headers used through transitive \texttt{\#include} which are not also listed in the \Make script.
 
 \paragraph{Rebuilding too much} \Rattle only reruns a command if some of the files it reads or writes have changed. It is possible that a command only depends on part of a file, but at the level of abstraction \Rattle works, it never rebuilds too much. As a matter of implementation, \Rattle detects changes by hashing the file contents, while \Make uses the modification time. As a consequence, if a file is modified, but it's contents do not change (e.g. using \texttt{touch}), \Make will rebuild but \Rattle will not.
 
-\paragraph{Parallelism} The script from \S\ref{sec:introduction} has three commands -- the first two can run in parallel, while the the third must wait for both to finish. \Make is given all this information by dependencies, and will always achieve as much parallelism as possible. In contrast, \Rattle has no such knowledge, so it has to recover the parallelism by speculation (see \S\ref{sec:speculation}). During the first execution, \Rattle has no knowledge about even which commands are coming next (as described in \S\ref{sec:monadic}), so it has no choice but to execute each command serially, with less parallelism than \Make. In subsequent executions \Rattle uses speculation to always speculate on the second command (as it never has a hazard with the first), but never speculate on the third until the first two have finished (as they are known to conflict). Interestingly, sometimes \Rattle executes the third command (because it got to that point in the script), and sometimes it speculates it (because the previous two have finished) -- it is a race condition where both alternatives are equivalent. While \Rattle has less parallelism on the first execution, by using shared storage for speculation traces, that can be reduced to the first execution \emph{ever}, rather than the first execution for a given user.
+\paragraph{Parallelism} The script from \S\ref{sec:introduction} has three commands -- the first two can run in parallel, while the the third must wait for both to finish. \Make is given all this information by dependencies, and will always achieve as much parallelism as possible. In contrast, \Rattle has no such knowledge, so it has to recover the parallelism by speculation (see \S\ref{sec:speculation}). During the first execution, \Rattle has no knowledge about even which commands are coming next (as described in \S\ref{sec:monadic}), so it has no choice but to execute each command serially, with less parallelism than \Make. In subsequent executions \Rattle uses speculation to always speculate on the second command (as it never has a hazard with the first), but never speculate on the third until the first two have finished (as they are known to conflict). Interestingly, sometimes \Rattle executes the third command (because it got to that point in the script), and sometimes it speculates it (because the previous two have finished) -- it is a race condition where both alternatives are equivalent. While \Rattle has less parallelism on the first execution, if we were to use shared storage for speculation traces, that can be reduced to the first execution \emph{ever}, rather than the first execution for a given user.
 
-\paragraph{Overhead} The overhead inherent in \Rattle is greater than that of \Make, as it hashes files, traces command execution, computes potential hazards, figures out what to speculate and writes to a shared cloud store. To measure the overhead, and prove the other claims in this section, we created a very simple pair of files, \texttt{main.c} and \texttt{util.c}, where \texttt{main.c} calls \texttt{printf} using a constant returned by a function in \texttt{util.c}. We then measured the time to do:
+\paragraph{Overhead} The overhead inherent in \Rattle is greater than that of \Make, as it hashes files, traces command execution, computes potential hazards, figures out what to speculate and writes to a shared cloud store (in the rest of this section we use a locally mounted shared drive). To measure the overhead, and prove the other claims in this section, we created a very simple pair of files, \texttt{main.c} and \texttt{util.c}, where \texttt{main.c} calls \texttt{printf} using a constant returned by a function in \texttt{util.c}. We then measured the time to do:
 
 \begin{enumerate}
 \item An initial build from a clean checkout.
@@ -78,7 +80,7 @@ As expected, we see that during the initial build \Rattle doesn't exhibit any pa
 In order to determine what overhead \Rattle introduces, we ran a fixed set of commands with increasingly more parts of \Rattle enabled. \Rattle command execution builds on the command execution from \Shake \cite{shake}, which in turn uses \Fsatrace for tracing and the Haskell \texttt{process} library for command execution. Therefore, we ran the commands in a clean build directory in 7 different ways:
 
 \begin{enumerate}
-\item Using \texttt{make -j1}, as a baseline.
+\item Using \texttt{make -j1} (\Make with 1 thread), as a baseline.
 \item Using \texttt{System.Process} from the Haskell \texttt{process} library.
 \item Using \texttt{cmd} from the Haskell \Shake library \cite{shake}, which builds on top of the \texttt{process} library.
 \item Using \texttt{cmd} from \Shake, but wrapping the command with \Fsatrace for file tracing.
@@ -87,7 +89,7 @@ In order to determine what overhead \Rattle introduces, we ran a fixed set of co
 \item Using \Rattle with all features turned on, including shared storage.
 \end{enumerate}
 
-To obtain a set of commands typical of building, we took the latest version of \Fsatrace\footnote{\url{https://github.com/jacereda/fsatrace/commit/41fbba17da580f81ababb32ec7e6e5fd49f11473}} and ran \texttt{make -j1}, capturing the commands that were executed. On Windows \Fsatrace runs 25 commands (21 compiles, 4 links). On Linux \Fsatrace runs 9 commands (7 compiles, 2 links). On Linux the list of commands produces write-write hazards, because it compiles some files (e.g. \texttt{shm.c}) twice, once with \texttt{-fPIC} (position independent code), and once without. However, both times it passes \texttt{-MMD} to cause \texttt{gcc} to produce \texttt{shm.d} which is used for dependencies -- we removed the \texttt{-MMD} flag as it doesn't impact the benchmark. We ran all sets of commands on both Windows and Linux.
+To obtain a set of commands typical of building, we took the latest version of \Fsatrace\footnote{\url{https://github.com/jacereda/fsatrace/commit/41fbba17da580f81ababb32ec7e6e5fd49f11473}} and ran \texttt{make -j1} with maximum verbosity,  recording the commands that were printed to the standard output. On Windows \Fsatrace runs 25 commands (21 compiles, 4 links). On Linux \Fsatrace runs 9 commands (7 compiles, 2 links). On Linux the list of commands produces write-write hazards, because it compiles some files (e.g. \texttt{shm.c}) twice, once with \texttt{-fPIC} (position independent code), and once without. However, both times it passes \texttt{-MMD} to cause \texttt{gcc} to produce \texttt{shm.d} at the same location (\texttt{shm.d} is used to track dependencies). That write-write hazard is a genuine problem, and in an incredibly unlucky build \Fsatrace would end up with a corrupted \texttt{shm.d} file. To remedy the problem we removed the \texttt{-MMD} flag as it doesn't impact the benchmark and isn't required by \Rattle. We ran all sets of commands on both Windows and Linux.
 
 % RAW RESULTS (final number is avg of fastest 3, to ignore swapping etc)
 % $ rattle-benchmark micro
@@ -145,13 +147,13 @@ These results show that tracing has a minor but not insignificant effect on Linu
 \subsection{\Fsatrace}
 \label{sec:eval:fsatrace}
 
-To compare \Make and \Rattle building \Fsatrace we took the commands we extracted for \S\ref{sec:eval:overhead} and ran the build script for the 100 previous commits in turn, starting with a clean build then performing incremental builds. To make the results readable, we hid any commands where all versions were < 0.02s, resulting in 26 interesting commits. We ran with 1 to 4 threads, but omit the 2 and 3 thread case as they typically fall either on or just above the 4 thread results.
+To compare \Make and \Rattle building \Fsatrace we took the commands we extracted for \S\ref{sec:eval:overhead} and ran the build script for the 100 previous commits in turn, starting with a clean build then performing incremental builds. To make the results readable, we hid any commits where all builds took < 0.02s, resulting in 26 interesting commits. We ran with 1 to 4 threads, but omit the 2 and 3 thread case as they typically fall either on or just above the 4 thread results.
 
 \vspace{3mm}
 
 \begin{tikzpicture}
 \begin{axis}[
-  title={Compile time at each successive commit},
+  title={Compile time at each successive commit\hspace{2cm}\phantom{.}},
   width=\textwidth,
   height=5cm,
   ylabel={Seconds},
@@ -159,10 +161,10 @@ To compare \Make and \Rattle building \Fsatrace we took the commands we extracte
   xmin=0,
   xmax=15,
 ]
-\addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/fsatrace.dat};    \addlegendentry{\Make -j1}
-\addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/fsatrace.dat};    \addlegendentry{\Make -j4}
-\addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1] {data/fsatrace.dat};  \addlegendentry{\Rattle -j1}
-\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4] {data/fsatrace.dat};  \addlegendentry{\Rattle -j4}
+\addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/fsatrace.dat};    \addlegendentry{\Make 1 thread}
+\addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/fsatrace.dat};    \addlegendentry{\Make 4 threads}
+\addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1] {data/fsatrace.dat};  \addlegendentry{\Rattle 1 thread}
+\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4] {data/fsatrace.dat};  \addlegendentry{\Rattle 4 threads}
 \end{axis}
 \end{tikzpicture}
 
@@ -176,43 +178,43 @@ As we can see, the first build is always > 1s for \Rattle, but \Make is able to 
 \vspace{3mm}
 \begin{tikzpicture}
 \begin{axis}[
-  title={Compile time at each successive commit},
+  title={Compile time at each successive commit\hspace{2cm}\phantom{.}},
   width=\textwidth,
   height=5cm,
   ylabel={Seconds},
   ymin=0,
   xmin=0,
-  xmax=30,
+  xmax=35,
 ]
-\addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/redis.dat}; 	\addlegendentry{\Make -j1}
-\addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/redis.dat}; 	\addlegendentry{\Make -j4}
-\addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1] {data/redis.dat}; 	\addlegendentry{\Rattle -j1}
-\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4] {data/redis.dat}; 	\addlegendentry{\Rattle -j4}
+\addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/redis.dat}; 	\addlegendentry{\Make 1 thread}
+\addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/redis.dat}; 	\addlegendentry{\Make 4 threads}
+\addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1] {data/redis.dat}; 	\addlegendentry{\Rattle 1 thread}
+\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4] {data/redis.dat}; 	\addlegendentry{\Rattle 4 threads}
 \end{axis}
 \end{tikzpicture}
 
 Redis is an in-memory NoSQL database written in C, developed over the last 10 years. Redis is built using recursive \Make \cite{miller:recursive_make}, where the external dependencies of Redis (e.g. Lua and Linenoise) have their own \Make scripts which are called by the main Redis \Make script. Using stamp files, on successive builds, the external dependencies are not checked -- meaning that users must clean their build when external dependencies change.
 
-When benchmarking \Rattle vs \Make we found that \Rattle was approximately 10\% slower due to copying files to the cloud cache, something \Make does not do. Therefore, for a fairer comparison, we disabled the cloud cache. For local builds, the consequence of disabling the cloud cache is that if a file changes, then changes back to a previous state, we will have to rebuild rather than get a cache hit -- something that never happens in this benchmark. With those changes \Rattle is able to perform very similarly to \Make, even though it properly checks the dependencies. Differences occur on the initial build, where \Rattle has no information to speculate with, and commit 1, where \Rattle correctly detects no work is required but \Make rebuilds some dependency information.
+When benchmarking \Rattle vs \Make we found that \Rattle was approximately 10\% slower due to copying files to the cloud cache (see \S\ref{sec:cloud_builds}), something \Make does not do. Therefore, for a fairer comparison, we disabled the cloud cache. For local builds, the consequence of disabling the cloud cache is that if a file changes, then changes back to a previous state, we will have to rebuild rather than get a cache hit -- something that never happens in this benchmark. With those changes \Rattle is able to perform very similarly to \Make, even though it properly checks the dependencies. Differences occur on the initial build, where \Rattle has no information to speculate with, and commit 1, where \Rattle correctly detects no work is required but \Make rebuilds some dependency information.
 
 \subsection{Vim}
 \label{sec:eval:vim}
 
 \begin{tikzpicture}
 \begin{axis}[
-  title={Compile time at each successive commit},
+  title={Compile time at each successive commit\hspace{2cm}\phantom{.}},
   width=\textwidth,
   height=5cm,
   ylabel={Seconds},
   ymin=0,
   xmin=0,
-  xmax=39,
+  xmax=43,
 ]
 
-\addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/vim.dat}; 	\addlegendentry{\Make -j1}
-\addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/vim.dat}; 	\addlegendentry{\Make -j4}
-\addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1_noshared] {data/vim.dat}; 	\addlegendentry{\Rattle -j1}
-\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4_noshared] {data/vim.dat}; 	\addlegendentry{\Rattle -j4}
+\addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/vim.dat}; 	\addlegendentry{\Make 1 thread}
+\addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/vim.dat}; 	\addlegendentry{\Make 4 threads}
+\addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1_noshared] {data/vim.dat}; 	\addlegendentry{\Rattle 1 thread}
+\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4_noshared] {data/vim.dat}; 	\addlegendentry{\Rattle 4 threads}
 \end{axis}
 \end{tikzpicture}
 
@@ -232,7 +234,7 @@ Vim is a popular text editor, over 25 years old. The majority of the source code
 
 \begin{tikzpicture}
 \begin{axis}[
-  title=Compile time at each successive commit,
+  title={Compile time at each successive commit\hspace{2cm}\phantom{.}},
   width=\textwidth,
   height=5cm,
   ylabel={Seconds},
@@ -241,10 +243,10 @@ Vim is a popular text editor, over 25 years old. The majority of the source code
   xmin=0,
 ]
 
-\addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/tmux.dat}; 	\addlegendentry{\Make -j1}
-\addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/tmux.dat}; 	\addlegendentry{\Make -j4}
-\addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1_noshared] {data/tmux.dat}; 	\addlegendentry{\Rattle -j1}
-\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4_noshared] {data/tmux.dat}; 	\addlegendentry{\Rattle -j4}
+\addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/tmux.dat}; 	\addlegendentry{\Make 1 thread}
+\addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/tmux.dat}; 	\addlegendentry{\Make 4 threads}
+\addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1_noshared] {data/tmux.dat}; 	\addlegendentry{\Rattle 1 thread}
+\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4_noshared] {data/tmux.dat}; 	\addlegendentry{\Rattle 4 threads}
 \end{axis}
 \end{tikzpicture}
 
@@ -356,17 +358,17 @@ These \emph{.intermediate} targets are specified as prerequisites of the special
 \vspace{3mm}
 \begin{tikzpicture}
 \begin{axis}[ymode=log,
-  title=Compile time at each successive commit,
+  title={Compile time at each successive commit\hspace{2cm}\phantom{.}},
   width=\textwidth,
   height=5cm,
   ylabel={Seconds (log scale)},
   xmin=0,
 ]
 
-\addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/node.dat}; 	\addlegendentry{\Make -j1}
-\addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/node.dat}; 	\addlegendentry{\Make -j4}
-\addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1_noshared] {data/node.dat}; 	\addlegendentry{\Rattle -j1}
-\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4_noshared] {data/node.dat}; 	\addlegendentry{\Rattle -j4}
+\addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/node.dat}; 	\addlegendentry{\Make 1 thread}
+\addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/node.dat}; 	\addlegendentry{\Make 4 threads}
+\addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1_noshared] {data/node.dat}; 	\addlegendentry{\Rattle 1 thread}
+\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4_noshared] {data/node.dat}; 	\addlegendentry{\Rattle 4 threads}
 \end{axis}
 \end{tikzpicture}
 % some data but not all; will put in tomorrow
@@ -413,7 +415,7 @@ For three commits, 2, 12, and 29, the \Rattle build with 4 threads was slower th
 Looking across the projects in this section, a few themes emerge.
 
 \begin{itemize}
-\item For most commits, \Rattle and \Make give similar performance. The one case that is not true is the initial build at higher levels of parallelism, where \Make outperforms \Rattle, because \Rattle has no speculation information. If \Rattle used a shared speculation cache for the initial build that difference would disappear.
+\item For most commits, \Rattle and \Make give similar performance. The one case that is not true is the initial build at higher levels of parallelism, where \Make outperforms \Rattle, because \Rattle has no speculation information. If \Rattle used a shared speculation cache for the initial build that difference would disappear. Such a cache would only need to provide approximate information to get most of the benefits, so the nearest ancestor commit with such information should be sufficient -- there would be no need to maintain or human curate such a list.
 \item The difference between 1 thread and 4 threads can be quite significant, and typically \Make and \Rattle do equally well with parallelism. The implicit parallelism in \Rattle is an important feature which works as designed.
 \item In a few cases \Rattle suffers a hazard, which can be observed on the build time plot. However, the hazards are relatively rare.
 \item Every \Make project has a slightly different variation on how dependencies are managed. Most make use of \texttt{gcc} to generate dependency information, which then has to be provided to \Make. Some provide it directly (e.g. \Fsatrace), some also use stamp files (e.g. Redis) and some build their own mechanisms on top of \Make (e.g. Node.js, but also \citet[\S2]{hadrian}).
