@@ -24,22 +24,22 @@ There are significantly fewer forward build systems than backwards build systems
 
 The design space of backward build systems is discussed in \cite{build_systems_a_la_carte}. In that paper it is notable that forward build systems do not naturally fit into the design space, lacking the features that a build system requires. We feel that omission points to an interesting gap in the landscape of build systems. We think that it is likely forward build systems could be characterised similarly, but that we have yet to develop the necessary variety of forward build systems to do so. There are two dimensions used to classify backward build systems:
 
-\paragraph{Ordering} Looking at the features of \Rattle, the ordering is a sequential list, representing an excessively strict ordering given by the user. The use of speculation is an attempt to weaken that ordering into one that is less linear and more precise.
+\textbf{Ordering} Looking at the features of \Rattle, the ordering is a sequential list, representing an excessively strict ordering given by the user. The use of speculation is an attempt to weaken that ordering into one that is less linear and more precise.
 
-\paragraph{Rebuild} For rebuilding, \Rattle looks a lot like the constructive trace model -- traces are made, stored in a cloud, and available for future use. The one wrinkle is that a trace may be later invalidated if it turns out a hazard occurred (see \S\ref{sec:choices}).
+\textbf{Rebuild} For rebuilding, \Rattle looks a lot like the constructive trace model -- traces are made, stored in a cloud, and available for future use. The one wrinkle is that a trace may be later invalidated if it turns out a hazard occurred (see \S\ref{sec:choices}).
 % In particular, the correspondence to constructive traces illuminates the consequences of moving to a deep constructive trace model (see \S\ref{sec:forward_hashes}) -- it solves non-determinism at the cost of losing unchanging builds.
 
-\postparagraphs
+%\postparagraphs
 
-There are also two interesting features available in some backward build systems that are relevant to \Rattle:
+There are also two  features available in some backward build systems that are relevant to \Rattle:
 
-\paragraph{Sandboxing} Some backward build systems (e.g. \Bazel \cite{bazel}) run processes in a sandbox, where access to files which weren't declared as dependencies are blocked -- ensuring dependencies are always sufficient. A consequence is that often it can be harder to write a \Bazel build system, requiring users to declare dependencies like \texttt{gcc} and system headers that are typically ignored. The sandbox doesn't prevent the reverse problem of too many dependencies.
+\textbf{Sandboxing} Some backward build systems (e.g. \Bazel \cite{bazel}) run processes in a sandbox, where access to files which weren't declared as dependencies are blocked -- ensuring dependencies are always sufficient. A consequence is that often it can be harder to write a \Bazel build system, requiring users to declare dependencies like \texttt{gcc} and system headers that are typically ignored. The sandbox doesn't prevent the reverse problem of too many dependencies.
 
-\paragraph{Remote Execution} Some build systems (e.g. \Bazel and \BuildXL \cite{buildxl}) allow running commands on a remote machine, usually with a much higher degree of parallelism than is available on the users machine. If \Rattle was able to leverage remote execution then speculative commands could be used to fill up the cloud cache, and \emph{not} involve local writes to disk, eliminating all speculative hazards -- a very attractive property. Remote execution in \Bazel sends all files alongside the command, but \Rattle doesn't know the files accessed in advance, which makes that model infeasible. Remote execution in \BuildXL sends the files it thinks the command will need, augments the file system to block if additional files are accessed, and sends further requests back to the initial machine -- which would fit nicely with \Rattle.
+\textbf{Remote Execution} Some build systems (e.g. \Bazel and \BuildXL \cite{buildxl}) allow running commands on a remote machine, usually with a much higher degree of parallelism than is available on the users machine. If \Rattle was able to leverage remote execution then speculative commands could be used to fill up the cloud cache, and \emph{not} involve local writes to disk, eliminating all speculative hazards -- a very attractive property. Remote execution in \Bazel sends all files alongside the command, but \Rattle doesn't know the files accessed in advance, which makes that model infeasible. Remote execution in \BuildXL sends the files it thinks the command will need, augments the file system to block if additional files are accessed, and sends further requests back to the initial machine -- which would fit nicely with \Rattle.
 
 % This related work isn't relevant, and doesn't say anything interesting. It feels like a forced way of including Pluto.
 %
-% \paragraph{Fine-grained dependencies} Pluto \cite{erdweg2015sound} is another backward build system that aims to
+% \textbf{Fine-grained dependencies} Pluto \cite{erdweg2015sound} is another backward build system that aims to
 % provide fine-grained dependencies and optimal incremental rebuilding.  It supports dynamic
 % dependencies, allows users to specify how they would like to depend on a file, and track build
 % rule definitions so a build will re-run correctly when changed.  Rattle in contrast doesn't need
