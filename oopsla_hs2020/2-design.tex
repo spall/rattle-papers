@@ -43,7 +43,7 @@ An important consequence of the control logic not being visible to the build sys
 \subsection{Dependency tracing}
 \label{sec:assume_tracing}
 
-For the rest of this section we assume the existence of \emph{dependency tracing} which can tell us which files a command accesses. Concretely, we can run a command in a special mode such that when the command completes (and not before) we can determine which files it read and wrote; these files are consdiered to be the command's inputs and outputs respectively. We cannot determine at which point during the execution these files were accessed, nor which order they were accessed in. We cannot prevent or otherwise redirect an in-progress access. We discuss the implementation of dependency tracing, and the reasons behind the (frustrating!) limitations, in \S\ref{sec:tracing}.
+For the rest of this section we assume the existence of \emph{dependency tracing} which can tell us which files a command accesses. Concretely, we can run a command in a special mode such that when the command completes (and not before) we can determine which files it read and wrote; these files are considered to be the command's inputs and outputs respectively. We cannot determine at which point during the execution these files were accessed, nor which order they were accessed in. We cannot prevent or otherwise redirect an in-progress access. We discuss the implementation of dependency tracing, and the reasons behind the (frustrating!) limitations, in \S\ref{sec:tracing}.
 
 \subsection{Skipping unnecessary commands}
 \label{sec:skipping_unnecessary}

@@ -221,6 +221,7 @@ This is the approach we currently take in \Rattle; below we describe
 other approaches also justified in our mode.
 
 \subsubsection{Restart with less speculation}
+\label{sec:recovering}
 
 Given the proofs in this section, running again with speculation is still safe. However, running with speculation might repeatedly cause the same speculation hazard, in which case the build would never terminate. Therefore, it is safe to restart with speculation provided there is strictly less speculation, so that (in the worst case) eventually there will be a run with no speculation.
 
