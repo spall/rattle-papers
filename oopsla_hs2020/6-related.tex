@@ -57,26 +57,8 @@ Speculation is used extensively in many other areas of computer science, from pr
 
 The most common use of speculation in computer science is the CPU -- \citet{swanson_cpu_speculation} found that 93\% of useful CPU instructions were evaluated speculatively. CPUs use hazards to detect incorrect speculation, with similar types of read/write, write/write and write/read hazards \cite{patterson_cpu_design} -- our terminology is inspired by their approaches. For CPUs many solutions to hazards are available, e.g. stalling the pipeline if a hazard is detected in advance or the Tomasulo algorithm \cite{tomasulo}. We also stall the pipeline if we detect potential hazards, although have to do so with incomplete information, unlike a CPU. The Tomasulo algorithm involves writing results into temporary locations and the moving them over afterwards -- use of remote execution (\S\ref{sec:remote_execution}) might be a way to apply similar ideas to build systems.
 
-Safe futures for Java \cite{welc2005safe} handles a similar problem with Java's futures.
-% how to compare to safe futures
-The goal of this project was to implement futures in Java that always respect the semantics of the
-sequential version of the program.  If mutable state is shared between a future and the
-code that executes after its invocation, its continuation, the future and the continuation should
-execute in a way so that the effect is the same as if the code executed sequentially.
-To prevent dependency violations between the future and its continuation, the system does two things. First, all data accesses to shared state are tracked and recorded, and if a dependency violation occurs the offending code is revoked and restarted.  Second, shared state is versioned using a copy-on-write invariant to ensure threads write to their own copies, preventing a future from seeing its continuation's writes.
+Looking towards software systems, \citet{welc2005safe} showed how to add speculation to Java programs, by marking certain parts of the program as worth speculating with a future. Similar to our work, they wanted Java with speculation to respect the semantics of the sequential version of the program, which required two main techniques. First, all data accesses to shared state are tracked and recorded, and if a dependency violation occurs the offending code is revoked and restarted.  Second, shared state is versioned using a copy-on-write invariant to ensure threads write to their own copies, preventing a future from seeing its continuation's writes.
 
-This approach cannot currently be applied to Rattle because we do not have the same level of control over the reading and writing of files. Although we can track reads and writes, we cannot cause writes to be done to objects local to the executing command.  If in the future a file system or tracing tool that enabled writes to be intercepted and buffered existed, an approach similar to that used by Safe futures for Java could be applied to Rattle.
+Thread level speculation \cite{steffan1998potential} is used by compilers to automatically parallelise programs, often by executing multiple bodies of a loop simultaneously. As before, the goal is to maintain the semantics as single-threaded execution. Techniques commonly involve buffering speculative writes \cite{steffan2000scalable} and ensuring that a read reflects the speculative writes of threads that precede it in the ordering.
 
-% talk about thread level speculation;
-Thread level speculation is the process of speculatively executing threads while maintaining the same semantics as if they had executed sequentially.  As with Safe future for Java, in thread
-level speculation, the writes of a speculative thread are buffered until it is no longer
-speculative.  And, a speculative thread must be sure to read the writes of speculative threads
-that precede it in the ordering, but not that come after it.  Unlike Rattle, these systems have
-control over writes and can actually buffer them.   % pick an appropriatepaper to cite
-
-
-\begin{comment}
-\subsection{Other related work}
-
-The notion of hazards is used extensively in processor design. This is standard terminology.
-\end{comment}
+All these approaches rely on the ability to trap writes, either placing them in a buffer and applying them later or rolling them back. Unfortunately, such facilities, while desirable, are currently difficult to achieve in portable cross-platform abstractions (\S\ref{sec:tracing}). We have used the ideas underlying speculative execution, but if the necessary facilities became available in future, it's possible we could follow the approaches more directly.
