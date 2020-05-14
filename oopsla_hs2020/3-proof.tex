@@ -212,39 +212,37 @@ Let $A$ have $n+1$ command.  From the inductive hypothesis we know the output of
 
 If a build involving speculation reaches a hazard there are several remedies that can be taken. In this section we outline these approaches and when each approach is safe to take.
 
-\subsubsection{Restart with no speculation}
+\paragraph{Restart with no speculation}
 \label{sec:proof:restart_no_speculation}
 
 Restarting the entire build that happened with speculation, with no speculation, is safe and gives an equivalent result provided the inputs to the build have not changed (Claims \ref{claim:reorder}, \ref{claim:additional}). Unfortunately, while writing to an input is guaranteed to give a hazard, restarting does \emph{not} change the input back. As a concrete example, consider the build script with the single command \texttt{gcc -c main.c}. If we speculate the command \texttt{echo 1 >> main.c} first, it will raise a speculative-write-read hazard, but restarting will not put \texttt{main.c} back to its original value, potentially breaking the build indefinitely. We discuss consequences and possible remediations from speculative commands writing to inputs in \S\ref{sec:choices}, but note such a situation should be very rare and likely easily reversible with minor user intervention.  The build system only executes commands that were previously part of the build script, making it unlikely a build author would include commands that would irreversibly break their build.  For all other recovery actions, we assume that restarting with no speculation is the baseline state, and consider them safe if it is equivalent to restarting with no speculation.
-
+%
 This is the approach we currently take in \Rattle; below we describe
-other approaches also justified in our mode.
+other approaches also justified in our model.
 
-\subsubsection{Restart with less speculation}
+\paragraph{Restart with less speculation}
 \label{sec:recovering}
 
 Given the proofs in this section, running again with speculation is still safe. However, running with speculation might repeatedly cause the same speculation hazard, in which case the build would never terminate. Therefore, it is safe to restart with speculation provided there is strictly less speculation, so that (in the worst case) eventually there will be a run with no speculation.
 
 As a practical matter, if a command is part of the commands that cause a hazard, it is a good candidate for excluding from speculation.
 
-\subsubsection{Raise a hazard}
+\paragraph{Raise a hazard}
 
 Importantly, if there is no speculation (including reordering and parallelism), and a hazard occurs, the hazard can be raised immediately. This property is essential as a base-case for restarting with no speculation.
 
 If two required commands, that is commands in the users build script, cause a write-write hazard, and there have been no speculative-write-read hazards, then the same hazard will be reraised if the command restarts. For write-write, this inevitability is a consequence of Claim \ref{claim:reorder}, as the same writes will occur.
-
+%
 If two required commands cause a read-write hazard, and the relative order they were run in matches their required ordering, then the same hazard will be reraised if the command restarts, because the relative ordering will remain the same, Claim \ref{claim:keep_hazards}. However, if the commands weren't in an order matching their required ordering, it is possible the write will come first avoiding the hazard, so it cannot be immediately raised.
 
-\subsubsection{Continue}
+\paragraph{Continue}
 \label{sec:proof:continue}
 
-If the hazard only affects speculated commands, and those commands have no subsequent effect on required commands, it is possible to continue the build. However, it is important that the commands have no subsequent effect, even on required commands that have not yet been executed, or even revealed to the build system. Consequently, even if a build can continue after an initial hazard, it may still fail due to a future hazard. A build can continue if the hazards only affect speculated commands, that is hazards where:
-
-\begin{enumerate}
-\item A \emph{write-write hazard} where both commands were speculated.
-\item A \emph{read-write hazard} where the read was speculated.
-\end{enumerate}
-
+If the hazard only affects speculated commands, and those commands have no subsequent effect on required commands, it is possible to continue the build. However, it is important that the commands have no subsequent effect, even on required commands that have not yet been executed, or even revealed to the build system. Consequently, even if a build can continue after an initial hazard, it may still fail due to a future hazard. A build can continue if the hazards only affect speculated commands, that is either
+%
+a \emph{write-write hazard} where both commands were speculated, or
+a \emph{read-write hazard} where the read was speculated.
+%
 For other hazards, continuing is unsafe. If a speculated command is affected by an initial hazard, and that command is later required by the build script, a new non-continuable hazard will be raised.
 
 
