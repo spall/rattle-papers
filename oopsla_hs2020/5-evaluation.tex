@@ -41,7 +41,7 @@ There are two axes on which to measure ``just as good'' -- correctness and perfo
 \begin{enumerate}
 \item An initial build from a clean checkout.
 \item A rebuild when nothing had changed.
-\item A rebuild with whitespace changes to \texttt{main.c}, which result in the same \texttt{main.o} file being produced.
+\item A rebuild with whitespace changes to \texttt{main.c}, resulting in the same \texttt{main.o} file.
 \item A rebuild with meaningful changes to \texttt{main.c}, resulting in a different \texttt{main.o} file.
 \item A rebuild with meaningful changes to both C files.
 \end{enumerate}
@@ -77,16 +77,16 @@ As expected, we see that during the initial build \Rattle doesn't exhibit any pa
 \subsection{Measuring overhead}
 \label{sec:eval:overhead}
 
-In order to determine what overhead \Rattle introduces, we ran a fixed set of commands with increasingly more parts of \Rattle enabled. \Rattle command execution builds on the command execution from \Shake \cite{shake}, which in turn uses \Fsatrace for tracing and the Haskell \texttt{process} library for command execution. Therefore, we ran the commands in a clean build directory in 7 different ways:
+In order to determine what overhead \Rattle introduces, we ran a fixed set of commands with increasingly more parts of \Rattle enabled. \Rattle command execution builds on the command execution from \Shake \cite{shake}, which uses \Fsatrace for tracing and the Haskell \texttt{process} library for command execution. We ran the commands in a clean build directory in 7 ways:
 
 \begin{enumerate}
 \item Using \texttt{make -j1} (\Make with 1 thread), as a baseline.
 \item Using \texttt{System.Process} from the Haskell \texttt{process} library.
-\item Using \texttt{cmd} from the Haskell \Shake library \cite{shake}, which builds on top of the \texttt{process} library.
+\item Using \texttt{cmd} from the  \Shake library \cite{shake}, which builds on  the \texttt{process} library.
 \item Using \texttt{cmd} from \Shake, but wrapping the command with \Fsatrace for file tracing.
 \item Using \texttt{cmd} from \Shake with the \texttt{Traced} setting, which runs \Fsatrace and collects the results.
-\item Using \Rattle with no speculation or parallelism, and not storing any results to shared storage.
-\item Using \Rattle with all features turned on, including shared storage.
+\item Using \Rattle with no speculation or parallelism, and without shared storage.
+\item Using \Rattle with all features, including shared storage.
 \end{enumerate}
 
 To obtain a set of commands typical of building, we took the latest version of \Fsatrace\footnote{\url{https://github.com/jacereda/fsatrace/commit/41fbba17da580f81ababb32ec7e6e5fd49f11473}} and ran \texttt{make -j1} with maximum verbosity,  recording the commands that were printed to the standard output. On Windows \Fsatrace runs 25 commands (21 compiles, 4 links). On Linux \Fsatrace runs 9 commands (7 compiles, 2 links). On Linux the list of commands produces write-write hazards, because it compiles some files (e.g. \texttt{shm.c}) twice, once with \texttt{-fPIC} (position independent code), and once without. However, both times it passes \texttt{-MMD} to cause \texttt{gcc} to produce \texttt{shm.d} at the same location (\texttt{shm.d} is used to track dependencies). That write-write hazard is a genuine problem, and in an incredibly unlucky build \Fsatrace would end up with a corrupted \texttt{shm.d} file. To remedy the problem we removed the \texttt{-MMD} flag as it doesn't impact the benchmark and isn't required by \Rattle. We ran all sets of commands on both Windows and Linux.

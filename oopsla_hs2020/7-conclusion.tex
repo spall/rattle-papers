@@ -1,7 +1,7 @@
 \section{Conclusion and future work}
 \label{sec:conclusion}
 
-In this paper we present a build system that can take a sequence of actions and treat them as a build script. From the user perspective, they get most of the benefits of a conventional build system (incrementality, parallelism) but with lower cost (less time thinking about dependencies, only needing to supply a valid ordering). Comparing \Rattle to other build systems, e.g. \Make, it is fair to say that \Rattle presents a simpler user interface (no dependencies), but a more complex implementation model.
+In this paper we present \Rattle, a build system that  takes a sequence of actions and treats them as a build script. From the user perspective, they get the benefits of a conventional build system (incrementality, parallelism) but at lower cost (less time thinking about dependencies, only needing to supply a valid ordering). Compared to conventional build systems like \Make,  \Rattle presents a simpler user interface (no dependencies), but a more complex implementation model.
 
 Our evaluation in \S\ref{sec:evaluation} shows that for some popular real-world projects, switching to \Rattle would bring about simplicity and correctness benefits, with negligible performance cost. The two places where builds aren't roughly equivalent to \Make are the very first build (which could be solved with a global shared cache) and when speculation leads to a hazard. There are various approaches to improving speculation, including giving \Rattle a list of commands that should not be speculated (which can be a perfect list for non-monadic builds), or giving \Rattle a subset of commands' inputs/outputs (like \Fac does). It is also possible to have better recovery strategies from speculation errors.
 
@@ -11,4 +11,4 @@ Our next steps are scaling \Rattle and incorporating feedback from actual users.
 
 % SS probably say something else here but not sure at moment.
 
-\paragraph{Acknowledgements} We'd like to thank Jorge Acereda and David Roundy for their work on \Fsatrace and \Bigbro respectively.
+%% \paragraph{Acknowledgements} We'd like to thank Jorge Acereda and David Roundy for their work on \Fsatrace and \Bigbro respectively.
