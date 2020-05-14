@@ -7,7 +7,7 @@ Of the build systems in existence, the vast majority can be thought of as \emph{
 
 The idea of treating a script as a build system, omitting execution of commands that have not changed, was first pioneered by \Memoize \cite{memoize} then later popularised by \Fabricate \cite{fabricate}. In both cases the build script was written in Python, where cheap logic was specified in Python and commands were run in a traced environment. If a traced command hadn't changed inputs or outputs since it was last run, then it was skipped. Of these two incarnations, \Fabricate came later and offered more features, so we focus on it. \Fabricate uses \texttt{strace} on Linux, and on Windows uses either file access times (which are either disabled or very low resolution on modern Windows installations) or a proprietary \texttt{tracker} program (which is not generally available). Parallelism can be annotated explicitly, but is usually omitted.
 
-These systems did not seem to have much adoption -- in both cases the original sources are no longer available, and knowledge of them survives on GitHub copies. \Rattle differs from an engineering perspective by the tracing mechanisms available (see \S\ref{sec:tracing}) and the availability of cloud build (see \S\ref{sec:cloud_builds}) -- both of which are likely just a consequence of being developed a decade later. \Rattle extends these systems in a more fundamental way with the notion of hazards, which both allows the detection of bad build scripts, and allows for speculation -- overcoming the main disadvantage of earlier forward build systems. Stated alternatively, \Rattle takes the delightfully simple approach of these build systems, and tries a more sophisticated execution strategy.
+These systems did not seem to have much adoption -- in both cases the original sources are no longer available, and knowledge of them survives only as GitHub copies. \Rattle differs from an engineering perspective by the tracing mechanisms available (see \S\ref{sec:tracing}) and the availability of cloud build (see \S\ref{sec:cloud_builds}) -- both of which are likely just a consequence of being developed a decade later. \Rattle extends these systems in a more fundamental way with the notion of hazards, which both allows the detection of bad build scripts, and allows for speculation -- overcoming the main disadvantage of earlier forward build systems. Stated alternatively, \Rattle takes the delightfully simple approach of these build systems, and tries a more sophisticated execution strategy.
 
 Recently there have been three other implementations of forward build systems we are aware of.
 
@@ -20,6 +20,7 @@ Recently there have been three other implementations of forward build systems we
 There are significantly fewer forward build systems than backwards build systems, but the interesting dimension starting to emerge is how an ordering is specified. The three current alternatives are the user specifies a valid order (\Fabricate and \Rattle), the user specifies partial dependencies which are used to calculate an order (\Fac) or the user specifies no ordering and search is used (\Stroll and some aspects of \Fac).
 
 \subsection{Comparison to backward build systems}
+\label{sec:remote_execution}
 
 The design space of backward build systems is discussed in \cite{build_systems_a_la_carte}. In that paper it is notable that forward build systems do not naturally fit into the design space, lacking the features that a build system requires. We feel that omission points to an interesting gap in the landscape of build systems. We think that it is likely forward build systems could be characterised similarly, but that we have yet to develop the necessary variety of forward build systems to do so. There are two dimensions used to classify backward build systems:
 
@@ -35,13 +36,15 @@ There are also two interesting features available in some backward build systems
 
 \paragraph{Remote Execution} Some build systems (e.g. \Bazel and \BuildXL \cite{buildxl}) allow running commands on a remote machine, usually with a much higher degree of parallelism than is available on the users machine. If \Rattle was able to leverage remote execution then speculative commands could be used to fill up the cloud cache, and \emph{not} involve local writes to disk, eliminating all speculative hazards -- a very attractive property. Remote execution in \Bazel sends all files alongside the command, but \Rattle doesn't know the files accessed in advance, which makes that model infeasible. Remote execution in \BuildXL sends the files it thinks the command will need, augments the file system to block if additional files are accessed, and sends further requests back to the initial machine -- which would fit nicely with \Rattle.
 
-\paragraph{Fine-grained dependencies} Pluto \cite{erdweg2015sound} is another backward build system that aims to
-provide fine-grained dependencies and optimal incremental rebuilding.  It supports dynamic
-dependencies, allows users to specify how they would like to depend on a file, and track build
-rule definitions so a build will re-run correctly when changed.  Rattle in contrast doesn't need
-to explicitly track whether a build script changes, and because all dependencies are implicitly
-tracked \Rattle does not provide the ability for a build script author to specify how a command
-should depend on any file.
+% This related work isn't relevant, and doesn't say anything interesting. It feels like a forced way of including Pluto.
+%
+% \paragraph{Fine-grained dependencies} Pluto \cite{erdweg2015sound} is another backward build system that aims to
+% provide fine-grained dependencies and optimal incremental rebuilding.  It supports dynamic
+% dependencies, allows users to specify how they would like to depend on a file, and track build
+% rule definitions so a build will re-run correctly when changed.  Rattle in contrast doesn't need
+% to explicitly track whether a build script changes, and because all dependencies are implicitly
+% tracked \Rattle does not provide the ability for a build script author to specify how a command
+% should depend on any file.
 
 \subsection{Analysis of existing build systems}
 
@@ -50,8 +53,11 @@ We aren't the first to observe that existing build systems often have incorrect 
 % SS TODO maybe mention something about a project like node trying to generate dependencies within make;
 \subsection{Speculation}
 
-Speculation is used extensively in many other areas of computer science, from processors to distributed systems.  If an action is taken before it is known to be required undesired side-effects can
-occur.  Safe futures for Java \cite{welc2005safe} handles a similar problem with Java's futures.
+Speculation is used extensively in many other areas of computer science, from processors to distributed systems. If an action is taken before it is known to be required, that can increase performance, but undesired side-effects can occur. Most speculating systems attempt to block the side-effects from happening, or roll them back if they do.
+
+The most common use of speculation in computer science is the CPU -- \citet{swanson_cpu_speculation} found that 93\% of useful CPU instructions were evaluated speculatively. CPUs use hazards to detect incorrect speculation, with similar types of read/write, write/write and write/read hazards \cite{patterson_cpu_design} -- our terminology is inspired by their approaches. For CPUs many solutions to hazards are available, e.g. stalling the pipeline if a hazard is detected in advance or the Tomasulo algorithm \cite{tomasulo}. We also stall the pipeline if we detect potential hazards, although have to do so with incomplete information, unlike a CPU. The Tomasulo algorithm involves writing results into temporary locations and the moving them over afterwards -- use of remote execution (\S\ref{sec:remote_execution}) might be a way to apply similar ideas to build systems.
+
+Safe futures for Java \cite{welc2005safe} handles a similar problem with Java's futures.
 % how to compare to safe futures
 The goal of this project was to implement futures in Java that always respect the semantics of the
 sequential version of the program.  If mutable state is shared between a future and the
