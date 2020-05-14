@@ -35,11 +35,39 @@ There are also two interesting features available in some backward build systems
 
 \paragraph{Remote Execution} Some build systems (e.g. \Bazel and \BuildXL \cite{buildxl}) allow running commands on a remote machine, usually with a much higher degree of parallelism than is available on the users machine. If \Rattle was able to leverage remote execution then speculative commands could be used to fill up the cloud cache, and \emph{not} involve local writes to disk, eliminating all speculative hazards -- a very attractive property. Remote execution in \Bazel sends all files alongside the command, but \Rattle doesn't know the files accessed in advance, which makes that model infeasible. Remote execution in \BuildXL sends the files it thinks the command will need, augments the file system to block if additional files are accessed, and sends further requests back to the initial machine -- which would fit nicely with \Rattle.
 
+\paragraph{Fine-grained dependencies} Pluto \cite{erdweg2015sound} is another backward build system that aims to
+provide fine-grained dependencies and optimal incremental rebuilding.  It supports dynamic
+dependencies, allows users to specify how they would like to depend on a file, and track build
+rule definitions so a build will re-run correctly when changed.  Rattle in contrast doesn't need
+to explicitly track whether a build script changes, and because all dependencies are implicitly
+tracked \Rattle does not provide the ability for a build script author to specify how a command
+should depend on any file.
+
 \subsection{Analysis of existing build systems}
 
 We aren't the first to observe that existing build systems often have incorrect dependencies.  \citet{bezemer2017empirical} performed an analysis of the missing dependencies in \Make build scripts, finding over \emph{1.2 million unspecified dependencies} among four projects. To detect missing dependencies, \citet{detecting_incorrect_build_rules} introduced a concept called \emph{build fuzzing}, finding race-conditions and errors in 30 projects. It has also been shown that build maintenance requires as much as a 27\% overhead \cite{build_maintenance}, a substantial proportion of which is devoted to dependency management. Our anecdotes from \S\ref{sec:evaluation} all reinforce these messages.
 
 % SS TODO maybe mention something about a project like node trying to generate dependencies within make;
+\subsection{Speculation}
+
+Speculation is used extensively in many other areas of computer science, from processors to distributed systems.  If an action is taken before it is known to be required undesired side-effects can
+occur.  Safe futures for Java \cite{welc2005safe} handles a similar problem with Java's futures.
+% how to compare to safe futures
+The goal of this project was to implement futures in Java that always respect the semantics of the
+sequential version of the program.  If mutable state is shared between a future and the
+code that executes after its invocation, its continuation, the future and the continuation should
+execute in a way so that the effect is the same as if the code executed sequentially.
+To prevent dependency violations between the future and its continuation, the system does two things. First, all data accesses to shared state are tracked and recorded, and if a dependency violation occurs the offending code is revoked and restarted.  Second, shared state is versioned using a copy-on-write invariant to ensure threads write to their own copies, preventing a future from seeing its continuation's writes.
+
+This approach cannot currently be applied to Rattle because we do not have the same level of control over the reading and writing of files. Although we can track reads and writes, we cannot cause writes to be done to objects local to the executing command.  If in the future a file system or tracing tool that enabled writes to be intercepted and buffered existed, an approach similar to that used by Safe futures for Java could be applied to Rattle.
+
+% talk about thread level speculation;
+Thread level speculation is the process of speculatively executing threads while maintaining the same semantics as if they had executed sequentially.  As with Safe future for Java, in thread
+level speculation, the writes of a speculative thread are buffered until it is no longer
+speculative.  And, a speculative thread must be sure to read the writes of speculative threads
+that precede it in the ordering, but not that come after it.  Unlike Rattle, these systems have
+control over writes and can actually buffer them.   % pick an appropriatepaper to cite
+
 
 \begin{comment}
 \subsection{Other related work}
