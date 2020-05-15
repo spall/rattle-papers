@@ -24,13 +24,13 @@ main = rattle $ do
 \begin{figure}
 \begin{small}
 \begin{verbatim}
--- The Run monad                           -- Reading/writing files                    
-data Run a = ...                           cmdReadFile :: FilePath -> Run String       
+-- The Run monad                           -- Reading/writing files
+data Run a = ...                           cmdReadFile :: FilePath -> Run String
 rattle :: Run a -> IO a                    cmdWriteFile :: FilePath -> String -> Run ()
-                                                         
--- Running commands                        -- Parallelism                              
-data CmdOption = Cwd FilePath | ...        forP :: [a] -> (a -> Run b) -> Run [b]      
-cmd :: CmdArguments args => args   
+
+-- Running commands                        -- Parallelism
+data CmdOption = Cwd FilePath | ...        forP :: [a] -> (a -> Run b) -> Run [b]
+cmd :: CmdArguments args => args
 \end{verbatim}
 \end{small}
 \caption{The \Rattle API}
