@@ -116,28 +116,12 @@ The disadvantage of hash forwarding (other than complexity) is that if the outpu
 \subsection{Tracing approaches}
 \label{sec:tracing}
 
-In \S\ref{sec:assume_tracing} we assume the existence of \emph{dependency tracing} which can, after a command completes, tell us which files that command read and wrote. Unfortunately, such an API is \emph{not} part of the POSIX standard, and is not easily available on any standard platform. We aim to make \Rattle work on Linux, Mac and Windows, which requires using a variety of approaches. In this section we outline some of the approaches that can be used for tracing, along with their advantages and disadvantages.
-
-\paragraph{Syscall tracing} On Linux, \texttt{ptrace} allows tracing every system call made, examining the arguments, and thus recording the files accessed. Moreover, by tracing  the \texttt{stat} system call even file queries can be recorded. The syscall tracking approach can be made complete, but because \emph{every} syscall must be hooked, can end up imposing high overhead. This approach is used by \Bigbro \cite{bigbro} as well as numerous other debugging and instrumentation tools.
-
-\paragraph{Library preload} On both Linux and Mac most programs use a dynamically linked C library to make file accesses. By using \texttt{LD\_LIBRARY\_PRELOAD} it is possible to inject a different library into the program memory which intercepts the relevant C library calls, recording which files are read and written. This approach is simpler than hooking syscalls, but only works if all syscall access is made through the C library. While normally true, that isn't the case for Go programs \cite{go} (syscalls are invoked directly) or statically linked programs (the C library cannot be replaced).
-
-While the technique works on a Mac, from Mac OS X 1.10 onwards system binaries can't be traced due to System Integrity Protection\footnote{\url{https://developer.apple.com/library/content/documentation/Security/Conceptual/System_Integrity_Protection_Guide/ConfiguringSystemIntegrityProtection/ConfiguringSystemIntegrityProtection.html}}. As an example, the C compiler is typically installed as a system binary. It is possible to disable System Integrity Protection (but not recommended by Apple), to use non-system binaries (e.g. those supplied by \Nix \cite{nix}), or to copy the system binary to a temporary directory (which works provided the binary does not afterwards invoke another system binary to do its work). The library preload mechanism is implemented by \Fsatrace \cite{fsatrace} and the copying system binaries trick on Mac is implemented by \Shake \cite{shake}.
-
-\paragraph{File system tracing} An alternative approach is to implement a custom file system and have that report which files are accessed. One such implementation for Linux is \tracedfs \cite{tracedfs}, which is unfortunately not yet complete. Such an approach can track all accesses, but may require administrator privileges to mount a file system.
-
-\paragraph{Custom Mac tracing} \BuildXL \cite{buildxl}\footnote{\url{https://github.com/Microsoft/BuildXL/blob/master/Documentation/Specs/Sandboxing.md\#macos-sandboxing}} uses a Mac sandbox based on KAuth combined with TrustedBSD Mandatory Access Control (MAC) to both detect which files are accessed and also block access to specific files. The approach is based on internal Mac OS X details which have been reversed engineered, some of which are deprecated and scheduled for removal.
-
-\paragraph{Windows Kernel API hooking} On Windows it is possible to hook the Kernel API, which can be used to detect when any files are accessed. Implementing such a hook is difficult, particularly around 32bit v 64bit differences, as custom assembly language trampolines must be used. Furthermore, some antivirus products (incorrectly) detect such programs as viruses. Windows kernel hooking is available in both \Fsatrace and \Bigbro, although without support for 32bit processes that spawn 64bit processes.
-
-\postparagraphs
-
-\Rattle currently uses \Fsatrace for the underlying tracing, with a Haskell interface provided by \Shake. That means it uses library preloading on Linux/Mac and kernel hooking on Windows. The biggest practical limitations vary by OS:
+In \S\ref{sec:assume_tracing} we assume the existence of \emph{dependency tracing} which can, after a command completes, tell us which files that command read and wrote. Unfortunately, such an API is \emph{not} part of the POSIX standard, and is not easily available on any standard platform. We reuse the file access tracing features that have been added to \Shake \cite{neil:file_access}, which in turn are built on top of \Fsatrace \cite{fsatrace}. The techniques and limitations vary by OS:
 
 \begin{itemize}
-\item On \textbf{Linux} it can't trace into Go programs (or other programs that use system calls directly) and statically linked binaries. We plan to integrate \Bigbro as an alternative, to address these concerns.
-\item On \textbf{Mac} it can't trace into system binaries called from other system binaries. We recommend using \Nix binaries if this limitation is problematic.
-\item On \textbf{Windows} it can't trace 64bit programs spawned by 32bit programs. In most cases the 32bit binaries can easily be replaced by 64bit binaries. The only problem we've seen was caused by a five year-old version of \texttt{sh}, which was easily remedied with a newer version.
+\item On \textbf{Linux} we use \texttt{LD\_LIBRARY\_PRELOAD} to inject a different C library which records accesses. It can't trace into programs that use system calls directly (typically Go programs \cite{go}) or statically linked binaries. In future we plan to integrate \Bigbro \cite{bigbro} as an alternative, which uses \texttt{ptrace} and fixes these issues.
+\item On \textbf{Mac} we also use \texttt{LD\_LIBRARY\_PRELOAD}, but that technique is blocked for security reasons on system binaries, notably the system C/C++ compiler. Installing a C/C++ compiler from another source (e.g. \Nix \cite{nix}) overcomes that limitation.
+\item On \textbf{Windows} we can't trace 64bit programs spawned by 32bit programs, but such a pattern is rare (most binaries are now 64bit), often easily remedied (switch to the 64bit version) and we have the code to fix it if necessary (although the integration is likely difficult).
 \end{itemize}
 
 \noindent In practice, none of the limitations have been overly problematic in the examples we have explored.
