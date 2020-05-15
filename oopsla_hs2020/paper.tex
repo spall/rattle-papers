@@ -46,7 +46,7 @@
 
 
 \begin{abstract}
-Build scripts for most build systems describe the actions to run, and the dependencies between those actions -- but often build scripts get those dependencies wrong.
+Build scripts for most build systems describe the actions to run, and the dependencies between those actions---but often build scripts get those dependencies wrong.
 Most build scripts have both \emph{too few dependencies} (leading to incorrect build outputs) and \emph{too many dependencies} (leading to excessive rebuilds and reduced parallelism). Any programmer who has wondered why a small change led to excess compilation, or who resorted to a ``clean'' step, has suffered the ill effects of incorrect dependency specification.
 We outline a build system where dependencies are \emph{not specified}, but instead \emph{captured by tracing execution}.
 The consequence is that dependencies are always correct by construction and build scripts are easier to write.
@@ -55,24 +55,24 @@ The simplest implementation of our approach would lose parallelism, but we are a
 
 %% 2012 ACM Computing Classification System (CSS) concepts
 %% Generate at 'http://dl.acm.org/ccs/ccs.cfm'.
-\begin{CCSXML}
-<ccs2012>
-<concept>
-<concept_id>10011007</concept_id>
- <concept_desc>Software and its engineering</concept_desc>
-<concept_significance>500</concept_significance>
-</concept>
-<concept>
-<concept_id>10002950</concept_id>
- <concept_desc>Mathematics of computing</concept_desc>
-<concept_significance>300</concept_significance>
-</concept>
-</ccs2012>
-\end{CCSXML}
-\ccsdesc[500]{Software and its engineering}
-\ccsdesc[300]{Mathematics of computing}
-%% End of generated code
-\keywords{build systems, functional programming, algorithms}
+%% \begin{CCSXML}
+%% <ccs2012>
+%% <concept>
+%% <concept_id>10011007</concept_id>
+%%  <concept_desc>Software and its engineering</concept_desc>
+%% <concept_significance>500</concept_significance>
+%% </concept>
+%% <concept>
+%% <concept_id>10002950</concept_id>
+%%  <concept_desc>Mathematics of computing</concept_desc>
+%% <concept_significance>300</concept_significance>
+%% </concept>
+%% </ccs2012>
+%% \end{CCSXML}
+%% \ccsdesc[500]{Software and its engineering}
+%% \ccsdesc[300]{Mathematics of computing}
+%% %% End of generated code
+%% \keywords{build systems, functional programming, algorithms}
 
 \maketitle
 

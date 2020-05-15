@@ -9,7 +9,9 @@ We have implemented the design from \S\ref{sec:design} in a build system called 
   \begin{small}
     % I know this syntax is fake
 \begin{verbatim}
-import Development.Rattle, System.FilePath, System.FilePattern
+import Development.Rattle
+import System.FilePattern
+import System.FilePath
 
 main = rattle $ do
     cs <- liftIO $ getDirectoryFiles "." [root </> "*.c"]
@@ -121,7 +123,7 @@ In \S\ref{sec:assume_tracing} we assume the existence of \emph{dependency tracin
 \begin{itemize}
 \item On \textbf{Linux} we use \texttt{LD\_LIBRARY\_PRELOAD} to inject a different C library which records accesses. It can't trace into programs that use system calls directly (typically Go programs \cite{go}) or statically linked binaries. In future we plan to integrate \Bigbro \cite{bigbro} as an alternative, which uses \texttt{ptrace} and fixes these issues.
 \item On \textbf{Mac} we also use \texttt{LD\_LIBRARY\_PRELOAD}, but that technique is blocked for security reasons on system binaries, notably the system C/C++ compiler. Installing a C/C++ compiler from another source (e.g. \Nix \cite{nix}) overcomes that limitation.
-\item On \textbf{Windows} we can't trace 64bit programs spawned by 32bit programs, but such a pattern is rare (most binaries are now 64bit), often easily remedied (switch to the 64bit version) and we have the code to fix it if necessary (although the integration is likely difficult).
+\item On \textbf{Windows} we can't trace 64bit programs spawned by 32bit programs, but such a pattern is rare (most binaries are now 64bit), often easily remedied (switch to the 64bit version), and possible to fix (although integrating the fix is likely difficult).
 \end{itemize}
 
 \noindent In practice, none of the limitations have been overly problematic in the examples we have explored.
