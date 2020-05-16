@@ -85,7 +85,7 @@ As stated in \citet[\S3.6]{build_systems_a_la_carte}, a build is correct provide
 \end{quote}
 
 % SS just trying to make it clear nothign has changed between builds; although maybe that goes without saying?
-Specified in terms more applicable to our design, it means that after a build completes, an immediate subsequent rebuild should have no effect because all commands are skipped (assuming the commands given to the build system are the same). However, there are sequences of commands, where each command meets our assumptions in isolation (as per \S\ref{sec:skipping_unnecessary}), but the combination is problematic, for example:
+Specified in terms more applicable to our design, it means that after a build completes, an immediate subsequent rebuild should have no effect because all commands are skipped (assuming the commands given to the build system are the same). However, there are sequences of commands, where each command meets our assumptions separately (as per \S\ref{sec:skipping_unnecessary}), but the combination is problematic:
 
 \vspace{1mm}
 \begin{small}
@@ -96,6 +96,7 @@ echo 2 > foo.txt
 \end{small}
 \vspace{1mm}
 
+\noindent
 % consistent -> correct because consistent had never been defined and I think correct is what we meant
 This program writes \texttt{1} to \texttt{foo.txt}, then writes \texttt{2}. If the commands are re-executed then the first command reruns because its output changed, and after the first command reruns, now the second commands output has changed. More generally, if a build writes different values to the same file multiple times, it is not correct by the above definition, because on a rebuild both commands would re-run. But even without writing to the same file twice, it is possible to have an incorrect build:
 
@@ -108,6 +109,7 @@ sha1sum bar.txt > foo.txt
 \end{small}
 \vspace{1mm}
 
+\noindent
 Here \texttt{sha1sum} takes the SHA1 hash of a file, first taking the SHA1 of \texttt{foo.txt} and storing it in \texttt{bar.txt}, then taking the SHA1 of \texttt{bar.txt} and storing it in \texttt{foo.txt}. The problem is that the script first reads from \texttt{foo.txt} on the first line, then writes to \texttt{foo.txt} on the second line, meaning that when the script is rerun the read of \texttt{foo.txt} will have to be repeated as its value has changed.
 
 Writing to a file after it has already been either read or written is the only circumstance in which a build, where every individual command is well-formed (as per \S\ref{sec:skipping_unnecessary}), is incorrect. We define such a build as \emph{hazardous} using the following rules:
@@ -117,7 +119,7 @@ Writing to a file after it has already been either read or written is the only c
 \item[Write then write] If two commands both write to the same file, on a future build, the first will be rerun (its output has changed), which is likely to then cause the second to be rerun. This behaviour is defined as a \emph{write-write hazard}.
 \end{description}
 
-Using tracing we can detect hazards and raise errors if they occur, detecting that a build system is incorrect before unnecessary rebuilds occur. We prove that a build system with deterministic control logic, given the same input the control logic will produce the same output,  and with no hazards always results in no rebuilds in \S\ref{sec:claims} Claim \ref{claim:no_rebuild}.  The presence of hazards in a build does not guarantee that a rebuild will always occur, for example if the write of a file after it is read does not change the file's value.  But, such a build system is malformed by our definition and if the write definitely can't change the output, then it should not be present.
+Using tracing we can detect hazards and raise errors if they occur, detecting that a build system is incorrect before unnecessary rebuilds occur. We prove that a build system with deterministic control logic, given the same input the control logic will produce the same output,  and with no hazards always results in no rebuilds in \S\ref{sec:claims}.  The presence of hazards in a build does not guarantee that a rebuild will always occur, for example if the write of a file after it is read does not change the file's value.  But, such a build system is malformed by our definition and if the write definitely can't change the output, then it should not be present.
 
 \subsection{Explicit Parallelism}
 \label{sec:explicit_parallelism}

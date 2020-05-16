@@ -5,7 +5,7 @@
 Every non-trivial piece of software includes a ``build system'', describing how to set up the system from source code.
 Build scripts \cite{build_systems_a_la_carte} describe \emph{commands to run} and \emph{dependencies to respect}. For example, using the \Make build system \cite{make}, a build script might look like:
 
-\vspace{3mm}
+\vspace{1mm}
 \begin{small}
 \begin{verbatim}
 main.o: main.c
@@ -16,11 +16,11 @@ main.exe: main.o util.o
     gcc -o main.exe main.o util.o
 \end{verbatim}
 \end{small}
-\vspace{3mm}
+\vspace{1mm}
 
 This script contains three rules. Looking at the first rule, it says \texttt{main.o} depends on \texttt{main.c}, and is produced by running \texttt{gcc -c main.c}. What if we copy the commands into a shell script? We get:
 
-\vspace{3mm}
+\vspace{1mm}
 \begin{small}
 \begin{verbatim}
 gcc -c main.c
@@ -28,7 +28,7 @@ gcc -c util.c
 gcc -o main.exe main.o util.o
 \end{verbatim}
 \end{small}
-\vspace{3mm}
+\vspace{1mm}
 
 That's shorter, simpler and easier to follow. Instead of declaring the outputs and dependencies of each command, we've merely given one valid ordering of the commands (we could equally have put \texttt{gcc -c util.c} first). This simpler specification has additional benefits. First, we've fixed some potential bugs -- these commands depend on the undeclared dependency \texttt{gcc}, and whatever header files are used by \texttt{main.c} and \texttt{util.c}.  These bugs could be fixed in the Makefile by adding a dependency on the version of gcc used, as well as by listing every header file transitively included by \texttt{main.c} and \texttt{util.c}
 Furthermore, as the files \texttt{main.c} and \texttt{util.c} evolve, and their dependencies change (by changing the \texttt{\#include} directives), the shell script remains correct, while the \Make script \emph{must} be kept consistent or builds will become incorrect.
@@ -41,4 +41,4 @@ Given the manifest simplicity of the shell script, why write a \texttt{Makefile}
 
 In this paper we show how to take the above shell script and gain most of the benefits of a \Make build (\S\ref{sec:design}). Firstly, we can skip those commands whose dependencies haven't changed by \emph{tracing} which files they read and write (\S\ref{sec:skipping_unnecessary}) and keeping a history of such traces. Secondly, we can run some commands in parallel, using \emph{speculation} to guess which future commands won't interfere with things already running (\S\ref{sec:speculation}). The key to speculation is a robust model of what ``interfering'' means -- we call a problematic interference a \emph{hazard}, which we define in \S\ref{sec:hazards}.
 
-We have implemented these techniques in a build system called \Rattle\footnote{\url{https://github.com/author_name_omitted/rattle}}, introduced in \S\ref{sec:implementation}, which embeds commands in a Haskell script. A key part of the implementation is the ability to trace commands, whose limitations we describe in \S\ref{sec:tracing}. We show that our design decisions produce correct builds in by formalizing hazards and demonstrating important properties about the safety of speculation in \S\ref{sec:proof}. To evaluate our claims, and properly understand the subtleties of our design, we converted existing \Make scripts into \Rattle scripts, and discuss the performance characteristics and \Make script issues uncovered in \S\ref{sec:evaluation}. We also implement two small but non-trivial builds from scratch in \Rattle and report on the lessons learned. Our design can be considered a successor to the \Memoize build system \cite{memoize}, and we compare \Rattle with it and other related work in \S\ref{sec:related}. Finally, in \S\ref{sec:conclusion} we conclude and describe future work.
+We have implemented these techniques in a build system called \Rattle\footnote{\url{https://github.com/rattle-authors/rattle} (lightly anonymized)}, introduced in \S\ref{sec:implementation}, which embeds commands in a Haskell script. A key part of the implementation is the ability to trace commands, whose limitations we describe in \S\ref{sec:tracing}. We show that our design decisions produce correct builds in by formalizing hazards and demonstrating important properties about the safety of speculation in \S\ref{sec:proof}. To evaluate our claims, and properly understand the subtleties of our design, we converted existing \Make scripts into \Rattle scripts, and discuss the performance characteristics and \Make script issues uncovered in \S\ref{sec:evaluation}. We also implement two small but non-trivial builds from scratch in \Rattle and report on the lessons learned. Our design can be considered a successor to the \Memoize build system \cite{memoize}, and we compare \Rattle with it and other related work in \S\ref{sec:related}. Finally, in \S\ref{sec:conclusion} we conclude and describe future work.
