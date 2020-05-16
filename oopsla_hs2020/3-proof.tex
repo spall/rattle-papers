@@ -8,7 +8,7 @@
 
 \newtheorem{claim}{Claim}
 
-\Rattle's design relies on taking a sequence of commands from the user, and additionally running some commands speculatively. In this section we argue for the correctness of this approach with respect to the reference semantics of sequential evaluation. Throughout, we assume the commands themselves are pure functions from the inputs to their outputs (as reported by tracing), without this property no build system more sophisticated than the shell script of \S\ref{sec:introduction} would be correct.
+\Rattle's design relies on taking a sequence of commands from the user, and additionally running some commands speculatively. In this section we argue for the correctness of this approach with respect to the reference semantics of sequential evaluation. Throughout, we assume the commands themselves are pure functions from the inputs to their outputs (as reported by tracing) -- without this property no build system more sophisticated than the shell script of \S\ref{sec:introduction} would be able to perfectly replicate the sequential model.
 
 \subsection{Hazards, formally}
 \label{sec:hazards_formally}
@@ -35,7 +35,7 @@ properties of our approach, particularly in the treatment of hazards. We define 
 \item[Deterministic command] A command is deterministic if for a given set of files and values it reads, it always writes the same values to the same set of files. We assume commands are deterministic.
 \item[Fixed point] A deterministic command will have no effect if none of the files it reads or writes have changed since the last time it was run. Since the command is deterministic, and its reads/writes are disjoint, the same reads will take place, the same computation will follow, and then the original values will be rewritten as they were before. We describe such a command as having \emph{reached a fixed point}.
 \item[Correct builds] If a build containing a set of commands $C$ has reached a fixed point for every command $c$ within the set, then it is a correct build system as per the definition in \S\ref{sec:hazards}.
-\item[No hazards] A build has no hazards if no command in the build writes to a file that a previous command has read or written to.
+\item[No hazards] A build has no hazards if none of the hazards from \S\ref{sec:hazards_formally} occur.
 \item[Input files] We define the input files as those the build reads from but does not write to, namely:
 \[
   \bigcup_{c \in C} c_r \setminus \bigcup_{c \in C} c_w

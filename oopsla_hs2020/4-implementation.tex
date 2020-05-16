@@ -15,8 +15,10 @@ import System.FilePath
 
 main = rattle $ do
     cs <- liftIO $ getDirectoryFiles "." [root </> "*.c"]
-    forP cs $ \c -> cmd "gcc -c" c
-    cmd "gcc -o main.exe" (map (\x -> takeBaseName x <.> "o") cs)
+    forP cs $ \c ->
+        cmd "gcc -c" c
+    let toO x = takeBaseName x <.> "o"
+    cmd "gcc -o main.exe" (map toO cs)
 \end{verbatim}
 \end{small}
 \caption{A Haskell/\Rattle version of the script from \S\ref{sec:monadic}}
@@ -42,8 +44,8 @@ cmd :: CmdArguments args => args
 A complete \Rattle script that compiles all \texttt{.c} files like \S\ref{sec:monadic} is given in Figure \ref{fig:rattle_example}, with the key API functions in Figure \ref{fig:api}. Looking at the example, we see:
 
 \begin{itemize}
-\item A \Rattle script is a Haskell program. It makes use of ordinary Haskell imports, and importantly includes \texttt{Development.Rattle}, offering the API from Figure \ref{fig:api}.
-\item The \texttt{rattle} function takes a value in the \texttt{Run} monad and executes it in \texttt{IO}. The \texttt{Run} type is the \texttt{IO} monad, enriched with a \texttt{ReaderT} \cite{mtl} containing a reference to shared mutable state (e.g. what commands are in flight, where to store metadata, location of shared storage).
+\item A \Rattle script is a Haskell program. It makes use of ordinary Haskell imports, and importantly uses \texttt{Development.Rattle}, offering the API from Figure \ref{fig:api}.
+\item The \texttt{rattle} function takes a value in the \texttt{Run} monad and executes it in \texttt{IO}. The \texttt{Run} type is the \texttt{IO} monad, enriched with a \texttt{ReaderT} \cite{mtl} containing a reference to shared mutable state (e.g. which commands are in flight, where to store metadata, location of shared storage).
 \item All the control logic is in Haskell and can use external libraries -- e.g. \texttt{System.FilePath} for manipulating \texttt{FilePath} values and \texttt{System.FilePattern} for directory listing. Taking the example of replacing the extension from \texttt{.c} to \texttt{.o}, we are able to abstract out this pattern as \texttt{toO} and reuse it later. Arbitrary Haskell IO can be embedded in the script using \texttt{liftIO}. All of the Haskell code (including the IO) is considered control logic and will be repeated in every execution.
 \item Commands are given to the build system part of \Rattle using \texttt{cmd}. We have implemented \texttt{cmd} as a variadic function \cite{variadic_functions} which takes a command as a series of \texttt{String} (a series of space-separated arguments), \texttt{[String]} (a list of arguments) and \texttt{CmdOption} (command execution modifiers, e.g. to change the current directory), returning a value of type \texttt{Run ()}. The function \texttt{cmd} only returns once the command has finished executing (whether that is by actual execution, skipping, or fetching from external storage).
 \item We have used \texttt{forP} in the example, as opposed to \texttt{forM}, which causes the commands to be given to \Rattle in parallel (\S\ref{sec:explicit_parallelism}). We could have equally used \texttt{forM} and relied on speculation for parallelism (\S\ref{sec:speculation}).
@@ -68,7 +70,7 @@ main = rattle $ do
 
 Here we take a command line argument, read the file it points to, then run each command sequentially using \texttt{forM\_}. We use this script for our evaluation in \S\ref{sec:evaluation}.
 
-An alternative API could be provided by opening up a socket, and allowing a \Rattle server to take command invocations through that socket. Such an API would allow writing \Rattle scripts in other languages, making use of the existing \Rattle implementation. While such an implementation should be easy, we have not yet actually implemented it.
+An alternative API could be provided by opening up a socket, and allowing a \Rattle server to take command invocations through that socket. Such an API would allow writing \Rattle scripts in other languages, making use of the existing \Rattle implementation. While such an implementation should be easy, we have not yet implemented it.
 
 \subsection{Specific design choices and consequences}
 \label{sec:choices}

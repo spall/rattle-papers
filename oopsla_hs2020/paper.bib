@@ -2,15 +2,14 @@
     ,title          = {Build systems \`a la carte}
     ,author         = {Andrey Mokhov and Neil Mitchell and Simon Peyton Jones}
     ,year           = {2018}
-    ,month          = {September}
-    ,day            = {24}
+    ,_month          = {September}
+    ,_day            = {24}
     ,journal        = {Proceedings ACM Programing Languages}
     ,volume         = {2}
     ,issn           = {2475-1421}
-    ,pages          = {79:1--79:29}
-    ,articleno      = {79}
-    ,doi            = {http://doi.acm.org/10.1145/3236774}
-    ,url            = {\verb'https://github.com/snowleopard/build/releases/download/icfp-final/build-systems.pdf'}
+    ,pages          = {1--29}
+    ,_articleno      = {79}
+    ,_doi            = {http://doi.acm.org/10.1145/3236774}
 }
 
 @unpublished{gyp,
@@ -127,16 +126,19 @@
   publisher={Wiley Online Library}
 }
 
-@inproceedings{shake,
-  title={Shake before building: Replacing {Make} with {Haskell}},
-  author={Mitchell, Neil},
-  booktitle={ACM SIGPLAN Notices},
-  volume={47},
-  number={9},
-  pages={55--66},
-  year={2012},
-  organization={ACM}
+@inproceedings{shake
+    ,title          = {Shake Before Building - Replacing Make with {Haskell}}
+    ,author         = {Neil Mitchell}
+    ,year           = {2012}
+    ,month          = {September}
+    ,day            = {10}
+    ,pages          = {55--66}
+    ,location       = {Copenhagen, Denmark}
+    ,booktitle      = {Proceedings of ICFP 2012}
+    ,publisher      = {ACM}
+    ,isbn           = {978-1-4503-1054-3}
 }
+
 
 @unpublished{bazel,
     title = {Bazel},
@@ -148,15 +150,16 @@
 @inproceedings{build_maintenance,
     author = {Shane McIntosh and Bram Adams and Thanh Nguyen and Yasutaka Kamei and Ahmed Hassan},
     title = {An empirical study of build maintenance effort},
-    booktitle = {Proc. ICSE '11},
+    booktitle = {Proceedings of ICSE 2011},
     year = {2011},
     pages = {141--150},
-    publisher = {ACM Press}
+    publisher = {ACM}
 }
 
 @inproceedings{detecting_incorrect_build_rules,
     author = {Licker, N\'{a}ndor and Rice, Andrew},
-    booktitle={2019 IEEE/ACM 41st International Conference on Software Engineering (ICSE)},
+    booktitle={Proceedings of ICSE 2019},
+    publisher= {ACM},
     title={Detecting incorrect build rules},
     year={2019},
     volume={},
@@ -186,7 +189,7 @@
 }
 
 @article{bezemer2017empirical,
-  title={An empirical study of unspecified dependencies in make-based build systems},
+  title={An empirical study of unspecified dependencies in Make-based build systems},
   author={Bezemer, Cor-Paul and McIntosh, Shane and Adams, Bram and German, Daniel and Hassan, Ahmed},
   journal={Empirical Software Engineering},
   volume={22},
@@ -211,8 +214,8 @@
 @inproceedings{hadrian,
     author = {Mokhov, Andrey and Mitchell, Neil and Peyton Jones, Simon and Marlow, Simon},
     title = {{Non-recursive Make considered harmful: build systems at scale}},
-    booktitle = {Proceedings of the 9th International Symposium on Haskell},
-    series = {Haskell 2016},
+    booktitle = {Proceedings of Haskell 2016},
+    _series = {Haskell 2016},
     year = {2016},
     pages = {170--181},
     publisher = {ACM},
@@ -227,28 +230,34 @@
     pages = {1--16},
 }
 
-@article{erdweg2015sound,
-  title={A sound and optimal incremental build system with dynamic dependencies},
-  author={Erdweg, Sebastian and Lichter, Moritz and Weiel, Manuel},
-  journal={ACM SIGPLAN Notices},
-  volume={50},
-  number={10},
-  pages={89--106},
-  year={2015},
-  publisher={ACM New York, NY, USA}
+@inproceedings{erdweg2015sound,
+  author = {Erdweg, Sebastian and Lichter, Moritz and Weiel, Manuel},
+  title = "A Sound and Optimal Incremental Build System with Dynamic Dependencies",
+  year = {2015},
+  isbn = {9781450336895},
+  publisher = {ACM},
+  _address = {New York, NY, USA},
+  _url = {https://doi.org/10.1145/2814270.2814316},
+  _doi = {10.1145/2814270.2814316},
+  pages = {89--106},
+  numpages = {18},
+  keywords = {cyclic dependencies, dynamic dependencies, pluto, incremental building, build system, builder API},
+  location = {Pittsburgh, PA, USA},
+  booktitle = {Proceedings of OOPSLA 2015}
 }
+
 
 @inproceedings{welc2005safe,
   title={Safe futures for Java},
   author={Welc, Adam and Jagannathan, Suresh and Hosking, Antony},
-  booktitle={Proceedings of the 20th annual ACM SIGPLAN conference on Object-oriented programming, systems, languages, and applications},
+  booktitle={Proceedings of OOPSLA 2005},
   pages={439--453},
   year={2005}
 }
 
 @article{steffan2000scalable,
   title={A scalable approach to thread-level speculation},
-  author={Steffan, J Greggory and Colohan, Christopher B and Zhai, Antonia and Mowry, Todd C},
+  author={Steffan, J Greggory and Colohan, Christopher and Zhai, Antonia and Mowry, Todd},
   journal={ACM SIGARCH Computer Architecture News},
   volume={28},
   number={2},
@@ -258,7 +267,7 @@
 }
 
 @article{swanson_cpu_speculation,
-author = {Swanson, Steven and McDowell, Luke K. and Swift, Michael M. and Eggers, Susan J. and Levy, Henry M.},
+author = {Swanson, Steven and McDowell, Luke and Swift, Michael and Eggers, Susan and Levy, Henry},
 title = {An Evaluation of Speculative Instruction Execution on Simultaneous Multithreaded Processors},
 year = {2003},
 issue_date = {August 2003},
@@ -267,17 +276,17 @@ address = {New York, NY, USA},
 volume = {21},
 number = {3},
 issn = {0734-2071},
-url = {https://doi.org/10.1145/859716.859720},
-doi = {10.1145/859716.859720},
-journal = {ACM Trans. Comput. Syst.},
-month = aug,
-pages = {314–340},
+_url = {https://doi.org/10.1145/859716.859720},
+_doi = {10.1145/859716.859720},
+journal = {ACM Transactions on Computer Systems},
+_month = aug,
+pages = {314--340},
 numpages = {27},
 keywords = {speculation, multiprocessors, simultaneous multithreading, Instruction-level parallelism, thread-level parallelism, multithreading}
 }
 
 @book{patterson_cpu_design,
-author = {Patterson, David A. and Hennessy, John L.},
+author = {Patterson, David and Hennessy, John},
 title = {Computer Organization and Design, Fifth Edition: The Hardware/Software Interface},
 year = {2013},
 isbn = {0124077269},
@@ -287,7 +296,7 @@ edition = {5th}
 }
 
 @article{tomasulo,
-  author={R. M. {Tomasulo}},
+  author={Robert Tomasulo},
   journal={IBM Journal of Research and Development},
   title={An Efficient Algorithm for Exploiting Multiple Arithmetic Units},
   year={1967},
@@ -298,7 +307,7 @@ edition = {5th}
 
 @inproceedings{steffan1998potential,
   title={The potential for using thread-level data speculation to facilitate automatic parallelization},
-  author={Steffan, J Gregory and Mowry, Todd C},
+  author={Steffan, J Gregory and Mowry, Todd},
   booktitle={Proceedings 1998 Fourth International Symposium on High-Performance Computer Architecture},
   pages={2--13},
   year={1998},
@@ -314,7 +323,7 @@ edition = {5th}
 
 @article{nightingale2005speculative,
   title={Speculative execution in a distributed file system},
-  author={Nightingale, Edmund B and Chen, Peter M and Flinn, Jason},
+  author={Nightingale, Edmund and Chen, Peter and Flinn, Jason},
   journal={ACM SIGOPS operating systems review},
   volume={39},
   number={5},
