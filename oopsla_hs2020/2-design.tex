@@ -11,19 +11,42 @@ Given a build script as a list of commands, like in \S\ref{sec:introduction}, th
 \subsection{Value-dependent commands}
 \label{sec:monadic}
 
-While a static list of commands is sufficient for simple builds, it is limited in its expressive power. Taking the build script from \S\ref{sec:introduction}, the user might really want to compile and link \emph{all} \texttt{.c} files -- not just those explicitly listed by the script. A more powerful script might be:
+While a static list of commands is sufficient for simple builds, it is
+limited in its expressive power. Taking the build script from
+\S\ref{sec:introduction}, the user might really want to compile and
+link \emph{all} \texttt{.c} files -- not just those explicitly listed
+by the script. A more powerful script, along with its translation to
+working \Rattle code, is shown in figure~\ref{fig:getdir}.
+
 
 \vspace{3mm}
-\begin{small}
+\begin{figure}[h!]
+\begin{minipage}{.35\textwidth}
+  \begin{small}
 \begin{verbatim}
-FILES=$(ls *.c)
+FILES=$(ls *.c)                                       
 for FILE in $FILES; do
     gcc -c $FILE
 done
 gcc -o main.exe ${FILES%.c}.o
 \end{verbatim}
+  \end{small}
+\end{minipage}% This must go next to `\end{minipage}`
+\begin{minipage}{.65\textwidth}
+  \begin{small}
+\begin{verbatim}
+  main = rattle $ do
+    cs <- liftIO $ getDirectoryFiles "." [root </> "*.c"]
+    forP cs $ \c -> cmd "gcc -c" c
+    let toO x = takeBaseName x <.> "o"
+    cmd "gcc -o main.exe" (map toO cs)
+\end{verbatim}
 \end{small}
-\vspace{3mm}
+\end{minipage}
+  
+  \caption{Value-dependent build scripts, in Shell and Rattle}
+  \label{fig:getdir}
+\end{figure}
 
 This script now has a curious mixture of commands (\texttt{ls}, \texttt{gcc}), control logic (\texttt{for}) and simple manipulation (changing file extension\footnote{We take some liberties with shell scripts around replacing extensions, so as not to obscure the main focus.}). Importantly, there is \emph{no fixed list of commands} -- the future commands are determined based on the results of previous commands. Concretely, in this example, the result of \texttt{ls} changes which \texttt{gcc} commands are executed. The transition from a fixed list of commands to a dynamic list matches the \texttt{Applicative} vs \texttt{Monadic} distinction of \citet[\S3.5]{build_systems_a_la_carte}.
 
