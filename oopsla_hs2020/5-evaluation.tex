@@ -3,7 +3,7 @@
 
 In this section we evaluate the design from \S\ref{sec:design}, specifically our implementation from \S\ref{sec:implementation}. We show how the implementation performs on the example from \S\ref{sec:introduction} in \S\ref{sec:eval:introduction}, on microbenchmarks in \S\ref{sec:eval:overhead}, and then on real projects that currently use \Make{} -- namely FSATrace (\S\ref{sec:eval:fsatrace}), Redis (\S\ref{sec:eval:redis}), Vim (\S\ref{sec:eval:vim}), tmux (\S\ref{sec:eval:tmux}), and Node.js (\S\ref{sec:eval:node}). We implement two sample projects using \Rattle in \S\ref{sec:eval:writing_rattle}.
 
-We have focused our real-world comparison on \Make projects using C because such projects often have minimal external dependencies (making them easier to evaluate in isolation), and despite using the same programming language, have an interesting variety of dependency tracking strategies and size (ranging from one second to three hours). Most newer programming languages (e.g. Rust, Haskell etc) have dedicated built tools (e.g. Cargo, Cabal) so small projects in such languages tend not to use general-purpose build tools.
+We have focused our real-world comparison on \Make projects using C because such projects often have minimal external dependencies (making them easier to evaluate in isolation), and despite using the same programming language, have an interesting variety of dependency tracking strategies and compilation times (ranging from one second to three hours). Most newer programming languages (e.g. Rust, Haskell etc) have dedicated built tools (e.g. Cargo, Cabal) so small projects in such languages tend not to use general-purpose build tools.
 
 %% Our evaluation shows that Rattle:
 %% \begin{enumerate}
@@ -137,7 +137,7 @@ On Windows, we see that the total overhead of \Rattle makes execution 46\% slowe
 %
 On Windows, enabling the default anti-virus (Windows Defender) has a significant impact on the result, increasing the \Make baseline by 11\% and the final time by 29\%. These results were collected with the anti-virus disabled.
 
-On Linux, the total overhead is only 7\%, of which nearly all (5\%) comes from tracing.
+On Linux, the total overhead is only 7\%, of which nearly all (5\%) comes from tracing. The initial Haskell process creation is faster than direct \Make execution (by 1\%) because the overheads of the Haskell process library on Linux are less than those of \Make doing dependency checking and process execution.
 
 %\postparagraphs
 

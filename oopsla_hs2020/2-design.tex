@@ -110,8 +110,10 @@ As stated in \citet[\S3.6]{build_systems_a_la_carte}, a build is correct provide
 \emph{If we recompute the value of the key (...), we should get exactly the same value as we see in the final store.}
 \end{quote}
 
+In our build system, a key is a filename, and a value are the files contents.
+
 % SS just trying to make it clear nothign has changed between builds; although maybe that goes without saying?
-Specified in terms more applicable to our design, it means that after a build completes, an immediate subsequent rebuild should have no effect because all commands are skipped (assuming the commands given to the build system are the same). However, there are sequences of commands, where each command meets our assumptions separately (as per \S\ref{sec:skipping_unnecessary}), but the combination is problematic:
+Specifying this requirement in terms more applicable to our design, it means that after a build completes, an immediate subsequent rebuild should have no effect because all commands are skipped (assuming the commands given to the build system are the same). However, there are sequences of commands, where each command meets our assumptions separately (as per \S\ref{sec:skipping_unnecessary}), but the combination is problematic:
 
 \vspace{1mm}
 \begin{small}
