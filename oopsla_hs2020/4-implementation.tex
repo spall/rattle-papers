@@ -85,7 +85,6 @@ Relative to the reference design in \S\ref{sec:design} we have made a few specif
 \item We never attempt to recover after speculation (see \S\ref{sec:recovering}), simply aborting the build and restarting without any speculation.
 %% \item We have not yet implemented speculative-read-write hazards, and equally have not seen them occur. Under normal (non-adversarial) circumstances, given our cautious approach to speculation, we consider such hazards extremely unlikely.
 \item We treat command lines as black boxes, never examining them to predict their outputs. For many programs a simple analysis (e.g. looking for \texttt{-o} flags) might be predictive.
-\item We use a shared drive for sharing build artefacts, but allow the use of tools such as NFS or Samba to provide remote connectivity and thus full ``cloud builds''.
 \item \Rattle can go wrong if a speculated command writes to an input file, as per \S\ref{sec:proof:restart_no_speculation}. This problem hasn't occurred in practice, but dividing files into inputs and outputs would be perfectly reasonable. Typically the inputs are either checked into version control or outside the project directory, so that information is readily available.
 \item It is important that traces (as stored for \S\ref{sec:skipping_unnecessary}) are only recorded to disk when we can be sure they were not affected by any hazards (see \S\ref{sec:proof:continue}). That determination requires waiting for all commands which ran at the same time as the command in question to have completed.
 \item We model queries for information about a file (e.g. existence or modification time) as a read for tracing purposes, thus depending on the contents of the file. For queries about the existence of a file, we rerun if the file contents changes, which may be significantly more frequent than when the file is created or deleted. For queries about modification time, we don't rerun if the modification time changes but the file contents don't, potentially not changing when we should. In practice, most modification time queries are to implement rebuilding logic, so can be safely ignored if the file contents haven't changed.
@@ -119,6 +118,21 @@ We require that if the ``important'' part of \texttt{main.o} changes then the fi
 The disadvantage of hash forwarding (other than complexity) is that if the output file eliminates some information compared to the inputs, e.g. is simply the number of lines in the input, then there might be instances where two output values would be equal despite their forwarding hashes being different, causing fewer cache hits. The use of hash forwarding is very similar to the idea of deep-constructive traces from \citet[\S4.2.4]{build_systems_a_la_carte}, including the inability to benefit from unchanging outputs.
 \end{comment}
 
+\subsection{Storage and cloud storage}
+\label{sec:cloud_implementation}
+
+Our \Rattle implementation stores all information required between executions on disk. It stores three different types of information:
+
+\begin{enumerate}
+\item \texttt{Command traces} record which files were accessed when a specific command line (including environment variables etc.) was run. For each file, we record whether it was read or written to, and the hash of each file. These traces are used to determine whether to skip running a command as per \S\ref{sec:skipping_unnecessary}, and are required to avoid continually rebuilding everything. These traces are relatively small and may be hundreds per execution, meaning the cost to storing them is low.
+\item \texttt{Speculation traces} record which commands were required by the last run. If the speculation information is missing, \Rattle uses an empty speculation trace, and won't get any speculative parallelism as per \S\ref{sec:speculation}. There is only one speculation trace stored or queried per run, so the cost of these traces is minimal.
+\item \texttt{File contents} record mappings from file hashes to the complete files. These hashes are used in conjunction with the command traces to allow copying outputs if all the inputs match, as per \S\ref{sec:cloud_builds}. Given a local file system with cheap copy-on-write semantics, it would be fairly cheap to add entries to the the file contents mapping. Unfortunately, copy-on-write is not a standard features of most file systems, so copying files to this storage can have approximately a 10\% performance cost.
+\end{enumerate}
+
+To provide sharing between multiple users, we can store these artefacts on a shared drive, and then use tools such as NFS or Samba to provide remote connectivity and thus full ``cloud builds''. When speculation traces are shared between multiple users, who may be compiling different versions of the software, it is necessary to index the speculation trace by commit reference, so that the nearest ancestor commit with speculation information can be used. Because speculation information is necessarily approximate, using slightly old speculation information is not harmful. However, in practice we currently just overwrite the speculation information, and because \Rattle is mostly used with small numbers of users, that works sufficiently well (but would definitely not scale).
+
+When sharing storage between multiple untrusted users, it is important to consider security implications. The file contents store is indexed by hash, and checking the hash on retrieval ensures the integrity of the data (assuming a strong hash function). The command traces are fundamentally relied upon, so should only be written to be trusted users. The speculation traces aren't relied upon by the build system, but a malicious speculation trace could cause a user to execute a malicious command, so should also be written only by trusted users. We have not yet implemented any security restrictions.
+
 \subsection{Tracing approaches}
 \label{sec:tracing}
 
@@ -130,6 +144,7 @@ In \S\ref{sec:assume_tracing} we assume the existence of \emph{dependency tracin
 \item On \textbf{Windows} it is possible to hook the Kernel API, which can be used to detect when any files are accessed. Since this hook is at the kernel level, all programs are subject to it, and while it is important to cover all entry points, that list of entry points is well documented and quite minimal, so easy to cover entirely. Implementing the hook is difficult, particularly around 32bit v 64bit differences, as custom assembly language trampolines must be used. Furthermore, some antivirus products (incorrectly) detect programs using the kernel hook as viruses. Windows kernel hooking is available in  \Fsatrace, although without support for 32bit processes that spawn 64bit processes. In practice this limitation is rarely a problem (most binaries are now 64bit), often easily remedied (switch to the 64bit version), and possible to fix in \Fsatrace if it was necessary (the engineering is difficult, but the technique is know and used by other tools).
 \item On all platforms, \Fsatrace does not record access to directories (as opposed to files). Thus, if the kind of file-listing logic seen in \ref{fig:getdir} was moved into a binary that needed to be traced, changes to the directory itself (such as adding new files) would not trigger a reexecution of the relevant command.
 \item On all platforms, any subcommands that are executed have their system accesses tracked and attributed to the parent process. As an example, \texttt{gcc} invokes \texttt{as} when compiling to transform textual assembly code to machine code. The tracing of \texttt{gcc} will include a read access to the \texttt{as} binary and a write to the \texttt{.o} file that \texttt{as} produces.
+\item Files which are both written and deleted before the command completes are considered as temporary files. They are reported by \Fsatrace, but we ignore them in \Rattle. Examples of such files are the temporary textual assembly code produced by \texttt{gcc} to give to \texttt{as}, which is also written in a temporary directory with a random filename.
 \end{itemize}
 
 \noindent In practice, none of the limitations have been overly problematic in the examples we have explored.
@@ -150,6 +165,10 @@ cmd "protoc hello.grpc --js_out=js"
 \end{verbatim}
 
 Unfortunately, it is not immediately obvious \emph{when} a tracing tool has returned incomplete dependencies, and manually specifying dependencies results in all the missing and incomplete dependency issues that are common in Makefile-based builds, which \Rattle was designed to avoid.
+
+\vspace{2mm}
+
+
 
 %\subsection{Possible Tracing Enhancements}
 
