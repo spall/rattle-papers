@@ -24,7 +24,7 @@ working \Rattle code, is shown in figure~\ref{fig:getdir}.
 \begin{minipage}{.35\textwidth}
   \begin{small}
 \begin{verbatim}
-FILES=$(ls *.c)                                       
+FILES=$(ls *.c)
 for FILE in $FILES; do
     gcc -c $FILE
 done
@@ -43,7 +43,7 @@ gcc -o main.exe ${FILES%.c}.o
 \end{verbatim}
 \end{small}
 \end{minipage}
-  
+
   \caption{Value-dependent build scripts, in Shell and Rattle}
   \label{fig:getdir}
 \end{figure}
