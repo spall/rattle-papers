@@ -53,6 +53,8 @@ A complete \Rattle script that compiles all \texttt{.c} files like \S\ref{sec:mo
 
 Looking at the functions from Figure \ref{fig:api}, there are two functions this example does not use. The \texttt{cmdWriteFile} and \texttt{cmdReadFile} functions are used to perform a read/write of the file system through Haskell code, causing hazards to arise if necessary. Apart from these functions, it is assumed that all Haskell control code only reads and writes files which are not written to by any commands.
 
+For further examples of \Rattle programs see \S\ref{sec:eval:writing_rattle}.
+
 \subsection{Alternative \Rattle wrappers}
 
 Given the above API, combined with the choice to treat the control logic as opaque, it is possible to write wrappers that expose \Rattle in new ways. For example, to run a series of commands from a file, we can write:
