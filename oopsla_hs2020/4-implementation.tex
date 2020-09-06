@@ -123,31 +123,30 @@ The disadvantage of hash forwarding (other than complexity) is that if the outpu
 In \S\ref{sec:assume_tracing} we assume the existence of \emph{dependency tracing} which can, after a command completes, tell us which files that command read and wrote. Unfortunately, such an API is \emph{not} part of the POSIX standard, and is not easily available on any standard platform. We reuse the file access tracing features that have been added to \Shake \cite{neil:file_access}, which in turn are built on top of \Fsatrace \cite{fsatrace}. The techniques and limitations vary by OS:
 
 \begin{itemize}
-\item On \textbf{Linux} we use \texttt{LD\_LIBRARY\_PRELOAD} to inject a different C library which records accesses. It can't trace into programs that use system calls directly (typically Go programs \cite{go}) or statically linked binaries. In future we plan to integrate \Bigbro \cite{bigbro} as an alternative, which uses \texttt{ptrace} and fixes these issues.
-\item On \textbf{Mac} we also use \texttt{LD\_LIBRARY\_PRELOAD}, but that technique is blocked for security reasons on system binaries, notably the system C/C++ compiler. Installing a C/C++ compiler from another source (e.g. \Nix \cite{nix}) overcomes that limitation.
-\item On \textbf{Windows} we can't trace 64bit programs spawned by 32bit programs, but such a pattern is rare (most binaries are now 64bit), often easily remedied (switch to the 64bit version), and possible to fix (although integrating the fix is likely difficult).
-  \item On all platforms, \Fsatrace does not record access to
-    directories (as opposed to files). Thus, if the kind of
-    file-listing logic seen in \ref{fig:getdir} was moved into a
-    binary that needed to be traced, changes to the directory itself
-    (such as adding new files) would not trigger a reexecution of the
-    relevant command.
+\item On \textbf{Linux} we use \texttt{LD\_LIBRARY\_PRELOAD} to inject a different C library into the process, which records file accesses, and then forwards functions on to the original C library. There are two main reasons we might fail to detect a file access. Firstly, the library we use (namely \Fsatrace) doesn't support all C library functions, as there are a great number which perform file accesses (e.g. in addition to the traditional \texttt{open}, there is also a newer \texttt{openat}). Fortunately, while it is difficult to determine the full C library file API, \Fsatrace has extensive coverage in practice, including at least 28 different file-related functions on Linux platforms.\footnote{Many of these functions appear to be entirely undocumented, and required reverse-engineering by the \Fsatrace developers.} Secondly, the program might not dynamically load the C library -- that is common in programs that invoke system calls directly (typically Go programs \cite{go}) or have their C library statically linked to the binary. In future we plan to integrate \Bigbro \cite{bigbro} as an alternative, which uses \texttt{ptrace} and doesn't rely on using a dynamic C library.
+\item On \textbf{Mac} we also use \texttt{LD\_LIBRARY\_PRELOAD}. While the technique works on a Mac, from Mac OS X 1.10 onwards system binaries can't be traced due to System Integrity Protection\footnote{\url{https://developer.apple.com/library/content/documentation/Security/Conceptual/System_Integrity_Protection_Guide/ConfiguringSystemIntegrityProtection/ConfiguringSystemIntegrityProtection.html}}. As an example of a program this impacts, the C/C++ compiler is typically installed as a system binary. It is possible to disable System Integrity Protection (but not recommended by Apple); or to use non-system binaries (e.g. those supplied by \Nix \cite{nix}); or to copy the system binary to a temporary directory (which works provided the binary does not afterwards invoke another system binary). The library preload mechanism is implemented by \Fsatrace and the copying system binaries trick on Mac is implemented in \Shake.
+\item On \textbf{Windows} it is possible to hook the Kernel API, which can be used to detect when any files are accessed. Since this hook is at the kernel level, all programs are subject to it, and while it is important to cover all entry points, that list of entry points is well documented and quite minimal, so easy to cover entirely. Implementing the hook is difficult, particularly around 32bit v 64bit differences, as custom assembly language trampolines must be used. Furthermore, some antivirus products (incorrectly) detect programs using the kernel hook as viruses. Windows kernel hooking is available in  \Fsatrace, although without support for 32bit processes that spawn 64bit processes. In practice this limitation is rarely a problem (most binaries are now 64bit), often easily remedied (switch to the 64bit version), and possible to fix in \Fsatrace if it was necessary (the engineering is difficult, but the technique is know and used by other tools).
+\item On all platforms, \Fsatrace does not record access to directories (as opposed to files). Thus, if the kind of file-listing logic seen in \ref{fig:getdir} was moved into a binary that needed to be traced, changes to the directory itself (such as adding new files) would not trigger a reexecution of the relevant command.
 \end{itemize}
 
 \noindent In practice, none of the limitations have been overly problematic in the examples we have explored.
 
-The most serious potential limitation of tracing tools is if a file
-access is missed due to a weakness of the tool. For example, including
-\texttt{open} but not \texttt{openat} would mean that some
-dependencies are omitted. The result would be failing to re-run build
-commands when the true dependencies change, similar to the errors
-experienced in many Makefile-based builds, and which \Rattle is design
-to avoid. Fortunately, while it is difficult to determine the full C
-library file API, \Fsatrace has extensive coverage in practice,
-including at least 28 different file-related functions on Linux
-platforms.\footnote{Many of these functions appear to be entirely
-  undocumented, and required reverse-engineering by the \Fsatrace
-  developers.}
+The consequence of a tracing tool not reporting a file access would be failing to re-run a build command when the true dependencies change. To take a concrete example, the gRPC generator (named \texttt{protoc}) is written in Go. If a \Rattle build features the command:
+
+\begin{verbatim}
+cmd "protoc hello.grpc --js_out=js"
+\end{verbatim}
+
+That reads the file \texttt{hello.proto}, and writes the file \texttt{js/hello.js}, but on Linux and Mac \Rattle does not know that. If the file \texttt{hello.proto} changes, \Rattle will fail to rebuild \texttt{js/hello.js} causing it to produce an \emph{incorrect result}. If the result is taken from a cloud cache (\S\ref{sec:cloud_builds}) it will not fetch \texttt{js/hello.js}. The dependency on the \texttt{protoc} binary itself \emph{is} tracked as that is done by the operating system.
+
+To resolve the issue, it is necessary to explicitly tell \Rattle the dependencies, with:
+
+\begin{verbatim}
+cmd "protoc hello.grpc --js_out=js"
+    (Read ["hello.grpc"]) (Write ["js/hello.js"])
+\end{verbatim}
+
+Unfortunately, it is not immediately obvious \emph{when} a tracing tool has returned incomplete dependencies, and manually specifying dependencies results in all the missing and incomplete dependency issues that are common in Makefile-based builds, which \Rattle was designed to avoid.
 
 %\subsection{Possible Tracing Enhancements}
 
