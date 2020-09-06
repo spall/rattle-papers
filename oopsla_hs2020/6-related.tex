@@ -29,8 +29,6 @@ The design space of backward build systems is discussed in \cite{build_systems_a
 \textbf{Rebuild} For rebuilding, \Rattle looks a lot like the constructive trace model -- traces are made, stored in a cloud, and available for future use. The one wrinkle is that a trace may be later invalidated if it turns out a hazard occurred (see \S\ref{sec:choices}).
 % In particular, the correspondence to constructive traces illuminates the consequences of moving to a deep constructive trace model (see \S\ref{sec:forward_hashes}) -- it solves non-determinism at the cost of losing unchanging builds.
 
-%\postparagraphs
-
 \postparagraphs
 
 \noindent There are two features present in some backward build systems that are particularly relevant to \Rattle:
