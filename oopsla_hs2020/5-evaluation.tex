@@ -224,7 +224,7 @@ When benchmarking \Rattle vs \Make we found that \Rattle was about 10\% slower d
 
 \addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/vim.dat}; 	\addlegendentry{\Make 1 thread}
 \addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/vim.dat}; 	\addlegendentry{\Make 4 threads}
-\addplot [color=blue, mark=*] table [x expr=\coordindex, y=make32] {data/vim.dat}; 	\addlegendentry{\Make 32 threads}
+\addplot [color=blue, mark=square] table [x expr=\coordindex, y=make32] {data/vim.dat}; 	\addlegendentry{\Make 32 threads}
 \addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1_noshared] {data/vim.dat}; 	\addlegendentry{\Rattle 1 thread}
 \addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4_noshared] {data/vim.dat}; 	\addlegendentry{\Rattle 4 threads}
 \addplot [color=red, mark=square] table [x expr=\coordindex, y=rattle32_noshared] {data/vim.dat}; 	\addlegendentry{\Rattle 32 threads}
@@ -262,7 +262,7 @@ Vim is a popular text editor, over 25 years old. The majority of the source code
 
 \addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/tmux.dat}; 	\addlegendentry{\Make 1 thread}
 \addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/tmux.dat}; 	\addlegendentry{\Make 4 threads}
-\addplot [color=blue, mark=*] table [x expr=\coordindex, y=make32] {data/tmux.dat}; 	\addlegendentry{\Make 32 threads}
+\addplot [color=blue, mark=square] table [x expr=\coordindex, y=make32] {data/tmux.dat}; 	\addlegendentry{\Make 32 threads}
 \addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1_noshared] {data/tmux.dat}; 	\addlegendentry{\Rattle 1 thread}
 \addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4_noshared] {data/tmux.dat}; 	\addlegendentry{\Rattle 4 threads}
 \addplot [color=red, mark=square] table [x expr=\coordindex, y=rattle32_noshared] {data/tmux.dat}; 	\addlegendentry{\Rattle 32 threads}
@@ -271,7 +271,8 @@ Vim is a popular text editor, over 25 years old. The majority of the source code
 
 
 tmux is a terminal multiplexer in development for the last 12 years.  It is built from source using \verb|sh autogen.sh && ./configure && make| sequence, making use of \textsc{Autoconf}, \textsc{Automake}, \textsc{pkg-config}, and \Make.
-To compare a \Rattle based tmux build to the \Make based one, we first ran \texttt{sh autogen.sh \&\& ./configure}, and then used the resulting \Make scripts to generate \Rattle build scripts. tmux was built over a series of 38 commits with both \Make and \Rattle. For the 11th, 22nd and 23rd commits \Rattle and \Make took noticeably different amounts of time. In all cases the cause was a build script change, preventing \Rattle from speculating, and thus taking approximately as long as a full single-threaded build.  For those three commits where the build script changed, it was possible for a write-write hazard to occur, and we occasionally observed it for the 11th and 22nd commits (but not in the 5 runs measured above).
+To compare a \Rattle based tmux build to the \Make based one, we first ran \texttt{sh autogen.sh \&\& ./configure}, and then used the resulting \Make scripts to generate \Rattle build scripts. tmux was built over a series of 38 commits with both \Make and \Rattle. For the 11th, 22nd and 23rd commits in the chart, \Rattle and \Make took noticeably different amounts of time. In all cases the cause was a build script change, preventing \Rattle from speculating, and thus taking approximately as long as a full single-threaded build. Additionally, a write-write hazard occurred at each of those commits caused by a conflict between a speculated command and its new version in the changed script.
+
 
 % 12th because previous command was skipped isnce it errors
 % 13th is 685eb38 what changed? added flag so almost all commands changed
@@ -388,20 +389,20 @@ These \emph{.intermediate} targets are specified as prerequisites of the special
 
 \addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/node.dat}; 	\addlegendentry{\Make 1 thread}
 \addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/node.dat}; 	\addlegendentry{\Make 4 threads}
-\addplot [color=blue, mark=*] table [x expr=\coordindex, y=make32] {data/node.dat}; 	\addlegendentry{\Make 32 threads}
+\addplot [color=blue, mark=square] table [x expr=\coordindex, y=make32] {data/node.dat}; 	\addlegendentry{\Make 32 threads}
 \addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1_noshared] {data/node.dat}; 	\addlegendentry{\Rattle 1 thread}
 \addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4_noshared] {data/node.dat}; 	\addlegendentry{\Rattle 4 threads}
 \addplot [color=red, mark=square] table [x expr=\coordindex, y=rattle32_noshared] {data/node.dat}; 	\addlegendentry{\Rattle 32 threads}
 \end{axis}
 \end{tikzpicture}
 
-To compare to \Rattle, we built Node.js over a series of 38 commits with both \Make and \Rattle, with 1 thread and 4 threads. The \Rattle build was created for each commit by recording every command executed by the original build, excluding the commands exclusively dealing with dependency files. Due to the large variations in time, the above plot uses a log scale.
+To compare to \Rattle, we built Node.js over a series of 38 commits with both \Make and \Rattle, with 1, 4, and 32 threads. The \Rattle build was created for each commit by recording every command executed by the original build, excluding the commands exclusively dealing with dependency files. Due to the large variations in time, the above plot uses a log scale.
 
-For building from scratch, \Make and \Rattle took approximately the same amount of time with a single thread (around 150 minutes). However, with 4 threads, \Make was able to build Node nearly four times faster (40 minutes), while \Rattle had no speculation information and did not improve. For many commits \Rattle and \Make give similar results, but for those with the least amount of work, where only a few files change, \Rattle is able to beat \Make. The fastest observed \Make time is 35 seconds, while \Rattle goes as low as 12 seconds. The major cause is that \Make \emph{always} rebuilds the generated files but \Rattle (correctly) does not.
+For building from scratch, \Make and \Rattle took approximately the same amount of time with a single thread (around 94 minutes). However, with 4 and 32 threads, \Make was able to build Node nearly four times faster (24 minutes), and approximately 20 times faster (4.8 minutes), respectively, while \Rattle had no speculation information and did not improve. When built from scratch with 4 and 32 threads, the \Rattle build was 2 \% slower (96 minutes) and 20 \% slower (113 minutes). This is presumably caused by the overhead of the un-used threads. For many commits \Rattle and \Make give similar results, but for those with the least amount of work, where only a few files change, \Rattle is able to beat \Make. The fastest observed \Make time across all thread counts is approximately 25 seconds, while \Rattle goes as low as 8 seconds when built with 4 threads.  When built with The major cause is that \Make \emph{always} rebuilds the generated files but \Rattle (correctly) does not.
 
-While building the third commit, a write-write hazard occurred, which caused the build to re-run
-with no speculation.  But, as we can see from the graph, even the failed speculation was still faster than the sequential
-version.  While building commits 4, 5, 8, 11, 14, read-write hazards occurred which caused the
+When Node.js was built with \Rattle using 32 threads it was noticeably slower for many commits than when built with 4 threads.  For most of those same commits the time \Make spent building with 4 threads versus 32 threads was the same suggesting that there was no more parallelism available at those commits and \Rattle's thread related overhead caused the 32 thread version to be slower.  For other commits, notably commits 6, 17, 22, and 24 in the chart, the 32 thread version was faster than the 4 thread version and comparable in performance to \Make.
+
+While building the third commit (labeled 2 in chart), a write-write hazard occurred, which caused the build to re-run with no speculation.  But, as we can see from the graph, when built with 4 threads even the failed speculation was still faster than the sequential version.  However, the time it took \Rattle to build the third commit with 32 threads was almost as long as it took to build it sequentially, likely caused by thread overhead. While building commits 4, 5, 8, 11, 14, read-write hazards occurred which caused the
 build to re-run these commits with no speculation, however, these hazards do not appear to have greatly impacted the build performance.
 
 % 3: 7b7e7bd (new script) read-write hazard
@@ -439,7 +440,7 @@ Looking across the projects in this section, a few themes emerge.
 
 \begin{itemize}
 \item For most commits, \Rattle and \Make give similar performance. The one case that is not true is the initial build at higher levels of parallelism, where \Make outperforms \Rattle, because \Rattle has no speculation information. If \Rattle used a shared speculation cache as per \S\ref{sec:cloud_implementation}, where another user had already built the initial commit, the first build would be no different as it would also have good speculation information.
-\item The difference between 1 thread and 4 threads can be quite significant, and typically \Make and \Rattle do equally well with parallelism. The implicit parallelism in \Rattle is an important feature which works as designed.
+\item The difference between 1 thread and 4 threads can be quite significant, and typically \Make and \Rattle do equally well with parallelism. \Rattle doesn't always perform as well when building with 32 threads, displaying thread related overhead in \Rattle that could be optimised. The implicit parallelism in \Rattle is an important feature which works as designed.  
 \item Hazards are relatively rare, but when they do occur, they do impact the build time.
 \item Every \Make project investigated manages dependencies differently. Most use \texttt{gcc} to generate dependency information. Some provide that information directly (e.g. \Fsatrace), some use stamp files (e.g. Redis) and some build their own mechanisms on top of \Make (e.g. Node.js, but also \citet[\S2]{hadrian}).
 \item Many projects give up on dependencies in less common cases, requiring the user to manually invoke a clean, e.g. Redis for external dependencies, Vim for prototype changes.
