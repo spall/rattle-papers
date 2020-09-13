@@ -224,10 +224,10 @@ When benchmarking \Rattle vs \Make we found that \Rattle was about 10\% slower d
 
 \addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/vim.dat}; 	\addlegendentry{\Make 1 thread}
 \addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/vim.dat}; 	\addlegendentry{\Make 4 threads}
-\addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make32] {data/vim.dat}; 	\addlegendentry{\Make 32 threads}
+\addplot [color=blue, mark=*] table [x expr=\coordindex, y=make32] {data/vim.dat}; 	\addlegendentry{\Make 32 threads}
 \addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1_noshared] {data/vim.dat}; 	\addlegendentry{\Rattle 1 thread}
 \addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4_noshared] {data/vim.dat}; 	\addlegendentry{\Rattle 4 threads}
-\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle32_noshared] {data/vim.dat}; 	\addlegendentry{\Rattle 32 threads}
+\addplot [color=red, mark=square] table [x expr=\coordindex, y=rattle32_noshared] {data/vim.dat}; 	\addlegendentry{\Rattle 32 threads}
 \end{axis}
 \end{tikzpicture}
 
@@ -262,10 +262,10 @@ Vim is a popular text editor, over 25 years old. The majority of the source code
 
 \addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/tmux.dat}; 	\addlegendentry{\Make 1 thread}
 \addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/tmux.dat}; 	\addlegendentry{\Make 4 threads}
-\addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make32] {data/tmux.dat}; 	\addlegendentry{\Make 32 threads}
+\addplot [color=blue, mark=*] table [x expr=\coordindex, y=make32] {data/tmux.dat}; 	\addlegendentry{\Make 32 threads}
 \addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1_noshared] {data/tmux.dat}; 	\addlegendentry{\Rattle 1 thread}
 \addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4_noshared] {data/tmux.dat}; 	\addlegendentry{\Rattle 4 threads}
-\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle32_noshared] {data/tmux.dat}; 	\addlegendentry{\Rattle 32 threads}
+\addplot [color=red, mark=square] table [x expr=\coordindex, y=rattle32_noshared] {data/tmux.dat}; 	\addlegendentry{\Rattle 32 threads}
 \end{axis}
 \end{tikzpicture}
 
@@ -388,10 +388,10 @@ These \emph{.intermediate} targets are specified as prerequisites of the special
 
 \addplot [color=cyan, mark=o] table [x expr=\coordindex, y=make1] {data/node.dat}; 	\addlegendentry{\Make 1 thread}
 \addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make4] {data/node.dat}; 	\addlegendentry{\Make 4 threads}
-\addplot [color=cyan, mark=*] table [x expr=\coordindex, y=make32] {data/node.dat}; 	\addlegendentry{\Make 32 threads}
+\addplot [color=blue, mark=*] table [x expr=\coordindex, y=make32] {data/node.dat}; 	\addlegendentry{\Make 32 threads}
 \addplot [color=purple, mark=triangle] table [x expr=\coordindex, y=rattle1_noshared] {data/node.dat}; 	\addlegendentry{\Rattle 1 thread}
 \addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle4_noshared] {data/node.dat}; 	\addlegendentry{\Rattle 4 threads}
-\addplot [color=purple, mark=triangle*] table [x expr=\coordindex, y=rattle32_noshared] {data/node.dat}; 	\addlegendentry{\Rattle 32 threads}
+\addplot [color=red, mark=square] table [x expr=\coordindex, y=rattle32_noshared] {data/node.dat}; 	\addlegendentry{\Rattle 32 threads}
 \end{axis}
 \end{tikzpicture}
 
