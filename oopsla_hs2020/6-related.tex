@@ -19,6 +19,15 @@ Recently there have been three other implementations of forward build systems we
 
 There are significantly fewer forward build systems than backwards build systems, but the interesting dimension starting to emerge is how an ordering is specified. The three current alternatives are the user specifies a valid order (\Fabricate and \Rattle), the user specifies partial dependencies which are used to calculate an order (\Fac) or the user specifies no ordering and search is used (\Stroll and some aspects of \Fac).
 
+Other build systems, such as \Pluto~\cite{erdweg2015sound} (and
+\textsc{PIE}~\cite{Konat_2018,10.1145/3238147.3238196}, a front-end to
+\Pluto), simulate some of the convenience of a forward build system by
+constructing the dependency graph during the execution of a
+host-language program. However, these systems, similar to \Shake, then
+rely on that dependency graph for rebuilding. In contrast, \Rattle and
+other forward build systems do not construct or use such a dependency
+graph.
+
 \subsection{Comparison to backward build systems}
 \label{sec:remote_execution}
 
