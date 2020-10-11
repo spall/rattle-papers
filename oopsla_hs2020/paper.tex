@@ -3,17 +3,39 @@
 % APPROACH: Double blind
 % CFP: https://2020.splashcon.org/track/splash-2020-oopsla#Call-for-Papers
 
-\documentclass[acmsmall,screen,review,10pt]{acmart}
+\documentclass[acmsmall,screen]{acmart}
 \settopmatter{printacmref=false}
 \renewcommand\footnotetextcopyrightpermission[1]{} % Remove after submission
 
 \bibliographystyle{ACM-Reference-Format}
 \citestyle{acmauthoryear}
 
+\usepackage{microtype}
 \usepackage{xspace}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.13}
 \pgfplotsset{title style={at={(0.5,0.7)}}}
+
+%%% If you see 'ACMUNKNOWN' in the 'setcopyright' statement below,
+%%% please first submit your publishing-rights agreement with ACM (follow link on submission page).
+%%% Then please update our instructions page and copy-and-paste the NEW commands into your article.
+%%% Please contact us in case of questions; allow up to 10 min for the system to propagate the information.
+%%%
+%%% The following is specific to OOPSLA '20 and the paper
+%%% 'Build Scripts with Perfect Dependencies'
+%%% by Sarah Spall, Neil Mitchell, and Sam Tobin-Hochstadt.
+%%%
+% \setcopyright{ACMUNKNOWN}
+\acmPrice{}
+\acmDOI{10.1145/3428237}
+\acmYear{2020}
+\copyrightyear{2020}
+\acmSubmissionID{oopsla20main-p169-p}
+\acmJournal{PACMPL}
+\acmVolume{4}
+\acmNumber{OOPSLA}
+\acmArticle{169}
+\acmMonth{11}
 
 \begin{document}
 
@@ -42,7 +64,7 @@
 \author{Sarah Spall}
 \affiliation{
   \institution{Indiana University}
-  \country{United States}
+  \country{USA}
 }
 \email{sjspall@iu.edu}
 
@@ -56,7 +78,7 @@
 \author{Sam Tobin-Hochstadt}
 \affiliation{
   \institution{Indiana University}
-  \country{United States}
+  \country{USA}
 }
 \email{samth@cs.indiana.edu}
 
